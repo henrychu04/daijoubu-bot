@@ -18,7 +18,7 @@ async function main() {
             }])
         .then(answer => {
             url = answer.url;
-        }).
+        })
 
         await fetch(`${url}.json`, headers)
             .then(response => response.json())
