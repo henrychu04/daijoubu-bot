@@ -57,10 +57,10 @@ client.on('message', async message => {
                     }
                 })
                 .catch(() => {
-                    message.channel.send('Site must be Shopify');
+                    message.channel.send('```' + 'Site must be Shopify' + '```');
                 });
         }
     } catch (err) {
-        message.channel.send('Unexpected error');
+        message.channel.send('```' + 'Unexpected error' + '```');
     }
 });
