@@ -1,7 +1,7 @@
 {
   "name": "shopify-variants",
   "version": "1.0.0",
-  "description": "A script to scrape shopify websites and return the variants of all the sizes of the product",
+  "description": "A Discord bot to scrape shopify websites and return the variants of all the sizes of the product",
   "main": "index.js",
   "dependencies": {
     "abort-controller": "^3.0.0",
