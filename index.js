@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const Discord = require('discord.js');
 const client = new Discord.Client();
+var auth = require('./auth.json');
 
 const headers = {
     headers: {
@@ -9,11 +10,14 @@ const headers = {
     }
 };
 
+var client = new Discord.Client({
+    token: auth.token,
+    autorun: true
+});
+
 client.once('ready', () => {
 	console.log('Ready!');
 });
-
-client.login('NzEyNzcxOTA3NzE5NTI4NDc4.XsWaoQ.0AhgP89tklcJroKhxtt998pqWkc');
 
 let controller = new AbortController();
 setTimeout(() => controller.abort(), 1000);
