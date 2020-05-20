@@ -51,7 +51,7 @@ client.on('message', async message => {
                             vars += `${data['product']['variants'][i]['title']} - ${data['product']['variants'][i]['id']}\n`;
                         }
 
-                        message.channel.send(vars);
+                        message.channel.send('```' + vars + '```');
                     } catch (err) {
                         throw err;
                     }
