@@ -2,7 +2,6 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const Discord = require('discord.js');
 const client = new Discord.Client();
-var auth = require('./auth.json');
 
 const headers = {
     headers: {
@@ -10,10 +9,7 @@ const headers = {
     }
 };
 
-var client = new Discord.Client({
-    token: auth.token,
-    autorun: true
-});
+client.login(process.env.BOT_TOKEN);
 
 client.once('ready', () => {
 	console.log('Ready!');
