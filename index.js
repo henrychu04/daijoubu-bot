@@ -91,6 +91,7 @@ client.on('message', async message => {
                 });
         }
     } catch (err) {
+        console.log(err);
         message.channel.send('```' + 'Unexpected error' + '```');
     }
 });
