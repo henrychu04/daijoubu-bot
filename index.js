@@ -48,10 +48,9 @@ client.on('message', async message => {
                         var vars = {
                             "embeds": [
                                 {
-                                    "author": {
-                                        "name": ""
-                                    },
-                                    "color": 16777215,
+                                    "title": data['product']['title'],
+                                    "url": url,
+                                    "color": 16777214,
                                     "fields": [
                                         {
                                             "name": "Price",
@@ -62,24 +61,33 @@ client.on('message', async message => {
                                             "value": ""
                                         }
                                     ],
-                                    "image": {
-                                        "url": data['image']['src']
+                                    "thumbnail": {
+                                        "url": data['product']['image']['src']
                                     }
                                 }
                             ]
                         };
 
                         for (var i = 0; i < data['product']['variants'].length; i++) {
-                            vars['embeds']['fields'][1]['value'] += `${data['product']['variants'][i]['title']} - ${data['product']['variants'][i]['id']}\n`;
+                            vars['embeds'][0]['fields'][1]['value'] += `${data['product']['variants'][i]['title']} - ${data['product']['variants'][i]['id']}\n`;
                         }
 
-                        message.channel.send(JSON.parse(vars));
+                        var api = process.env.SHOPIFY_VARIANTS_API;
+
+                        fetch(api, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(vars)
+                        });
                     } catch (err) {
+                        console.log(err);
                         throw err;
                     }
                 })
                 .catch(() => {
-                    message.channel.send('```' + 'Site must be Shopify' + '```');
+                    webhookClient.send('```' + 'Site must be Shopify' + '```');
                 });
         }
     } catch (err) {
