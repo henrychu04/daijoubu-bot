@@ -45,13 +45,35 @@ client.on('message', async message => {
                 .then(response => response.json())
                 .then(data => {
                     try {
-                        var vars = "";
+                        var vars = {
+                            "embeds": [
+                                {
+                                    "author": {
+                                        "name": ""
+                                    },
+                                    "color": 16777215,
+                                    "fields": [
+                                        {
+                                            "name": "Price",
+                                            "value": "$" + data['product']['variants'][0]['price']
+                                        },
+                                        {
+                                            "name": "Variants",
+                                            "value": ""
+                                        }
+                                    ],
+                                    "image": {
+                                        "url": data['image']['src']
+                                    }
+                                }
+                            ]
+                        };
 
                         for (var i = 0; i < data['product']['variants'].length; i++) {
-                            vars += `${data['product']['variants'][i]['title']} - ${data['product']['variants'][i]['id']}\n`;
+                            vars['embeds']['fields'][1]['value'] += `${data['product']['variants'][i]['title']} - ${data['product']['variants'][i]['id']}\n`;
                         }
 
-                        message.channel.send('```' + vars + '```');
+                        message.channel.send(JSON.parse(vars));
                     } catch (err) {
                         throw err;
                     }
