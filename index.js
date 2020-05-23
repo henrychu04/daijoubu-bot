@@ -88,7 +88,12 @@ client.on('message', async message => {
                 })
                 .catch((err) => {
                     console.log(err);
-                    message.channel.send('```' + 'Site must be Shopify' + '```');
+
+                    if (err.message.includes('invalid json response body')) {
+                        message.channel.send('```' + 'Error retrieving variants' + '```');
+                    } else if (err.message === 'timeout') {
+                        message.channel.send('```' + 'Site must be Shopify' + '```');
+                    }
                 });
         }
     } catch (err) {
