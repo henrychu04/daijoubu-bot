@@ -86,7 +86,8 @@ client.on('message', async message => {
                         throw err;
                     }
                 })
-                .catch(() => {
+                .catch((err) => {
+                    console.log(err);
                     message.channel.send('```' + 'Site must be Shopify' + '```');
                 });
         }
