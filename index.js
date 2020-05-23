@@ -87,7 +87,7 @@ client.on('message', async message => {
                     }
                 })
                 .catch(() => {
-                    webhookClient.send('```' + 'Site must be Shopify' + '```');
+                    message.channel.send('```' + 'Site must be Shopify' + '```');
                 });
         }
     } catch (err) {
