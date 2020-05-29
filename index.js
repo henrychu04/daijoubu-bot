@@ -221,7 +221,7 @@ client.on('message', async message => {
                 var proxy_num = command_split[1];
 
                 if (task_num.length != 0 && proxy_num.length != 0 && !isNaN(task_num) && !isNaN(proxy_num)) {
-                    var delay = (task_num * 3600) / proxy_num;
+                    var delay = Math.round((task_num * 3600) / proxy_num);
 
                     message.channel.send('```' + `Suggested delay for ${task_num} tasks and ${proxy_num} proxies: ${delay}` + '```');
 
