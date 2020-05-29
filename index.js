@@ -22,7 +22,7 @@ client.on('message', async message => {
     try {
         if (message.content.substring(0, 8) === '!shopify') {
 
-            console.log(`Message is ${message}`);
+            console.log(`Command: ${message}`);
 
             let controller = new AbortController();
             setTimeout(() => controller.abort(), 1000);
@@ -122,7 +122,7 @@ client.on('message', async message => {
 
         if (message.content.substring(0, 4) === '!fee') {
 
-            console.log(`Message is ${message}`);
+            console.log(`Command: ${message}`);
 
             var num = Money.fromDecimal(parseInt(message.content.slice(5)), 'USD');
 
@@ -209,8 +209,72 @@ client.on('message', async message => {
                 console.log('Command completed')
             );
         }
+
+        if (message.content.substring(0, 6) === '!delay') {
+            try {
+                console.log(`Command: ${message}`);
+
+                var command = message.content.slice(7);
+                var command_split = command.split(/\s+/);
+                
+                var task_num = command_split[0];
+                var proxy_num = command_split[1];
+
+                if (task_num.length != 0 && proxy_num.length != 0 && !isNaN(task_num) && !isNaN(proxy_num)) {
+                    var delay = (task_num * 3600) / proxy_num;
+
+                    message.channel.send('```' + `Suggested delay for ${task_num} tasks and ${proxy_num} proxies: ${delay}` + '```');
+
+                    console.log('Command completed')
+                } else {
+                    throw new err;
+                }
+            } catch (err) {
+                message.channel.send('```' + 'Incorrect Format\n!delay <number of tasks> <number of proxies>' + '```');
+                throw new Error('Incorrect Format');
+            }
+        }
+
+        if (message.content === '!help') {
+            console.log(`Command: ${message}`);
+
+            var help = {
+                "username": "Commands",
+                "embeds": [
+                    {
+                        "title": 'All Commands',
+                        "color": 16777214,
+                        "fields": [
+                            {
+                                "name": '!shopify <shopify link>',
+                                "value": 'Shopify Variant Scraper'
+                            },
+                            {
+                                "name": '!fee <amount>',
+                                "value": 'Fee Calculator for StockX, Goat, Stadium Goods'
+                            },
+                            {
+                                "name": '!delay <number of tasks> <number of proxies>',
+                                "value": 'Delay Calculator based on 3600 delay'
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            fetch(api, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(help)
+            })
+            .then (
+                console.log('Command completed')
+            );
+        }
     } catch (err) {
         console.log(err);
-        message.channel.send('```' + 'Unexpected error' + '```');
+        if (!err.message.includes('Incorrect Format')) message.channel.send('```' + 'Unexpected error' + '```');
     }
 });
