@@ -1,2 +1,4 @@
-# shopify-variants
-A Discord bot to scrape shopify websites and return the variants of all the sizes of the product
+# discord-bot-tools
+A Discord bot able to:
+- Scrape variants of a shopify product
+- Caclulate fees from different marketplaces
