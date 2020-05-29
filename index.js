@@ -8,7 +8,7 @@ const api = process.env.BOT_TOOLS;
 
 const headers = {
     headers: {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4136"
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4136'
     }
 };
 
@@ -52,30 +52,30 @@ client.on('message', async message => {
             .then(data => {
                 try {
                     var vars = {
-                        "username": "Shopify Variants",
-                        "embeds": [
+                        'username': 'Shopify Variants',
+                        'embeds': [
                             {
-                                "title": data['product']['title'],
-                                "url": link,
-                                "color": 16777214,
-                                "fields": [
+                                'title': data['product']['title'],
+                                'url': link,
+                                'color': 16777214,
+                                'fields': [
                                     {
-                                        "name": "Price",
-                                        "value": "$" + data['product']['variants'][0]['price'],
-                                        "inline": true
+                                        'name': 'Price',
+                                        'value': '$' + data['product']['variants'][0]['price'],
+                                        'inline': true
                                     },
                                     {
-                                        "name": "Site",
-                                        "value": domain,
-                                        "inline": true
+                                        'name': 'Site',
+                                        'value': domain,
+                                        'inline': true
                                     },
                                     {
-                                        "name": "Variants",
-                                        "value": ""
+                                        'name': 'Variants',
+                                        'value': ''
                                     }
                                 ],
-                                "thumbnail": {
-                                    "url": data['product']['image']['src']
+                                'thumbnail': {
+                                    'url': data['product']['image']['src']
                                 }
                             }
                         ]
@@ -142,56 +142,56 @@ client.on('message', async message => {
             var SGRevenue = num.subtract(SGFee, Math.ceil);
 
             var fee = {
-                "username": "Fee Calculator",
-                "embeds": [
+                'username': 'Fee Calculator',
+                'embeds': [
                     {
-                        "title": 'Fee for $' + num,
-                        "color": 16777214,
-                        "fields": [
+                        'title': 'Fee for $' + num,
+                        'color': 16777214,
+                        'fields': [
                             {
-                                "name": "Marketplace",
-                                "value": "StockX",
-                                "inline": true
+                                'name': 'Marketplace',
+                                'value': 'StockX',
+                                'inline': true
                             },
                             {
-                                "name": "Fee",
-                                "value": '$' + StockXFee1,
-                                "inline": true
+                                'name': 'Fee',
+                                'value': '$' + StockXFee1,
+                                'inline': true
                             },
                             {
-                                "name": "Revenue",
-                                "value": '$' + StockXRevenue,
-                                "inline": true
+                                'name': 'Revenue',
+                                'value': '$' + StockXRevenue,
+                                'inline': true
                             },
                             {
-                                "name": "Marketplace",
-                                "value": "Goat",
-                                "inline": true
+                                'name': 'Marketplace',
+                                'value': 'Goat',
+                                'inline': true
                             },
                             {
-                                "name": "Fee",
-                                "value": '$' + GoatFee1,
-                                "inline": true
+                                'name': 'Fee',
+                                'value': '$' + GoatFee1,
+                                'inline': true
                             },
                             {
-                                "name": "Revenue",
-                                "value": '$' + GoatRevenue,
-                                "inline": true
+                                'name': 'Revenue',
+                                'value': '$' + GoatRevenue,
+                                'inline': true
                             },
                             {
-                                "name": "Marketplace",
-                                "value": "Stadium Goods",
-                                "inline": true
+                                'name': 'Marketplace',
+                                'value': 'Stadium Goods',
+                                'inline': true
                             },
                             {
-                                "name": "Fee",
-                                "value": '$' + SGFee,
-                                "inline": true
+                                'name': 'Fee',
+                                'value': '$' + SGFee,
+                                'inline': true
                             },
                             {
-                                "name": "Revenue",
-                                "value": '$' + SGRevenue,
-                                "inline": true
+                                'name': 'Revenue',
+                                'value': '$' + SGRevenue,
+                                'inline': true
                             }
                         ]
                     }
@@ -239,23 +239,23 @@ client.on('message', async message => {
             console.log(`Command: ${message}`);
 
             var help = {
-                "username": "Commands",
-                "embeds": [
+                'username': 'Commands',
+                'embeds': [
                     {
-                        "title": 'All Commands',
-                        "color": 16777214,
-                        "fields": [
+                        'title': 'All Commands',
+                        'color': 16777214,
+                        'fields': [
                             {
-                                "name": '!shopify <shopify link>',
-                                "value": 'Shopify Variant Scraper'
+                                'name': '!shopify <shopify link>',
+                                'value': 'Shopify Variant Scraper'
                             },
                             {
-                                "name": '!fee <amount>',
-                                "value": 'Fee Calculator for StockX, Goat, Stadium Goods'
+                                'name': '!fee <amount>',
+                                'value': 'Fee Calculator for StockX, Goat, Stadium Goods'
                             },
                             {
-                                "name": '!delay <number of tasks> <number of proxies>',
-                                "value": 'Delay Calculator based on 3600 delay'
+                                'name': '!delay <number of tasks> <number of proxies>',
+                                'value': 'Delay Calculator based on 3600 delay'
                             }
                         ]
                     }
