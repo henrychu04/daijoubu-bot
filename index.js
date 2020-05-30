@@ -132,7 +132,7 @@ client.on('message', async message => {
             var StockXRevenue = num.subtract(StockXFee1, Math.ceil);
 
             var GoatFee1 = num.multiply(0.095, Math.ceil);
-            GoatFee1 = GoatFee1.add(new Money(5, Money.USD));
+            GoatFee1 = GoatFee1.add(new Money(500, Money.USD));
             var GoatFee2 = num.subtract(GoatFee1, Math.ceil);
             GoatFee2 = GoatFee2.multiply(0.029, Math.ceil);
             GoatFee1 = GoatFee1.add(GoatFee2, Math.ceil);
@@ -205,7 +205,7 @@ client.on('message', async message => {
                 },
                 body: JSON.stringify(fee)
             })
-            .then (
+            .then(
                 console.log('Command completed')
             );
         }
@@ -225,7 +225,7 @@ client.on('message', async message => {
 
                     message.channel.send('```' + `Suggested delay for ${task_num} tasks and ${proxy_num} proxies: ${delay}` + '```');
 
-                    console.log('Command completed')
+                    console.log('Command completed');
                 } else {
                     throw new err;
                 }
@@ -269,12 +269,12 @@ client.on('message', async message => {
                 },
                 body: JSON.stringify(help)
             })
-            .then (
+            .then(
                 console.log('Command completed')
             );
         }
     } catch (err) {
         console.log(err);
-        if (!err.message.includes('Incorrect Format')) message.channel.send('```' + 'Unexpected error' + '```');
+        if (err.message != 'Incorrect Format') message.channel.send('```' + 'Unexpected error' + '```');
     }
 });
