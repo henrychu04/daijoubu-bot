@@ -1,8 +1,8 @@
 const fetch = require('node-fetch');
-const config = require('../config.json');
+require('dotenv').config();
 
 module.exports = async function sendWebhook(embeded) {
-  await fetch(config.api, {
+  await fetch(process.env.BOT_TOOLS, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
