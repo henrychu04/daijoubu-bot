@@ -1,4 +1,4 @@
-package-lock.json
 /node_modules
-.env
+package-lock.json
+config.json
 discord-bot-tools.code-workspace
