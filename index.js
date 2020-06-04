@@ -127,7 +127,7 @@ client.on('message', async (message) => {
 
       var StockXFee1 = num.multiply(0.09, Math.ceil);
       var StockXFee2 = num.multiply(0.03, Math.ceil);
-      StockXFee1.add(StockXFee2);
+      StockXFee1 = StockXFee1.add(StockXFee2);
       var StockXRevenue = num.subtract(StockXFee1, Math.ceil);
 
       var GoatFee1 = num.multiply(0.095, Math.ceil);
