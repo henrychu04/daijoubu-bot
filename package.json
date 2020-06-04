@@ -1,10 +1,11 @@
 {
-  "name": "shopify-variants",
+  "name": "discord-bot-tools",
   "version": "1.0.0",
   "description": "A Discord bot to scrape shopify websites and return the variants of all the sizes of the product",
   "main": "index.js",
   "dependencies": {
     "abort-controller": "^3.0.0",
+    "cheerio": "^1.0.0-rc.3",
     "discord.js": "^12.2.0",
     "js-money": "^0.6.3",
     "node-fetch": "^2.6.0",
