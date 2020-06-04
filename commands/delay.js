@@ -18,9 +18,9 @@ exports.run = async (client, message, args) => {
         username: 'Delay Calculator',
         embeds: [
           {
-            title: `Suggested delay for ${task_num} tasks and ${proxy_num} proxies:`,
+            title: delay,
             color: 16777214,
-            description: delay,
+            description: `Suggested delay for ${task_num} tasks and ${proxy_num} proxies`,
           },
         ],
       };
