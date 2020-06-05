@@ -24,6 +24,7 @@ exports.run = async (client, message, args) => {
           },
         ],
       };
+
       sendWebhook(delayEmbed)
         .then(console.log(`${message} completed`))
         .catch((err) => {

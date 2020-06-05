@@ -1,9 +1,12 @@
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const sendWebhook = require('./sendWebhook');
+const sleep = require('./sleep');
 const config = require('../config.json');
 
 exports.run = async (client, message, args) => {
+  let command = message.content.slice(10);
+
   const domain = 'https://www.supremecommunity.com';
 
   let droplistPage = await fetch(
@@ -17,93 +20,161 @@ exports.run = async (client, message, args) => {
 
   const $1 = cheerio.load(droplistPage);
 
-  const latestURL = $1(
-    'div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]'
-  )
-    .find('div[class="col-sm-4 col-xs-12 app-lr-pad-2"]')
-    .find('a')
-    .attr('href');
+  let link = undefined;
+  let num = -2;
 
-  let doc = await fetch(domain + latestURL, { headers: config.headers })
-    .then((res) => {
-      return res.text();
-    })
-    .catch((err) => console.log(err));
+  if (!isNaN(command)) {
+    let weeks = $1(
+      'div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]'
+    ).find('div[class="col-sm-4 col-xs-12 app-lr-pad-2"]');
 
-  const $ = cheerio.load(doc);
-
-  const pageItems = $('div[class="card card-2"]');
-
-  if (pageItems.length > 0) {
-    let items = [];
-
-    pageItems.each((i, el) => {
-      let prop = {};
-
-      prop.name = $(el).find('h2').text();
-
-      prop.price = $(el).find('.label-price').text().trim();
-
-      const imageURL = $(el).find('img').attr('src');
-      prop.image = 'https://www.supremecommunity.com' + imageURL;
-
-      const description = $(el).find('img').attr('alt');
-      prop.description = description.split(' - ')[1];
-
-      const category = $(el).find('.category').text();
-      prop.category = category;
-
-      items.push(prop);
+    weeks.each((i, el) => {
+      let weekNum = $1(el).find('.droplist-overview-title').text();
+      if (weekNum.slice(5) == command) {
+        link = $1(el).find('a').attr('href');
+      }
     });
+  } else if (command == 'num') {
+    let weeks = $1(
+      'div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]'
+    ).find('div[class="col-sm-4 col-xs-12 app-lr-pad-2"]');
 
-    for (let crnt of items) {
+    weeks.each((i, el) => {
+      num++;
+    });
+  } else if (!command || command == 'latest') {
+    link = $1(
+      'div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]'
+    )
+      .find('div[class="col-sm-4 col-xs-12 app-lr-pad-2"]')
+      .find('a')
+      .attr('href');
+  }
+
+  if (link) {
+    let doc = await fetch(domain + link, { headers: config.headers })
+      .then((res) => {
+        return res.text();
+      })
+      .catch((err) => console.log(err));
+
+    const $ = cheerio.load(doc);
+
+    const pageItems = $('div[class="card card-2"]');
+
+    if (pageItems.length > 0) {
+      let items = [];
+
+      pageItems.each((i, el) => {
+        let prop = {};
+
+        prop.name = $(el).find('h2').text();
+
+        prop.price = $(el).find('.label-price').text().trim();
+
+        const imageURL = $(el).find('img').attr('src');
+        prop.image = domain + imageURL;
+
+        const description = $(el).find('img').attr('alt');
+        prop.description = description.split(' - ')[1];
+
+        const category = $(el).find('.category').text();
+        prop.category = category;
+
+        items.push(prop);
+      });
+
+      for (let crnt of items) {
+        let droplist = {
+          username: 'Latest Supreme Droplist',
+          embeds: [
+            {
+              title: crnt.name,
+              color: 16711680,
+              fields: [
+                {
+                  name: 'Description',
+                  value: crnt.description,
+                },
+                {
+                  name: 'Price',
+                  value: crnt.price,
+                  inline: true,
+                },
+                {
+                  name: 'Category',
+                  value: editCategory(crnt.category),
+                  inline: true,
+                },
+              ],
+              thumbnail: {
+                url: crnt.image,
+              },
+            },
+          ],
+        };
+
+        await sendWebhook(droplist);
+
+        await sleep(1000);
+      }
+
+      console.log(`${message} completed`);
+    } else {
       let droplist = {
         username: 'Latest Supreme Droplist',
         embeds: [
           {
-            title: crnt.name,
+            title: 'Droplist not out yet',
             color: 16711680,
-            fields: [
-              {
-                name: 'Description',
-                value: crnt.description,
-              },
-              {
-                name: 'Price',
-                value: crnt.price,
-                inline: true,
-              },
-              {
-                name: 'Category',
-                value: crnt.category,
-                inline: true,
-              },
-            ],
-            thumbnail: {
-              url: crnt.image,
-            },
+            description: 'Stay tuned!',
           },
         ],
       };
 
-      await sendWebhook(droplist);
-
-      await sleep(1000);
+      await sendWebhook(droplist).then(console.log(`${message} completed`));
     }
-  } else {
-    let droplist = {
-      username: 'Latest Supreme Droplist',
+  } else if (command == 'num') {
+    let numWeeks = {
+      username: 'Supreme Week',
       embeds: [
         {
-          title: 'Droplist not out yet',
+          title: 'Latest Supreme Week',
           color: 16711680,
-          description: 'Stay tuned!',
+          description: `Week ${num}`,
         },
       ],
     };
 
-    await sendWebhook(droplist);
+    await sendWebhook(numWeeks).then(console.log(`${message} completed`));
   }
-
-  console.log(`${message} completed`);
 };
+
+function editCategory(category) {
+  switch (category) {
+    case 'jackets':
+      return 'Jackets';
+    case 'shirts':
+      return 'Shirts';
+    case 'tops-sweaters':
+      return 'Tops/Sweaters';
+    case 'sweatshirts':
+      return 'Sweatshirts';
+    case 'pants':
+      return 'Pants';
+    case 'shorts':
+      return 'Shorts';
+    case 'hats':
+      return 'Hats';
+    case 'bags':
+      return 'Bags';
+    case 'accessories':
+      return 'Accessories';
+    case 'shoes':
+      return 'Shoes';
+    case 'skate':
+      return 'Skate';
+    default:
+      break;
+  }
+}

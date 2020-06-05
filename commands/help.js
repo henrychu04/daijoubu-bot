@@ -9,20 +9,22 @@ exports.run = async (client, message, args) => {
         color: 16777214,
         fields: [
           {
-            name: '!shopify <shopify link>',
-            value: 'Shopify Variant Scraper',
+            name: 'Shopify Variant Scraper',
+            value: '!shopify <shopify link>',
           },
           {
-            name: '!fee <amount>',
-            value: 'Fee Calculator for StockX, Goat, Stadium Goods',
+            name: 'Fee Calculator for StockX, Goat, Stadium Goods',
+            value: '!fee <amount>',
           },
           {
-            name: '!delay <number of tasks> <number of proxies>',
-            value: 'Delay Calculator based on 3600 delay',
+            name: 'Delay Calculator based on 3600 delay',
+            value: '!delay <number of tasks> <number of proxies>',
           },
           {
-            name: '!droplist',
-            value: 'Sends latest Supreme drop info',
+            name:
+              'Sends latest Supreme drop info, current Supreme week, and the Supreme drop info for a specific week',
+            value:
+              '!droplist, !droplist latest, !droplist num, !droplist <number>',
           },
         ],
       },
