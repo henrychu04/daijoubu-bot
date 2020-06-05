@@ -119,7 +119,7 @@ exports.run = async (client, message, args) => {
 
         await sendWebhook(droplist);
 
-        await sleep(500);
+        await sleep(1000);
 
         numItems++;
       }
@@ -174,6 +174,8 @@ function editCategory(category) {
       return 'Jackets';
     case 'shirts':
       return 'Shirts';
+    case 't-shirts':
+      return 'T-Shirts';
     case 'tops-sweaters':
       return 'Tops/Sweaters';
     case 'sweatshirts':
