@@ -77,7 +77,7 @@ exports.run = async (client, message, args) => {
 
         let description = $(el).find('img').attr('alt');
         description = description.split(' - ')[1];
-        prop.description = description.split('<span')[0].trim();
+        prop.description = description.split('<')[0].trim();
 
         const category = $(el).find('.category').text();
         prop.category = category;
