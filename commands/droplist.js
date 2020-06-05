@@ -75,14 +75,17 @@ exports.run = async (client, message, args) => {
         const imageURL = $(el).find('img').attr('src');
         prop.image = domain + imageURL;
 
-        const description = $(el).find('img').attr('alt');
-        prop.description = description.split(' - ')[1];
+        let description = $(el).find('img').attr('alt');
+        description = description.split(' - ')[1];
+        prop.description = description.split('<span')[0].trim();
 
         const category = $(el).find('.category').text();
         prop.category = category;
 
         items.push(prop);
       });
+
+      let numItems = 0;
 
       for (let crnt of items) {
         let droplist = {
@@ -116,10 +119,25 @@ exports.run = async (client, message, args) => {
 
         await sendWebhook(droplist);
 
-        await sleep(1000);
+        await sleep(500);
+
+        numItems++;
       }
 
-      console.log(`${message} completed`);
+      let numItemsWebhook = {
+        username: 'Latest Supreme Droplist',
+        embeds: [
+          {
+            title: 'Number of items',
+            color: 16711680,
+            description: numItems + ' items',
+          },
+        ],
+      };
+
+      await sendWebhook(numItemsWebhook).then(
+        console.log(`${message} completed`)
+      );
     } else {
       let droplist = {
         username: 'Latest Supreme Droplist',
