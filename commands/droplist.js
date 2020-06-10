@@ -30,6 +30,7 @@ exports.run = async (client, message, args) => {
 
     weeks.each((i, el) => {
       let weekNum = $1(el).find('.droplist-overview-title').text();
+
       if (weekNum.slice(5) == command) {
         link = $1(el).find('a').attr('href');
       }
@@ -70,17 +71,26 @@ exports.run = async (client, message, args) => {
 
         prop.name = $(el).find('h2').text();
 
-        prop.price = $(el).find('.label-price').text().trim();
+        if ($(el).find('p[class="priceusd hidden"]').text() == 0) {
+          prop.price = 'Currently no price';
+        } else {
+          prop.price = $(el).find('.label-price').text().trim();
+        }
 
         const imageURL = $(el).find('img').attr('src');
         prop.image = domain + imageURL;
 
         let description = $(el).find('img').attr('alt');
         description = description.split(' - ')[1];
-        prop.description = description.split('<')[0].trim();
+        description = description.split('<')[0].trim();
 
-        const category = $(el).find('.category').text();
-        prop.category = category;
+        if (!description) {
+          prop.description = 'Currently no description';
+        } else {
+          prop.description = description;
+        }
+
+        prop.category = $(el).find('.category').text();
 
         items.push(prop);
       });
