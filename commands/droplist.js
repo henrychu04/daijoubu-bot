@@ -175,6 +175,19 @@ exports.run = async (client, message, args) => {
     };
 
     await sendWebhook(numWeeks).then(console.log(`${message} completed`));
+  } else if (!link) {
+    let weekNotFound = {
+      username: 'Supreme Week',
+      embeds: [
+        {
+          title: 'Week not available',
+          color: 16711680,
+          description: `Enter a new week num`,
+        },
+      ],
+    };
+
+    await sendWebhook(weekNotFound).then(console.log(`${message} completed`));
   }
 };
 
