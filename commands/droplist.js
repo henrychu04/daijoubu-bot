@@ -21,7 +21,7 @@ exports.run = async (client, message, args) => {
   const $1 = cheerio.load(droplistPage);
 
   let link = undefined;
-  let num = -2;
+  let num = 0;
 
   if (!isNaN(command)) {
     let weeks = $1(
@@ -41,7 +41,14 @@ exports.run = async (client, message, args) => {
     ).find('div[class="col-sm-4 col-xs-12 app-lr-pad-2"]');
 
     weeks.each((i, el) => {
-      num++;
+      let weekNum = $1(el)
+        .find('.droplist-overview-title')
+        .text()
+        .split(/\s+/)[1];
+
+      if (parseInt(weekNum) > num) {
+        num = weekNum;
+      }
     });
   } else if (!command || command == 'latest') {
     link = $1(
