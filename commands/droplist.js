@@ -68,7 +68,9 @@ exports.run = async (client, message, args) => {
 
     const $ = cheerio.load(doc);
 
-    const weekNum = $('p[class="lead hidden-xs"]').text().match(/\d/g);
+    const weekNum = $('p[class="lead hidden-xs"]')
+      .text()
+      .replace(/[^0-9]/g, '');
 
     const pageItems = $('div[class="card card-2"]');
 
