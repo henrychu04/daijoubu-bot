@@ -68,6 +68,8 @@ exports.run = async (client, message, args) => {
 
     const $ = cheerio.load(doc);
 
+    const weekNum = $('p[class="lead hidden-xs"]').text().match(/\d/g);
+
     const pageItems = $('div[class="card card-2"]');
 
     if (pageItems.length > 0) {
@@ -129,6 +131,9 @@ exports.run = async (client, message, args) => {
               ],
               thumbnail: {
                 url: crnt.image,
+              },
+              footer: {
+                text: 'Supreme Week ' + weekNum,
               },
             },
           ],
