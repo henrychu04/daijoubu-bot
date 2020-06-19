@@ -4,16 +4,18 @@ const sendWebhook = require('./sendWebhook');
 exports.run = async (client, message, args) => {
   let num = Money.fromDecimal(parseInt(message.content.slice(5)), 'USD');
 
-  let StockXFee1 = num.multiply(0.095, Math.ceil);
+  let StockXFee1 = num.multiply(0.095);
   let StockXFee2 = num.multiply(0.09, Math.ceil);
   let StockXFee3 = num.multiply(0.085, Math.ceil);
   let StockXFee4 = num.multiply(0.08, Math.ceil);
 
   let StockXFeeTransfer = num.multiply(0.03, Math.ceil);
+
   StockXFee1 = StockXFee1.add(StockXFeeTransfer);
-  StockXFee2 = StockXFee1.add(StockXFeeTransfer);
-  StockXFee3 = StockXFee1.add(StockXFeeTransfer);
-  StockXFee4 = StockXFee1.add(StockXFeeTransfer);
+  StockXFee2 = StockXFee2.add(StockXFeeTransfer);
+  StockXFee3 = StockXFee3.add(StockXFeeTransfer);
+  StockXFee4 = StockXFee4.add(StockXFeeTransfer);
+
   let StockXRevenue1 = num.subtract(StockXFee1, Math.ceil);
   let StockXRevenue2 = num.subtract(StockXFee2, Math.ceil);
   let StockXRevenue3 = num.subtract(StockXFee3, Math.ceil);
