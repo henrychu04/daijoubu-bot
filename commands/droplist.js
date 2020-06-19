@@ -50,7 +50,7 @@ exports.run = async (client, message, args) => {
         num = weekNum;
       }
     });
-  } else if (!command || command == 'latest') {
+  } else if (!command) {
     link = $1(
       'div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]'
     )

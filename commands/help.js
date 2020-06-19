@@ -24,7 +24,7 @@ exports.run = async (client, message, args) => {
             name:
               'Sends latest Supreme drop info, current Supreme week, and the Supreme drop info for a specific week',
             value:
-              '!droplist, !droplist latest, !droplist num, !droplist <number>',
+              '!droplist, !droplist num, !droplist <number>',
           },
         ],
       },
