@@ -2,7 +2,6 @@ const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const sendWebhook = require('./sendWebhook');
 const sleep = require('./sleep');
-const config = require('../config.json');
 
 exports.run = async (client, message, args) => {
   let command = message.content.slice(10);
@@ -11,7 +10,7 @@ exports.run = async (client, message, args) => {
 
   let droplistPage = await fetch(
     domain + '/season/spring-summer2020/droplists/',
-    { headers: config.headers }
+    { headers: client.config.headers }
   )
     .then((res) => {
       return res.text();
@@ -60,7 +59,7 @@ exports.run = async (client, message, args) => {
   }
 
   if (link) {
-    let doc = await fetch(domain + link, { headers: config.headers })
+    let doc = await fetch(domain + link, { headers: client.config.headers })
       .then((res) => {
         return res.text();
       })

@@ -27,4 +27,4 @@ fs.readdir('./commands/', (err, files) => {
   });
 });
 
-client.login(config.botToken).then(console.log('Ready!'));
+client.login(client.config.botToken).then(console.log('Ready!'));

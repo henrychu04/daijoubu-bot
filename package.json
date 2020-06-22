@@ -7,7 +7,6 @@
     "abort-controller": "^3.0.0",
     "cheerio": "^1.0.0-rc.3",
     "discord.js": "^12.2.0",
-    "dotenv": "^8.2.0",
     "enmap": "^5.2.5",
     "js-money": "^0.6.3",
     "node-fetch": "^2.6.0",

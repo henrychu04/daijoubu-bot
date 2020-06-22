@@ -2,7 +2,6 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const url = require('url');
 const sendWebhook = require('./sendWebhook');
-const config = require('../config.json');
 
 exports.run = async (client, message, args) => {
   let controller = new AbortController();
@@ -31,7 +30,7 @@ exports.run = async (client, message, args) => {
 
   let data = await timeoutPromise(
     1000,
-    fetch(`${link}.json`, { headers: config.headers })
+    fetch(`${link}.json`, { headers: client.config.headers })
   )
     .then((response) => {
       return response.json();
