@@ -1,5 +1,4 @@
 /node_modules
 /commands/stockx.js
 package-lock.json
-.env
 discord-bot-tools.code-workspace

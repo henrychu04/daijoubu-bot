@@ -2,5 +2,7 @@
   "prefix": "!",
   "headers": {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4136"
-  }
+  },
+  "botToken": "NzEyNzcxOTA3NzE5NTI4NDc4.XsWzww.teNvosZF17sj-VVd14o0oz4vkBw",
+  "webhookURL": "https://discordapp.com/api/webhooks/713589203228819467/uidWN7yqfkIZOm2Vr1xRSyJY0gDL2xN3TpgQJkLdpQ6kolMBgzhOVSgXluEyPY2DK_-B"
 }

@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
 const Enmap = require('enmap');
 const fs = require('fs');
-require('dotenv').config();
 
 const client = new Discord.Client();
 const config = require('./config.json');
@@ -28,4 +27,4 @@ fs.readdir('./commands/', (err, files) => {
   });
 });
 
-client.login(process.env.BOT_TOKEN).then(console.log('Ready!'));
+client.login(config.botToken).then(console.log('Ready!'));
