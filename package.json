@@ -8,6 +8,7 @@
     "cheerio": "^1.0.0-rc.3",
     "discord.js": "^12.2.0",
     "enmap": "^5.2.5",
+    "form-data": "^3.0.0",
     "js-money": "^0.6.3",
     "node-fetch": "^2.6.0",
     "url": "^0.11.0"

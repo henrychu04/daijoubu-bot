@@ -231,6 +231,6 @@ function editCategory(category) {
     case 'skate':
       return 'Skate';
     default:
-      break;
+      return 'Category not available';
   }
 }
