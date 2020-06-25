@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const url = require('url');
-const sendWebhook = require('./sendWebhook');
+const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
   let controller = new AbortController();
@@ -28,10 +28,7 @@ exports.run = async (client, message, args) => {
   let link = message.content.slice(9);
   let domain = url.parse(link).host;
 
-  let data = await timeoutPromise(
-    1000,
-    fetch(`${link}.json`, { headers: client.config.headers })
-  )
+  let data = await timeoutPromise(1000, fetch(`${link}.json`, { headers: client.config.headers }))
     .then((response) => {
       return response.json();
     })
@@ -45,36 +42,6 @@ exports.run = async (client, message, args) => {
       }
     });
 
-  let vars = {
-    username: 'Shopify Variants',
-    embeds: [
-      {
-        title: data['product']['title'],
-        url: link,
-        color: 16777214,
-        fields: [
-          {
-            name: 'Price',
-            value: '$' + data['product']['variants'][0]['price'],
-            inline: true,
-          },
-          {
-            name: 'Site',
-            value: domain,
-            inline: true,
-          },
-          {
-            name: 'Variants',
-            value: '',
-          },
-        ],
-        thumbnail: {
-          url: data['product']['image']['src'],
-        },
-      },
-    ],
-  };
-
   let sizes = [];
 
   for (let i = 0; i < data['product']['options'].length; i++) {
@@ -84,11 +51,24 @@ exports.run = async (client, message, args) => {
     }
   }
 
+  let vars = '';
+
   for (let i = 0; i < sizes.length; i++) {
-    vars['embeds'][0]['fields'][2][
-      'value'
-    ] += `${sizes[i]} - ${data['product']['variants'][i]['id']}\n`;
+    vars += `${sizes[i]} - ${data['product']['variants'][i]['id']}`;
+
+    if (i != sizes.length - 1) {
+      vars += '\n';
+    }
   }
 
-  await sendWebhook(vars).then(console.log(`${message} completed`));
+  const embed = new Discord.MessageEmbed()
+    .setTitle(data['product']['title'])
+    .setURL(link)
+    .setColor(16777214)
+    .setThumbnail(data['product']['image']['src'])
+    .addField('Price', `$${data['product']['variants'][0]['price']}`, true)
+    .addField('Site', domain, true)
+    .addField('Variants', vars);
+
+  message.channel.send({ embed }).then(console.log(`${message} completed`));
 };

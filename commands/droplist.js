@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
+const Discord = require('discord.js');
 const sendWebhook = require('./sendWebhook');
 const sleep = require('./sleep');
 
@@ -8,10 +9,9 @@ exports.run = async (client, message, args) => {
 
   const domain = 'https://www.supremecommunity.com';
 
-  let droplistPage = await fetch(
-    domain + '/season/spring-summer2020/droplists/',
-    { headers: client.config.headers }
-  )
+  let droplistPage = await fetch(domain + '/season/spring-summer2020/droplists/', {
+    headers: client.config.headers,
+  })
     .then((res) => {
       return res.text();
     })
@@ -23,9 +23,9 @@ exports.run = async (client, message, args) => {
   let num = 0;
 
   if (!isNaN(command)) {
-    let weeks = $1(
-      'div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]'
-    ).find('div[class="col-sm-4 col-xs-12 app-lr-pad-2"]');
+    let weeks = $1('div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]').find(
+      'div[class="col-sm-4 col-xs-12 app-lr-pad-2"]'
+    );
 
     weeks.each((i, el) => {
       let weekNum = $1(el).find('.droplist-overview-title').text();
@@ -35,24 +35,19 @@ exports.run = async (client, message, args) => {
       }
     });
   } else if (command == 'num') {
-    let weeks = $1(
-      'div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]'
-    ).find('div[class="col-sm-4 col-xs-12 app-lr-pad-2"]');
+    let weeks = $1('div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]').find(
+      'div[class="col-sm-4 col-xs-12 app-lr-pad-2"]'
+    );
 
     weeks.each((i, el) => {
-      let weekNum = $1(el)
-        .find('.droplist-overview-title')
-        .text()
-        .split(/\s+/)[1];
+      let weekNum = $1(el).find('.droplist-overview-title').text().split(/\s+/)[1];
 
       if (parseInt(weekNum) > num) {
         num = weekNum;
       }
     });
   } else if (!command) {
-    link = $1(
-      'div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]'
-    )
+    link = $1('div[class="col-xs-12 col-sm-12 col-md-10 box-list scapp-main-cont"]')
       .find('div[class="col-sm-4 col-xs-12 app-lr-pad-2"]')
       .find('a')
       .attr('href');
@@ -108,99 +103,50 @@ exports.run = async (client, message, args) => {
       let numItems = 0;
 
       for (let crnt of items) {
-        let droplist = {
-          username: 'Latest Supreme Droplist',
-          embeds: [
-            {
-              title: crnt.name,
-              color: 16711680,
-              fields: [
-                {
-                  name: 'Description',
-                  value: crnt.description,
-                },
-                {
-                  name: 'Price',
-                  value: crnt.price,
-                  inline: true,
-                },
-                {
-                  name: 'Category',
-                  value: editCategory(crnt.category),
-                  inline: true,
-                },
-              ],
-              thumbnail: {
-                url: crnt.image,
-              },
-              footer: {
-                text: 'Supreme Week ' + weekNum,
-              },
-            },
-          ],
-        };
+        const embed = new Discord.MessageEmbed()
+          .setTitle(crnt.name)
+          .setColor(16711680)
+          .addField('Description', crnt.description)
+          .addField('Price', crnt.price, true)
+          .addField('Category', editCategory(crnt.category), true)
+          .setThumbnail(crnt.image)
+          .setFooter(`Supreme Week ${weekNum}`);
 
-        await sendWebhook(droplist);
+        await message.channel.send({ embed });
 
         await sleep(1000);
 
         numItems++;
       }
 
-      let numItemsWebhook = {
-        username: 'Latest Supreme Droplist',
-        embeds: [
-          {
-            title: 'Number of items',
-            color: 16711680,
-            description: numItems + ' items',
-          },
-        ],
-      };
+      const embed = new Discord.MessageEmbed()
+        .setTitle('Number of items')
+        .setColor(16711680)
+        .setDescription(`${numItems} items`);
 
-      await sendWebhook(numItemsWebhook).then(
-        console.log(`${message} completed`)
-      );
+      message.channel.send({ embed }).then(console.log(`${message} completed`));
     } else {
-      let droplist = {
-        username: 'Latest Supreme Droplist',
-        embeds: [
-          {
-            title: 'Droplist not out yet',
-            color: 16711680,
-            description: 'Stay tuned!',
-          },
-        ],
-      };
+      const embed = new Discord.MessageEmbed()
+        .setTitle('Droplist not out yet')
+        .setColor(16711680)
+        .setDescription('Stay tuned!');
 
-      await sendWebhook(droplist).then(console.log(`${message} completed`));
+      message.channel.send({ embed }).then(console.log(`${message} completed`));
     }
   } else if (command == 'num') {
-    let numWeeks = {
-      username: 'Supreme Week',
-      embeds: [
-        {
-          title: 'Latest Supreme Week',
-          color: 16711680,
-          description: `Week ${num}`,
-        },
-      ],
-    };
+    const embed = new Discord.MessageEmbed()
+      .setTitle('Latest Supreme Week')
+      .setColor(16711680)
+      .setDescription(`Week ${num}`);
 
-    await sendWebhook(numWeeks).then(console.log(`${message} completed`));
+    message.channel.send({ embed }).then(console.log(`${message} completed`));
   } else if (!link) {
-    let weekNotFound = {
-      username: 'Supreme Week',
-      embeds: [
-        {
-          title: 'Week not available',
-          color: 16711680,
-          description: `Enter a new week num`,
-        },
-      ],
-    };
+    const embed = new Discord.MessageEmbed()
+      .setTitle('Week not available')
+      .setColor(16711680)
+      .setDescription('Enter a new week num');
 
-    await sendWebhook(weekNotFound).then(console.log(`${message} completed`));
+    message.channel.send({ embed }).then(console.log(`${message} completed`));
   }
 };
 

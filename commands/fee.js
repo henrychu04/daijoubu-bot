@@ -1,5 +1,5 @@
 const Money = require('js-money');
-const sendWebhook = require('./sendWebhook');
+const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
   let num = Money.fromDecimal(parseInt(message.content.slice(5)), 'USD');
@@ -31,107 +31,27 @@ exports.run = async (client, message, args) => {
   let SGFee = num.multiply(0.2, Math.ceil);
   let SGRevenue = num.subtract(SGFee, Math.ceil);
 
-  let fee = {
-    username: 'Fee Calculator',
-    embeds: [
-      {
-        title: 'Fee for $' + num,
-        color: 16777214,
-        fields: [
-          {
-            name: 'Marketplace',
-            value: 'StockX Level 1',
-            inline: true,
-          },
-          {
-            name: 'Fee',
-            value: '$' + StockXFee1,
-            inline: true,
-          },
-          {
-            name: 'Revenue',
-            value: '$' + StockXRevenue1,
-            inline: true,
-          },
-          {
-            name: 'Marketplace',
-            value: 'StockX Level 2',
-            inline: true,
-          },
-          {
-            name: 'Fee',
-            value: '$' + StockXFee2,
-            inline: true,
-          },
-          {
-            name: 'Revenue',
-            value: '$' + StockXRevenue2,
-            inline: true,
-          },
-          {
-            name: 'Marketplace',
-            value: 'StockX Level 3',
-            inline: true,
-          },
-          {
-            name: 'Fee',
-            value: '$' + StockXFee3,
-            inline: true,
-          },
-          {
-            name: 'Revenue',
-            value: '$' + StockXRevenue3,
-            inline: true,
-          },
-          {
-            name: 'Marketplace',
-            value: 'StockX Level 4',
-            inline: true,
-          },
-          {
-            name: 'Fee',
-            value: '$' + StockXFee4,
-            inline: true,
-          },
-          {
-            name: 'Revenue',
-            value: '$' + StockXRevenue4,
-            inline: true,
-          },
-          {
-            name: 'Marketplace',
-            value: 'Goat',
-            inline: true,
-          },
-          {
-            name: 'Fee',
-            value: '$' + GoatFee1,
-            inline: true,
-          },
-          {
-            name: 'Revenue',
-            value: '$' + GoatRevenue,
-            inline: true,
-          },
-          {
-            name: 'Marketplace',
-            value: 'Stadium Goods',
-            inline: true,
-          },
-          {
-            name: 'Fee',
-            value: '$' + SGFee,
-            inline: true,
-          },
-          {
-            name: 'Revenue',
-            value: '$' + SGRevenue,
-            inline: true,
-          },
-        ],
-      },
-    ],
-  };
+  const embed = new Discord.MessageEmbed()
+    .setTitle(`Fee for $${num}`)
+    .setColor(16777214)
+    .addField('Marketplace', 'StockX Level 1', true)
+    .addField('Fee', `$${StockXFee1}`, true)
+    .addField('Revenue', `$${StockXRevenue1}`, true)
+    .addField('Marketplace', 'StockX Level 2', true)
+    .addField('Fee', `$${StockXFee2}`, true)
+    .addField('Revenue', `$${StockXRevenue2}`, true)
+    .addField('Marketplace', 'StockX Level 3', true)
+    .addField('Fee', `$${StockXFee3}`, true)
+    .addField('Revenue', `$${StockXRevenue3}`, true)
+    .addField('Marketplace', 'StockX Level 4', true)
+    .addField('Fee', `$${StockXFee4}`, true)
+    .addField('Revenue', `$${StockXRevenue4}`, true)
+    .addField('Marketplace', 'Goat', true)
+    .addField('Fee', `$${GoatFee1}`, true)
+    .addField('Revenue', `$${GoatRevenue}`, true)
+    .addField('Marketplace', 'Stadium Goods', true)
+    .addField('Fee', `$${SGFee}`, true)
+    .addField('Revenue', `$${SGRevenue}`, true);
 
-  await sendWebhook(fee).then(console.log(`${message} completed`));
+  message.channel.send({ embed }).then(console.log(`${message} completed`));
 };

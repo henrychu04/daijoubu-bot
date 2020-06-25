@@ -1,35 +1,15 @@
-const sendWebhook = require('./sendWebhook');
+const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
-  let help = {
-    username: 'Commands',
-    embeds: [
-      {
-        title: 'All Commands',
-        color: 16777214,
-        fields: [
-          {
-            name: 'Shopify Variant Scraper',
-            value: '!shopify <shopify link>',
-          },
-          {
-            name: 'Fee Calculator for StockX, Goat, Stadium Goods',
-            value: '!fee <amount>',
-          },
-          {
-            name: 'Delay Calculator based on 3600 delay',
-            value: '!delay <number of tasks> <number of proxies>',
-          },
-          {
-            name:
-              'Sends latest Supreme drop info, current Supreme week, and the Supreme drop info for a specific week',
-            value:
-              '!droplist, !droplist num, !droplist <number>',
-          },
-        ],
-      },
-    ],
-  };
+  const embed = new Discord.MessageEmbed()
+    .setTitle('All Commands')
+    .setColor(16777214)
+    .addField('Shopify Variant Scraper', '!shopify <shopify link>')
+    .addField('Fee Calculator for StockX, Goat, Stadium Goods', '!fee <amount>')
+    .addField(
+      'Sends latest Supreme drop info, current Supreme week, and the Supreme drop info for a specific week',
+      '!droplist, !droplist num, !droplist <number>'
+    );
 
-  await sendWebhook(help).then(console.log(`${message} completed`));
+  message.channel.send({ embed }).then(console.log(`${message} completed`));
 };
