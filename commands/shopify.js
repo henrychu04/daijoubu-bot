@@ -66,9 +66,11 @@ exports.run = async (client, message, args) => {
     .setURL(link)
     .setColor(16777214)
     .setThumbnail(data['product']['image']['src'])
-    .addField('Price', `$${data['product']['variants'][0]['price']}`, true)
-    .addField('Site', domain, true)
-    .addField('Variants', vars);
+    .addField(
+      { name: 'Price', value: `$${data['product']['variants'][0]['price']}`, inline: true },
+      { name: 'Site', value: domain, inline: true },
+      { name: 'Variants', value: vars }
+    );
 
   message.channel.send({ embed }).then(console.log(`${message} completed`));
 };

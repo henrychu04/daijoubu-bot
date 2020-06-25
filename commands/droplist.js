@@ -106,9 +106,11 @@ exports.run = async (client, message, args) => {
         const embed = new Discord.MessageEmbed()
           .setTitle(crnt.name)
           .setColor(16711680)
-          .addField('Description', crnt.description)
-          .addField('Price', crnt.price, true)
-          .addField('Category', editCategory(crnt.category), true)
+          .addField(
+            { name: 'Description', value: crnt.description },
+            { name: 'Price', value: crnt.price, inline: true },
+            { name: 'Category', value: editCategory(crnt.category), inline: true }
+          )
           .setThumbnail(crnt.image)
           .setFooter(`Supreme Week ${weekNum}`);
 
