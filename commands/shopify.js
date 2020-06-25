@@ -61,16 +61,19 @@ exports.run = async (client, message, args) => {
     }
   }
 
-  const embed = new Discord.MessageEmbed()
-    .setTitle(data['product']['title'])
-    .setURL(link)
-    .setColor(16777214)
-    .setThumbnail(data['product']['image']['src'])
-    .addField(
-      { name: 'Price', value: `$${data['product']['variants'][0]['price']}`, inline: true },
-      { name: 'Site', value: domain, inline: true },
-      { name: 'Variants', value: vars }
-    );
-
-  message.channel.send({ embed }).then(console.log(`${message} completed`));
+  message.channel
+    .send({
+      embed: {
+        title: data['product']['title'],
+        url: link,
+        color: 16777214,
+        thumbnail: data['product']['image']['src'],
+        fields: [
+          { name: 'Price', value: `$${data['product']['variants'][0]['price']}`, inline: true },
+          { name: 'Site', value: domain, inline: true },
+          { name: 'Variants', value: vars },
+        ],
+      },
+    })
+    .then(console.log(`${message} completed`));
 };

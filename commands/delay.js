@@ -10,12 +10,15 @@ exports.run = async (client, message, args) => {
     if (task_num.length != 0 && proxy_num.length != 0 && !isNaN(task_num) && !isNaN(proxy_num)) {
       let delay = Math.round((task_num * 3600) / proxy_num);
 
-      const embed = new Discord.MessageEmbed()
-        .setTitle(delay)
-        .setColor(16777214)
-        .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies`);
-
-        message.channel.send({ embed }).then(console.log(`${message} completed`));
+      message.channel
+        .send({
+          embed: {
+            title: delay,
+            color: 16777214,
+            description: `Suggested delay for ${task_num} tasks and ${proxy_num} proxies`,
+          },
+        })
+        .then(console.log(`${message} completed`));
     } else {
       throw new err();
     }

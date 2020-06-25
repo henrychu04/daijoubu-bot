@@ -103,52 +103,65 @@ exports.run = async (client, message, args) => {
       let numItems = 0;
 
       for (let crnt of items) {
-        const embed = new Discord.MessageEmbed()
-          .setTitle(crnt.name)
-          .setColor(16711680)
-          .addField(
-            { name: 'Description', value: crnt.description },
-            { name: 'Price', value: crnt.price, inline: true },
-            { name: 'Category', value: editCategory(crnt.category), inline: true }
-          )
-          .setThumbnail(crnt.image)
-          .setFooter(`Supreme Week ${weekNum}`);
-
-        await message.channel.send({ embed });
+        await message.channel.send({
+          embed: {
+            title: crnt.name,
+            color: 16711680,
+            fields: [
+              { name: 'Description', value: crnt.description },
+              { name: 'Price', value: crnt.price, inline: true },
+              { name: 'Category', value: editCategory(crnt.category), inline: true },
+            ],
+            thumbnail: crnt.image,
+            footer: `Supreme Week ${weekNum}`,
+          },
+        });
 
         await sleep(1000);
 
         numItems++;
       }
 
-      const embed = new Discord.MessageEmbed()
-        .setTitle('Number of items')
-        .setColor(16711680)
-        .setDescription(`${numItems} items`);
-
-      message.channel.send({ embed }).then(console.log(`${message} completed`));
+      message.channel
+        .send({
+          embed: {
+            title: 'Number of items',
+            color: 16711680,
+            description: `${numItems} items`,
+          },
+        })
+        .then(console.log(`${message} completed`));
     } else {
-      const embed = new Discord.MessageEmbed()
-        .setTitle('Droplist not out yet')
-        .setColor(16711680)
-        .setDescription('Stay tuned!');
-
-      message.channel.send({ embed }).then(console.log(`${message} completed`));
+      message.channel
+        .send({
+          embed: {
+            title: 'Droplist not out yet',
+            color: 16711680,
+            description: 'Stay tuned!',
+          },
+        })
+        .then(console.log(`${message} completed`));
     }
   } else if (command == 'num') {
-    const embed = new Discord.MessageEmbed()
-      .setTitle('Latest Supreme Week')
-      .setColor(16711680)
-      .setDescription(`Week ${num}`);
-
-    message.channel.send({ embed }).then(console.log(`${message} completed`));
+    message.channel
+      .send({
+        embed: {
+          title: 'Latest Supreme Week',
+          color: 16711680,
+          description: `Week ${num}`,
+        },
+      })
+      .then(console.log(`${message} completed`));
   } else if (!link) {
-    const embed = new Discord.MessageEmbed()
-      .setTitle('Week not available')
-      .setColor(16711680)
-      .setDescription('Enter a new week num');
-
-    message.channel.send({ embed }).then(console.log(`${message} completed`));
+    message.channel
+      .send({
+        embed: {
+          title: 'Week not available',
+          color: 16711680,
+          description: 'Enter a new week num',
+        },
+      })
+      .then(console.log(`${message} completed`));
   }
 };
 
