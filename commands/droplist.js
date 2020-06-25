@@ -1,8 +1,6 @@
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
-const Discord = require('discord.js');
-const sendWebhook = require('./sendWebhook');
-const sleep = require('./sleep');
+const sleep = require('../scripts/sleep');
 
 exports.run = async (client, message, args) => {
   let command = message.content.slice(10);

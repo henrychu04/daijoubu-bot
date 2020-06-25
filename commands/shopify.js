@@ -1,7 +1,6 @@
 const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const url = require('url');
-const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
   let controller = new AbortController();

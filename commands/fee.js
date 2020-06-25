@@ -1,5 +1,4 @@
 const Money = require('js-money');
-const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
   let num = Money.fromDecimal(parseInt(message.content.slice(5)), 'USD');
