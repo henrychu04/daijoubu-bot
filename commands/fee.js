@@ -53,7 +53,7 @@ exports.run = async (client, message, args) => {
           { name: 'Revenue', value: `$${GoatRevenue}`, inline: true },
           { name: 'Marketplace', value: 'Stadium Goods', inline: true },
           { name: 'Fee', value: `$${SGFee}`, inline: true },
-          { name: 'Revenue', value: `$${SGRevenue}`, tinline: true },
+          { name: 'Revenue', value: `$${SGRevenue}`, inline: true },
         ],
       },
     })
