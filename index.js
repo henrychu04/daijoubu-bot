@@ -27,4 +27,8 @@ fs.readdir('./commands/', (err, files) => {
   });
 });
 
+client.on('ready', () => {
+  client.user.setActivity('!help for more info');
+});
+
 client.login(client.config.botToken).then(console.log('Ready!'));
