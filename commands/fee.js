@@ -10,6 +10,19 @@ exports.run = async (client, message, args) => {
 
   let StockXFeeTransfer = num.multiply(0.03, Math.ceil);
 
+  if (StockXFee1.lessThanOrEqual(new Money(700, Money.USD))) {
+    StockXFee1 = new Money(700, Money.USD);
+  }
+  if (StockXFee2.lessThanOrEqual(new Money(700, Money.USD))) {
+    StockXFee2 = new Money(700, Money.USD);
+  }
+  if (StockXFee3.lessThanOrEqual(new Money(700, Money.USD))) {
+    StockXFee3 = new Money(700, Money.USD);
+  }
+  if (StockXFee4.lessThanOrEqual(new Money(700, Money.USD))) {
+    StockXFee4 = new Money(700, Money.USD);
+  }
+
   StockXFee1 = StockXFee1.add(StockXFeeTransfer);
   StockXFee2 = StockXFee2.add(StockXFeeTransfer);
   StockXFee3 = StockXFee3.add(StockXFeeTransfer);
