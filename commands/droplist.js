@@ -110,7 +110,9 @@ exports.run = async (client, message, args) => {
               { name: 'Price', value: crnt.price, inline: true },
               { name: 'Category', value: editCategory(crnt.category), inline: true },
             ],
-            thumbnail: crnt.image,
+            thumbnail: {
+              url: crnt.image,
+            },
             footer: `Supreme Week ${weekNum}`,
           },
         });
