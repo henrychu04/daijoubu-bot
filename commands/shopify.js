@@ -34,12 +34,6 @@ exports.run = async (client, message, args) => {
       })
       .catch((err) => {
         console.log(err);
-
-        if (err.message.includes('invalid json response body')) {
-          message.channel.send('```' + 'Error retrieving variants' + '```');
-        } else if (err.message === 'timeout') {
-          message.channel.send('```' + 'Site must be Shopify' + '```');
-        }
       });
 
     let sizes = [];
@@ -82,6 +76,13 @@ exports.run = async (client, message, args) => {
       });
   } catch (err) {
     console.log(err);
-    message.channel.send('```' + 'Error retrieving variants' + '```');
+
+    if (err.message.includes('invalid json response body')) {
+      message.channel.send('```' + 'Error retrieving variants' + '```');
+    } else if (err.message === 'timeout') {
+      message.channel.send('```' + 'Site must be Shopify' + '```');
+    } else {
+      message.channel.send('```' + 'Error retrieving variants' + '```');
+    }
   }
 };
