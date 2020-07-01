@@ -33,7 +33,11 @@ exports.run = async (client, message, args) => {
         return response.json();
       })
       .catch((err) => {
-        console.log(err);
+        if (err.message.includes('invalid json response body')) {
+          throw new Error('invalid json');
+        } else {
+          throw new Error();
+        }
       });
 
     let sizes = [];
@@ -72,15 +76,17 @@ exports.run = async (client, message, args) => {
       .then(console.log(`${message} completed`))
       .catch((err) => {
         console.log(err);
-        message.channel.send('```Unexpected Error```');
+        throw new Error('Unable to send embed');
       });
   } catch (err) {
     console.log(err);
 
-    if (err.message.includes('invalid json response body')) {
+    if (err.message == 'invalid json') {
       message.channel.send('```' + 'Error retrieving variants' + '```');
-    } else if (err.message === 'timeout') {
+    } else if (err.message == 'timeout') {
       message.channel.send('```' + 'Site must be Shopify' + '```');
+    } else if (err.message == 'Unable to send embed') {
+      message.channel.send('```Unexpected Error```');
     } else {
       message.channel.send('```' + 'Error retrieving variants' + '```');
     }
