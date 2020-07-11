@@ -36,6 +36,7 @@ exports.run = async (client, message, args) => {
         if (err.message.includes('invalid json response body')) {
           throw new Error('invalid json');
         } else {
+          console.log(err);
           throw new Error();
         }
       });
