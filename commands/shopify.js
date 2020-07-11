@@ -5,7 +5,7 @@ const url = require('url');
 exports.run = async (client, message, args) => {
   try {
     let controller = new AbortController();
-    setTimeout(() => controller.abort(), 1000);
+    setTimeout(() => controller.abort(), 2000);
 
     function timeoutPromise(ms, promise) {
       return new Promise((resolve, reject) => {
