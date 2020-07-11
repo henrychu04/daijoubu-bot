@@ -5,7 +5,7 @@ const url = require('url');
 exports.run = async (client, message, args) => {
   try {
     let controller = new AbortController();
-    setTimeout(() => controller.abort(), 2000);
+    setTimeout(() => controller.abort(), 1000);
 
     function timeoutPromise(ms, promise) {
       return new Promise((resolve, reject) => {
@@ -35,9 +35,10 @@ exports.run = async (client, message, args) => {
       .catch((err) => {
         if (err.message.includes('invalid json response body')) {
           throw new Error('invalid json');
+        } else if (err.message.includes('timeout')) {
+          throw new Error('timeout');
         } else {
-          console.log(err);
-          throw new Error();
+          throw new Error(err.message);
         }
       });
 
@@ -85,7 +86,7 @@ exports.run = async (client, message, args) => {
     if (err.message == 'invalid json') {
       message.channel.send('```' + 'Error retrieving variants' + '```');
     } else if (err.message == 'timeout') {
-      message.channel.send('```' + 'Site must be Shopify' + '```');
+      message.channel.send('```' + 'Site has proxy protection enabled' + '```');
     } else if (err.message == 'Unable to send embed') {
       message.channel.send('```Unexpected Error```');
     } else {
