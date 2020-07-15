@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const url = require('url');
+const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
   try {
@@ -61,20 +62,19 @@ exports.run = async (client, message, args) => {
       }
     }
 
+    const embed = new Discord.MessageEmbed()
+      .setColor(16777214)
+      .setTitle(data['product']['title'])
+      .setURL(link)
+      .setThumbnail(data['product']['image']['src'])
+      .addFields(
+        { name: 'Price', value: `$${data['product']['variants'][0]['price']}`, inline: true },
+        { name: 'Site', value: domain, inline: true },
+        { name: 'Variants', value: vars }
+      );
+
     message.channel
-      .send({
-        embed: {
-          title: data['product']['title'],
-          url: link,
-          color: 16777214,
-          thumbnail: data['product']['image']['src'],
-          fields: [
-            { name: 'Price', value: `$${data['product']['variants'][0]['price']}`, inline: true },
-            { name: 'Site', value: domain, inline: true },
-            { name: 'Variants', value: vars },
-          ],
-        },
-      })
+      .send(embed)
       .then(console.log(`${message} completed`))
       .catch((err) => {
         console.log(err);
