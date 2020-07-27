@@ -54,6 +54,22 @@ exports.run = async (client, message, args) => {
     let price = pageDetails.find('[data-testid="product-detail-retail price"]').text().trim();
     let date = pageDetails.find('[data-testid="product-detail-release date"]').text().trim();
 
+    if (SKU.length == 0) {
+      SKU = 'N/A';
+    }
+
+    if (colorway.length == 0) {
+      colorway = 'N/A';
+    }
+
+    if (price.length == 0) {
+      price = 'N/A';
+    }
+
+    if (date.length == 0) {
+      date = 'N/A';
+    }
+
     embed.addFields(
       { name: 'SKU', value: SKU, inline: true },
       { name: 'Colorway', value: colorway, inline: true },
