@@ -49,23 +49,16 @@ exports.run = async (client, message, args) => {
 
     const pageDetails = $('.detail');
 
+    let SKU = pageDetails.find('[data-testid="product-detail-style"]').text().trim();
+    let colorway = pageDetails.find('[data-testid="product-detail-colorway"]').text().trim();
+    let price = pageDetails.find('[data-testid="product-detail-retail price"]').text().trim();
+    let date = pageDetails.find('[data-testid="product-detail-release date"]').text().trim();
+
     embed.addFields(
-      { name: 'SKU', value: pageDetails.find('[data-testid="product-detail-style"]').text().trim(), inline: true },
-      {
-        name: 'Colorway',
-        value: pageDetails.find('[data-testid="product-detail-colorway"]').text().trim(),
-        inline: true,
-      },
-      {
-        name: 'Price',
-        value: pageDetails.find('[data-testid="product-detail-retail price"]').text().trim(),
-        inline: true,
-      },
-      {
-        name: 'Date',
-        value: pageDetails.find('[data-testid="product-detail-release date"]').text().trim(),
-        inline: true,
-      }
+      { name: 'SKU', value: SKU, inline: true },
+      { name: 'Colorway', value: colorway, inline: true },
+      { name: 'Price', value: price, inline: true },
+      { name: 'Date', value: date, inline: true }
     );
 
     const image = $('[data-testid="product-detail-image"]').attr('src');
@@ -103,15 +96,17 @@ exports.run = async (client, message, args) => {
     let asksAllString = '';
 
     askTable.each((i, el) => {
-      let prop = {};
+      let size = $(el).find('.title').text().trim();
+      let price = $(el).find('.subtitle').text();
 
-      prop.size = $(el).find('.title').text().trim();
-      prop.price = $(el).find('.subtitle').text();
-
-      asksAllString += `${prop.size} -- ${prop.price}\n`;
+      asksAllString += `${size} -- ${price}\n`;
     });
 
     embed.addFields({ name: 'Lowest Asks', value: asksAllString });
+
+    // const table = $('div[class="latest-sales-container"]').each((i, el) => {
+    //   console.log($(el).text());
+    // });
 
     message.channel
       .send(embed)
