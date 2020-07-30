@@ -12,7 +12,7 @@ exports.run = async (client, message, args) => {
       throw new Error('Enter num');
     }
 
-    let num = Money.fromDecimal(parseInt(command, 'USD'));
+    let num = Money.fromDecimal(parseInt(command), 'USD');
 
     let StockXFee1 = num.multiply(0.095);
     let StockXFee2 = num.multiply(0.09, Math.ceil);
