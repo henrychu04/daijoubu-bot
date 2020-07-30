@@ -120,10 +120,6 @@ exports.run = async (client, message, args) => {
 
     embed.addFields({ name: 'Lowest Asks', value: asksAllString });
 
-    // const table = $('div[class="latest-sales-container"]').each((i, el) => {
-    //   console.log($(el).text());
-    // });
-
     message.channel
       .send(embed)
       .then(console.log(`${message} completed`))
