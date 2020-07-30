@@ -118,7 +118,9 @@ exports.run = async (client, message, args) => {
       asksAllString += `${size} -- ${price}\n`;
     });
 
-    embed.addFields({ name: 'Lowest Asks', value: asksAllString });
+    if (asksAllString.length != 0) {
+      embed.addFields({ name: 'Lowest Asks', value: asksAllString });
+    }
 
     message.channel
       .send(embed)
