@@ -27,6 +27,11 @@ exports.run = async (client, message, args) => {
     }
 
     let link = message.content.slice(9);
+
+    if (link.length == 0) {
+      throw new Error('Empty commnad');
+    }
+
     let domain = url.parse(link).host;
 
     let data = await timeoutPromise(1000, fetch(`${link}.json`, { headers: client.config.headers }))
@@ -89,14 +94,16 @@ exports.run = async (client, message, args) => {
   } catch (err) {
     console.log(err);
 
-    if (err.message == 'invalid json') {
-      message.channel.send('```' + 'Error retrieving variants' + '```');
+    if (err.message == 'Empty command') {
+      message.channel.send('```Command is missing valid shopify link```');
+    } else if (err.message == 'invalid json') {
+      message.channel.send('```Error retrieving variants```');
     } else if (err.message == 'timeout') {
-      message.channel.send('```' + 'Site has proxy protection enabled' + '```');
+      message.channel.send('```Site has proxy protection enabled```');
     } else if (err.message == 'Unable to send embed') {
       message.channel.send('```Unexpected Error```');
     } else {
-      message.channel.send('```' + 'Error retrieving variants' + '```');
+      message.channel.send('```Unexpected Error```');
     }
   }
 };

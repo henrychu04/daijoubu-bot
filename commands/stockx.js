@@ -9,6 +9,10 @@ exports.run = async (client, message, args) => {
 
     const query = message.content.slice(8);
 
+    if (query.length == 0) {
+      throw new Error('Empty command');
+    }
+
     const headers = {
       'x-algolia-application-id': 'XW7SBCT9V6',
       'x-algolia-api-key': '6bfb5abee4dcd8cea8f0ca1ca085c2b3',
@@ -133,7 +137,9 @@ exports.run = async (client, message, args) => {
     console.log(err);
 
     if (err.message == 'No matching products') {
-      message.channel.send('```' + 'No products found matching search parameters' + '```');
+      message.channel.send('```No products found matching search parameters```');
+    } else if (err.message == 'Empty command') {
+      message.channel.send('```Command is missing search parameters```');
     } else {
       message.channel.send('```Unexpected Error```');
     }

@@ -1,6 +1,11 @@
 exports.run = async (client, message, args) => {
   try {
     let command = message.content.slice(7);
+
+    if (command.length == 0) {
+      throw new Error('Empty command');
+    }
+
     let command_split = command.split(/\s+/);
     let task_num = command_split[0];
     let proxy_num = command_split[1];
@@ -16,15 +21,25 @@ exports.run = async (client, message, args) => {
             description: `Suggested delay for ${task_num} tasks and ${proxy_num} proxies`,
           },
         })
-        .then(console.log(`${message} completed`));
+        .then(console.log(`${message} completed`))
+        .catch((err) => {
+          console.log(err);
+          throw new Error('Unable to send embed');
+        });
     } else {
-      throw new err();
+      throw new Error('Incorrect format');
     }
   } catch (err) {
-    message.channel.send(
-      '```' + 'Incorrect Format\n!delay <number of tasks> <number of proxies>' + '```'
-    );
     console.log(err);
-    throw new Error('Incorrect Format');
+
+    if (err.message == 'Empty command') {
+      message.channel.send('```Command is missing valid entries```');
+    } else if (err.message == 'Incorrect format') {
+      message.channel.send('```Incorrect Format\n!delay <number of tasks> <number of proxies>```');
+    } else if (err.message == 'Unable to send embed') {
+      message.channel.send('```Unexpected Error```');
+    } else {
+      message.channel.send('```Unexpected Error```');
+    }
   }
 };
