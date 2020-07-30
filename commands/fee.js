@@ -8,6 +8,10 @@ exports.run = async (client, message, args) => {
       throw new Error('Empty command');
     }
 
+    if (isNaN(command)) {
+      throw new Error('Enter num');
+    }
+
     let num = Money.fromDecimal(parseInt(command, 'USD'));
 
     let StockXFee1 = num.multiply(0.095);
@@ -83,6 +87,8 @@ exports.run = async (client, message, args) => {
 
     if (err.message == 'Empty Command') {
       message.channel.send('```Command is missing valid fee```');
+    } else if (err.message == 'Enter num') {
+      message.channel.send('```Invalid command enter a valid number```');
     } else {
       message.channel.send('```Unexpected Error```');
     }
