@@ -17,10 +17,12 @@ exports.run = async (client, message, args) => {
       let delay2 = Math.round((task_num * 4500) / proxy_num);
 
       const embed1 = new Discord.MessageEmbed()
+        .setColor(16777214)
         .setTitle(delay1)
         .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies based on a 3600 delay`);
 
       const embed2 = new Discord.MessageEmbed()
+        .setColor(16777214)
         .setTitle(delay2)
         .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies based on a 4500 delay`);
 
