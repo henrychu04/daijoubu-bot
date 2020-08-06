@@ -11,20 +11,28 @@ exports.run = async (client, message, args) => {
     let proxy_num = command_split[1];
 
     if (task_num.length != 0 && proxy_num.length != 0 && !isNaN(task_num) && !isNaN(proxy_num)) {
-      let delay = Math.round((task_num * 3600) / proxy_num);
+      let delay1 = Math.round((task_num * 3600) / proxy_num);
+      let delay2 = Math.round((task_num * 4500) / proxy_num);
 
-      message.channel
-        .send({
-          embed: {
-            title: delay,
-            color: 16777214,
-            description: `Suggested delay for ${task_num} tasks and ${proxy_num} proxies`,
-          },
-        })
+      const embed1 = new Discord.MessageEmbed()
+        .setTitle(delay1)
+        .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies based on a 3600 delay`);
+
+      const embed2 = new Discord.MessageEmbed()
+        .setTitle(delay2)
+        .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies based on a 4500 delay`);
+
+      await message.channel.send(embed1).catch((err) => {
+        console.log(err);
+        throw new Error('Unable to send embed1');
+      });
+
+      await message.channel
+        .send(embed2)
         .then(console.log(`${message} completed`))
         .catch((err) => {
           console.log(err);
-          throw new Error('Unable to send embed');
+          throw new Error('Unable to send embed2');
         });
     } else {
       throw new Error('Incorrect format');
