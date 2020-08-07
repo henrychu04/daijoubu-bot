@@ -5,7 +5,7 @@ exports.run = async (client, message, args) => {
     let command = message.content.slice(5);
 
     if (command.length == 0) {
-      throw new Error('Empty command');
+      throw new Error('Empty command'); 
     }
 
     if (isNaN(command)) {

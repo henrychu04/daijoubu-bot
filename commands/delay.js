@@ -15,6 +15,7 @@ exports.run = async (client, message, args) => {
     if (task_num.length != 0 && proxy_num.length != 0 && !isNaN(task_num) && !isNaN(proxy_num)) {
       let delay1 = Math.round((task_num * 3600) / proxy_num);
       let delay2 = Math.round((task_num * 4500) / proxy_num);
+      let delay3 = Math.round((task_num * 5500) / proxy_num);
 
       const embed1 = new Discord.MessageEmbed()
         .setColor(16777214)
@@ -26,13 +27,23 @@ exports.run = async (client, message, args) => {
         .setTitle(delay2)
         .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies based on a 4500 delay`);
 
+      const embed3 = new Discord.MessageEmbed()
+        .setColor(16777214)
+        .setTitle(delay3)
+        .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies based on a 5500 delay`);
+
       await message.channel.send(embed1).catch((err) => {
         console.log(err);
         throw new Error('Unable to send embed1');
       });
 
+      await message.channel.send(embed2).catch((err) => {
+        console.log(err);
+        throw new Error('Unable to send embed1');
+      });
+
       await message.channel
-        .send(embed2)
+        .send(embed3)
         .then(console.log(`${message} completed`))
         .catch((err) => {
           console.log(err);
