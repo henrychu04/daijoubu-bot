@@ -21,7 +21,6 @@ exports.run = async (client, message, args) => {
       })
       .then((json) => {
         if (json.hits.length != 0) {
-          console.log(json.hits[0]);
           return json.hits[0];
         } else {
           throw new Error('No hits');
