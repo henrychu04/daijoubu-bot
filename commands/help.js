@@ -11,7 +11,6 @@ exports.run = async (client, message, args) => {
             name: 'Sends latest Supreme drop info, current Supreme week, or the Supreme drop info for a specific week',
             value: '!droplist, !droplist num, !droplist <number>',
           },
-          { name: 'StockX Product Scraper', value: '!stockx <search parameters>' },
           { name: 'Scrapes information and lowest asks of a Stockx product', value: '!stockx <search parameters>' },
           { name: 'Scrapes information and lowest asks of a GOAT product', value: '!goat <search parameters>' },
         ],
