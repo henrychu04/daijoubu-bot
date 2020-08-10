@@ -3,5 +3,15 @@
   "headers": {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4136"
   },
-  "botToken": "NzEyNzcxOTA3NzE5NTI4NDc4.XsWzww.teNvosZF17sj-VVd14o0oz4vkBw"
+  "botToken": "NzEyNzcxOTA3NzE5NTI4NDc4.XsWzww.teNvosZF17sj-VVd14o0oz4vkBw",
+  "stockxHeader": {
+    "x-algolia-application-id": "XW7SBCT9V6",
+    "x-algolia-api-key": "6bfb5abee4dcd8cea8f0ca1ca085c2b3",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4136"
+  },
+  "goatHeader": {
+    "x-algolia-application-id": "2FWOTDVM2O",
+    "x-algolia-api-key": "ac96de6fef0e02bb95d433d8d5c7038a",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4136"
+  }
 }

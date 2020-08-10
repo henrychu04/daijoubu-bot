@@ -5,33 +5,34 @@ const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
   try {
-    const embed = new Discord.MessageEmbed().setColor(16777214);
-
     const query = message.content.slice(8);
 
     if (query.length == 0) {
       throw new Error('Empty command');
     }
 
-    const headers = {
-      'x-algolia-application-id': 'XW7SBCT9V6',
-      'x-algolia-api-key': '6bfb5abee4dcd8cea8f0ca1ca085c2b3',
-      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4136',
-    };
+    let last72 = 0;
+    let totalSales = 0;
 
     let data = await fetch('https://xw7sbct9v6-dsn.algolia.net/1/indexes/products/query', {
       method: 'POST',
-      headers: headers,
-      body: `{\"params\":\"query=${encodeURIComponent(query)}&facets=*&filters=\"}`,
-    }).then((res) => {
-      return res.json();
-    });
+      headers: config.stockxHeader,
+      body: `{"params":"query=${encodeURIComponent(query)}"}`,
+    })
+      .then((res) => {
+        return res.json();
+      })
+      .then((json) => {
+        if (json.hits.length != 0) {
+          last72 = json.hits[0].sales_last_72;
+          totalSales = '$' + json.hits[0].total_dollars.toLocaleString();
+          return json.hits[0];
+        } else {
+          throw new Error('No hits');
+        }
+      });
 
-    if (data.hits.length == 0) {
-      throw new Error('No matching products');
-    }
-
-    const productURL = `https://www.stockx.com/${data.hits[0].url}`;
+    const productURL = `https://www.stockx.com/${data.url}`;
 
     let page = await fetch(productURL, {
       headers: config.headers,
@@ -47,9 +48,6 @@ exports.run = async (client, message, args) => {
       .find('div[class="col-md-12"]')
       .find('h1[class="name"]')
       .text();
-
-    embed.setTitle(name);
-    embed.setURL(productURL);
 
     const pageDetails = $('.detail');
 
@@ -74,15 +72,7 @@ exports.run = async (client, message, args) => {
       date = 'N/A';
     }
 
-    embed.addFields(
-      { name: 'SKU', value: SKU, inline: true },
-      { name: 'Colorway', value: colorway, inline: true },
-      { name: 'Price', value: price, inline: true },
-      { name: 'Date', value: date, inline: true }
-    );
-
     const image = $('[data-testid="product-detail-image"]').attr('src');
-    embed.setThumbnail(image);
 
     const salesData = $('.gauge-container');
     let numberSales = null;
@@ -91,25 +81,12 @@ exports.run = async (client, message, args) => {
     salesData.each((i, el) => {
       if ($(el).find('.gauge-title').text() == '# of Sales') {
         numberSales = $(el).find('.gauge-value').text();
-        embed.addFields({
-          name: 'Number of Sales',
-          value: Number(numberSales).toLocaleString(),
-          inline: true,
-        });
       }
 
       if ($(el).find('.gauge-title').text() == 'Average Sale Price') {
         averagePrice = $(el).find('.gauge-value').text();
-        embed.addFields({
-          name: 'Average Price',
-          value: averagePrice.toLocaleString(),
-          inline: true,
-        });
       }
     });
-
-    const totalSales = '$' + (numberSales * averagePrice.replace(/\D/g, '')).toLocaleString();
-    embed.addFields({ name: 'Total Sales', value: totalSales, inline: true });
 
     const askTable = $('.market-summary').find('li[class="select-option"]');
 
@@ -119,11 +96,35 @@ exports.run = async (client, message, args) => {
       let size = $(el).find('.title').text().trim();
       let price = $(el).find('.subtitle').text();
 
-      asksAllString += `${size} -- ${price}\n`;
+      asksAllString += `${size}   ----   ${price}\n`;
     });
 
+    const embed = new Discord.MessageEmbed()
+      .setColor(16777214)
+      .setTitle(name)
+      .setURL(productURL)
+      .setThumbnail(image)
+      .addFields(
+        { name: 'SKU', value: SKU, inline: true },
+        { name: 'Colorway', value: colorway, inline: true },
+        { name: 'Price', value: price, inline: true },
+        { name: 'Release Date', value: date }
+      )
+      .addFields({
+        name: 'Number of Sales',
+        value: Number(numberSales).toLocaleString(),
+        inline: true,
+      })
+      .addFields({
+        name: 'Average Price',
+        value: averagePrice.toLocaleString(),
+        inline: true,
+      })
+      .addFields({ name: 'Total Sales', value: totalSales, inline: true })
+      .addFields({ name: 'Sales Last 72 Hours', value: last72, inline: true });
+
     if (asksAllString.length != 0) {
-      embed.addFields({ name: 'Lowest Asks', value: asksAllString });
+      embed.addFields({ name: 'Lowest Asks', value: '```' + asksAllString + '```' });
     }
 
     message.channel
@@ -136,7 +137,7 @@ exports.run = async (client, message, args) => {
   } catch (err) {
     console.log(err);
 
-    if (err.message == 'No matching products') {
+    if (err.message == 'No hits') {
       message.channel.send('```No products found matching search parameters```');
     } else if (err.message == 'Empty command') {
       message.channel.send('```Command is missing search parameters```');
