@@ -89,15 +89,27 @@ exports.run = async (client, message, args) => {
     });
 
     const askTable = $('.market-summary').find('li[class="select-option"]');
-
     let asksAllString = '';
 
-    askTable.each((i, el) => {
-      let size = $(el).find('.title').text().trim();
-      let price = $(el).find('.subtitle').text();
+    if (askTable.length == 0) {
+      let asks = $('.market-summary').find('.stats').find('div[class="en-us stat-value stat-small"]');
+      let lowestAsk = '';
 
-      asksAllString += `${size}   ----   ${price}\n`;
-    });
+      asks.each((i, el) => {
+        if ($(el).next().text() == 'Lowest Ask') {
+          lowestAsk = $(el).text();
+        }
+      });
+
+      asksAllString += `OS   ----   ${lowestAsk}`;
+    } else {
+      askTable.each((i, el) => {
+        let size = $(el).find('.title').text().trim();
+        let price = $(el).find('.subtitle').text();
+
+        asksAllString += `${size}   ----   ${price}\n`;
+      });
+    }
 
     const embed = new Discord.MessageEmbed()
       .setColor(16777214)
