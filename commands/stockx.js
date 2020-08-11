@@ -75,8 +75,8 @@ exports.run = async (client, message, args) => {
     const image = $('[data-testid="product-detail-image"]').attr('src');
 
     const salesData = $('.gauge-container');
-    let numberSales = null;
-    let averagePrice = null;
+    let numberSales = '';
+    let averagePrice = '';
 
     salesData.each((i, el) => {
       if ($(el).find('.gauge-title').text() == '# of Sales') {
