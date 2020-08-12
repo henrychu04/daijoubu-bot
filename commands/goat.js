@@ -1,6 +1,4 @@
 const fetch = require('node-fetch');
-const cheerio = require('cheerio');
-const config = require('../config.json');
 const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
@@ -13,7 +11,7 @@ exports.run = async (client, message, args) => {
 
     let res = await fetch('https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query', {
       method: 'POST',
-      headers: config.goatHeader,
+      headers: client.config.goatHeader,
       body: `{"params":"query=${encodeURIComponent(query)}"}`,
     })
       .then((res) => {
@@ -32,7 +30,7 @@ exports.run = async (client, message, args) => {
     let productURL = 'https://www.goat.com/sneakers/' + res.slug;
     let image = res.main_glow_picture_url;
     let colorway = res.details;
-    let retail = '$' + res.retail_price_cents / 100;
+    let retail = res.retail_price_cents;
     let sku = res.sku;
     let date = res.release_date;
     let parsedDate = null;
@@ -46,11 +44,37 @@ exports.run = async (client, message, args) => {
       parsedDate = 'N/A';
     }
 
+    if (!category) {
+      category = 'N/A';
+    }
+
+    if (!name) {
+      name = 'N/A';
+    }
+
+    if (!image) {
+      image = null;
+    }
+
+    if (!colorway) {
+      colorway = 'N/A';
+    }
+
+    if (!retail) {
+      retail = 'N/A';
+    } else {
+      retail = '$' + retail / 100;
+    }
+
+    if (!sku) {
+      sku = 'N/A';
+    }
+
     let pageData = await fetch(`https://www.goat.com/web-api/v1/product_variants?productTemplateId=${res.slug}`, {
       method: 'GET',
-      headers: config.headers,
+      headers: client.config.headers,
     })
-      .then((res, req) => {
+      .then((res) => {
         return res.json();
       })
       .then((json) => {

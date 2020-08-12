@@ -1,6 +1,5 @@
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
-const config = require('../config.json');
 const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
@@ -16,7 +15,7 @@ exports.run = async (client, message, args) => {
 
     let data = await fetch('https://xw7sbct9v6-dsn.algolia.net/1/indexes/products/query', {
       method: 'POST',
-      headers: config.stockxHeader,
+      headers: client.config.stockxHeader,
       body: `{"params":"query=${encodeURIComponent(query)}"}`,
     })
       .then((res) => {
@@ -35,7 +34,7 @@ exports.run = async (client, message, args) => {
     const productURL = `https://www.stockx.com/${data.url}`;
 
     let page = await fetch(productURL, {
-      headers: config.headers,
+      headers: client.config.headers,
     })
       .then((res) => {
         return res.text();
@@ -56,19 +55,19 @@ exports.run = async (client, message, args) => {
     let price = pageDetails.find('[data-testid="product-detail-retail price"]').text().trim();
     let date = pageDetails.find('[data-testid="product-detail-release date"]').text().trim();
 
-    if (SKU.length == 0) {
+    if (!SKU) {
       SKU = 'N/A';
     }
 
-    if (colorway.length == 0) {
+    if (!colorway) {
       colorway = 'N/A';
     }
 
-    if (price.length == 0) {
+    if (!price) {
       price = 'N/A';
     }
 
-    if (date.length == 0) {
+    if (!date) {
       date = 'N/A';
     }
 
