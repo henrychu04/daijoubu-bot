@@ -137,7 +137,7 @@ exports.run = async (client, message, args) => {
             embed: {
               title: 'Number of items',
               color: 16711680,
-              description: `${numItems} items`,
+              description: `${numItems} items\n[Link](${domain + link})`,
             },
           })
           .then(console.log(`${message} completed`))
