@@ -89,6 +89,8 @@ exports.run = async (client, message, args) => {
 
     const askTable = $('.market-summary').find('li[class="select-option"]');
     let asksAllString = '';
+    let totalPrice = 0;
+    let j = 0;
 
     if (askTable.length == 0) {
       let asks = $('.market-summary').find('.stats').find('div[class="en-us stat-value stat-small"]');
@@ -97,6 +99,11 @@ exports.run = async (client, message, args) => {
       asks.each((i, el) => {
         if ($(el).next().text() == 'Lowest Ask') {
           lowestAsk = $(el).text();
+
+          let price = lowestAsk.replace('$', '');
+          price = Number(price);
+          totalPrice += price;
+          j++;
         }
       });
 
@@ -106,9 +113,17 @@ exports.run = async (client, message, args) => {
         let size = $(el).find('.title').text().trim();
         let price = $(el).find('.subtitle').text();
 
-        asksAllString += `${size}   ----   ${price}\n`;
+        askAllString += `${size}   ----   ${price}\n`;
+
+        price = price.replace('$', '');
+        price = price.replace(/,/g, '');
+        price = Number(price);
+        totalPrice += price;
+        j++;
       });
     }
+
+    totalPrice = '$' + Math.round(totalPrice / j).toLocaleString();
 
     const embed = new Discord.MessageEmbed()
       .setColor(16777214)
