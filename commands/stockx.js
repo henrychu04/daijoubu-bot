@@ -88,7 +88,7 @@ exports.run = async (client, message, args) => {
     });
 
     const askTable = $('.market-summary').find('li[class="select-option"]');
-    let asksAllString = '';
+    let askAllString = '';
     let totalPrice = 0;
     let j = 0;
 
@@ -107,7 +107,7 @@ exports.run = async (client, message, args) => {
         }
       });
 
-      asksAllString += `OS   ----   ${lowestAsk}`;
+      askAllString += `OS   ----   ${lowestAsk}`;
     } else {
       askTable.each((i, el) => {
         let size = $(el).find('.title').text().trim();
@@ -149,8 +149,8 @@ exports.run = async (client, message, args) => {
       .addFields({ name: 'Total Sales', value: totalSales, inline: true })
       .addFields({ name: 'Sales Last 72 Hours', value: last72, inline: true });
 
-    if (asksAllString.length != 0) {
-      embed.addFields({ name: 'Lowest Asks', value: '```' + asksAllString + '```' });
+    if (askAllString.length != 0) {
+      embed.addFields({ name: 'Lowest Asks', value: '```' + askAllString + '```' });
     }
 
     message.channel
