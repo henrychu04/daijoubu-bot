@@ -127,7 +127,7 @@ exports.run = async (client, message, args) => {
         inline: true,
       })
       .addFields({
-        name: 'Average Price',
+        name: 'Average Selling Price',
         value: averagePrice.toLocaleString(),
         inline: true,
       })
