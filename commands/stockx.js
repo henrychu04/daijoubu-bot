@@ -1,5 +1,4 @@
 const fetch = require('node-fetch');
-const cheerio = require('cheerio');
 const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
@@ -9,9 +8,6 @@ exports.run = async (client, message, args) => {
     if (query.length == 0) {
       throw new Error('Empty command');
     }
-
-    let last72 = 0;
-    let totalSales = 0;
 
     let data = await fetch('https://xw7sbct9v6-dsn.algolia.net/1/indexes/products/query', {
       method: 'POST',
@@ -23,135 +19,153 @@ exports.run = async (client, message, args) => {
       })
       .then((json) => {
         if (json.hits.length != 0) {
-          last72 = json.hits[0].sales_last_72;
-          totalSales = '$' + json.hits[0].total_dollars.toLocaleString();
           return json.hits[0];
         } else {
           throw new Error('No hits');
         }
       });
 
-    const productURL = `https://www.stockx.com/${data.url}`;
+    const productURL = `https://gateway.stockx.com/api/v2/products/${data.objectID}?includes=market,360&currency=USD&country=US`;
 
     let page = await fetch(productURL, {
-      headers: client.config.headers,
+      headers: client.config.stockxHeaderMobile,
     })
       .then((res) => {
-        return res.text();
+        return res.json();
       })
       .catch((err) => console.log(err));
 
-    const $ = cheerio.load(page);
+    let product = page.Product;
 
-    const name = $('div[class="product-header hidden-xs"]')
-      .find('div[class="col-md-12"]')
-      .find('h1[class="name"]')
-      .text();
+    let name = product.title;
+    let URL = `https://www.stockx.com/${product.urlKey}`;
+    let description = product.description;
+    description = description.replace(/<br>/g, '');
+    let SKU = 'N/A';
+    let season = 'N/A';
+    let colorway = 'N/A';
+    let price = 'NA';
+    let date = 'N/A';
 
-    const pageDetails = $('.detail');
-
-    let SKU = pageDetails.find('[data-testid="product-detail-style"]').text().trim();
-    let colorway = pageDetails.find('[data-testid="product-detail-colorway"]').text().trim();
-    let price = pageDetails.find('[data-testid="product-detail-retail price"]').text().trim();
-    let date = pageDetails.find('[data-testid="product-detail-release date"]').text().trim();
-
-    if (!SKU) {
-      SKU = 'N/A';
-    }
-
-    if (!colorway) {
-      colorway = 'N/A';
-    }
-
-    if (!price) {
-      price = 'N/A';
-    }
-
-    if (!date) {
-      date = 'N/A';
-    }
-
-    const image = $('[data-testid="product-detail-image"]').attr('src');
-
-    const salesData = $('.gauge-container');
-    let numberSales = '';
-    let averagePrice = '';
-
-    salesData.each((i, el) => {
-      if ($(el).find('.gauge-title').text() == '# of Sales') {
-        numberSales = $(el).find('.gauge-value').text();
-      }
-
-      if ($(el).find('.gauge-title').text() == 'Average Sale Price') {
-        averagePrice = $(el).find('.gauge-value').text();
-      }
-    });
-
-    const askTable = $('.market-summary').find('li[class="select-option"]');
-    let askAllString = '';
-    let totalPrice = 0;
-    let j = 0;
-
-    if (askTable.length == 0) {
-      let asks = $('.market-summary').find('.stats').find('div[class="en-us stat-value stat-small"]');
-      let lowestAsk = '';
-
-      asks.each((i, el) => {
-        if ($(el).next().text() == 'Lowest Ask') {
-          lowestAsk = $(el).text();
-
-          let price = lowestAsk.replace('$', '');
-          price = Number(price);
-          totalPrice += price;
-          j++;
+    if (product.traits[0].name == 'Season') {
+      for (trait of product.traits) {
+        if (trait.name == 'Season') {
+          season = trait.value;
         }
-      });
 
-      askAllString += `OS   ----   ${lowestAsk}`;
-    } else {
-      askTable.each((i, el) => {
-        let size = $(el).find('.title').text().trim();
-        let price = $(el).find('.subtitle').text();
+        if (trait.name == 'Color') {
+          colorway = trait.value;
+        }
 
-        askAllString += `${size}   ----   ${price}\n`;
+        if (trait.name == 'Release Date') {
+          date = trait.value;
+        }
 
-        price = price.replace('$', '');
-        price = price.replace(/,/g, '');
-        price = Number(price);
-        totalPrice += price;
-        j++;
-      });
+        if (trait.name == 'Retail') {
+          price = '$' + trait.value;
+        }
+      }
+    } else if (product.contentGroup == 'sneakers') {
+      for (trait of product.traits) {
+        if (trait.name == 'Style') {
+          SKU = trait.value;
+        }
+
+        if (trait.name == 'Colorway') {
+          colorway = trait.value;
+        }
+
+        if (trait.name == 'Retail Price') {
+          price = '$' + trait.value;
+        }
+
+        if (trait.name == 'Release Date') {
+          date = trait.value;
+        }
+      }
     }
 
-    totalPrice = '$' + Math.round(totalPrice / j).toLocaleString();
+    let image = product.media.imageUrl;
+    let sales72 = product.market.salesLast72Hours;
+    let totalSales = product.market.deadstockSold;
+    let totalDollars = '$' + product.market.totalDollars.toLocaleString();
+    let averageDeadstockPrice = '$' + product.market.averageDeadstockPrice;
+    let lowestPrice = '';
+    let highestOffer = '';
+    let lastSold = '';
+    let averageLowestPrice = 0;
+    let averageHighestOffer = 0;
+    let averageLastSold = 0;
+    let lowest = 0;
+    let highest = 0;
+    let last = 0;
+
+    for (variant in product.children) {
+      let market = product.children[variant].market;
+
+      let size = product.children[variant].shoeSize;
+
+      if (size == null || size.length == 0) {
+        size = 'OS';
+      }
+
+      if (market.lowestAsk != 0) {
+        lowestPrice += `${size}   ----   $${market.lowestAsk}\n`;
+        averageLowestPrice += market.lowestAsk;
+        lowest++;
+      } else {
+        lowestPrice += `${size}   ----   N/A\n`;
+      }
+
+      if (market.highestBid != 0) {
+        highestOffer += `${size}   ----   $${market.highestBid}\n`;
+        averageHighestOffer += market.highestBid;
+        highest++;
+      } else {
+        highestOffer += `${size}   ----   N/A\n`;
+      }
+
+      if (market.lastSale != 0) {
+        lastSold += `${size}   ----   $${market.lastSale}\n`;
+        averageLastSold += market.lastSale;
+        last++;
+      } else {
+        lastSold += `${size}   ----   N/A\n`;
+      }
+    }
+
+    averageLowestPrice = '$' + Math.round(averageLowestPrice / lowest);
+    averageHighestOffer = '$' + Math.round(averageHighestOffer / highest);
+    averageLastSold = '$' + Math.round(averageLastSold / last);
 
     const embed = new Discord.MessageEmbed()
       .setColor(16777214)
       .setTitle(name)
-      .setURL(productURL)
+      .setURL(URL)
       .setThumbnail(image)
-      .addFields(
-        { name: 'SKU', value: SKU, inline: true },
-        { name: 'Colorway', value: colorway, inline: true },
-        { name: 'Price', value: price, inline: true },
-        { name: 'Release Date', value: date }
-      )
-      .addFields({
-        name: 'Number of Sales',
-        value: Number(numberSales).toLocaleString(),
-        inline: true,
-      })
-      .addFields({
-        name: 'Average Selling Price',
-        value: averagePrice.toLocaleString(),
-        inline: true,
-      })
-      .addFields({ name: 'Total Sales', value: totalSales, inline: true })
-      .addFields({ name: 'Sales Last 72 Hours', value: last72, inline: true });
+      .setDescription(description);
 
-    if (askAllString.length != 0) {
-      embed.addFields({ name: 'Lowest Asks', value: '```' + askAllString + '```' });
+    if (SKU != 'N/A') {
+      embed.addFields({ name: 'SKU', value: SKU, inline: true });
+    } else {
+      embed.addFields({ name: 'Season', value: season, inline: true });
     }
+
+    embed.addFields(
+      { name: 'Colorway', value: colorway, inline: true },
+      { name: 'Price', value: price, inline: true },
+      { name: 'Release Date', value: date, inline: false },
+      { name: 'Total Amount of Sales', value: totalSales, inline: true },
+      { name: 'Sales Last 72 Hours', value: sales72, inline: true },
+      { name: 'Total Sales', value: totalDollars, inline: true },
+      { name: 'Average Sale Price', value: averageDeadstockPrice, inline: true },
+      { name: 'Lowest Asks', value: 'Average: ' + averageLowestPrice + '```' + lowestPrice + '```' },
+      {
+        name: 'Highest Offers',
+        value: 'Average: ' + averageHighestOffer + '```' + highestOffer + '```',
+      },
+      { name: 'Last Sold', value: 'Average: ' + averageLastSold + '```' + lastSold + '```' }
+    );
 
     message.channel
       .send(embed)

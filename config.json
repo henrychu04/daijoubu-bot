@@ -9,6 +9,12 @@
     "x-algolia-api-key": "6bfb5abee4dcd8cea8f0ca1ca085c2b3",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4136"
   },
+  "stockxHeaderMobile": {
+    "app-platform": "ios",
+    "app-name": "StockX-iOS",
+    "x-api-key": "99WtRZK6pS1Fqt8hXBfWq8BYQjErmwipa3a0hYxX",
+    "user-agent": "StockX/31092 CFNetwork/1188 Darwin/20.0.0"
+  },
   "goatHeader": {
     "x-algolia-application-id": "2FWOTDVM2O",
     "x-algolia-api-key": "ac96de6fef0e02bb95d433d8d5c7038a",

@@ -28,10 +28,13 @@ exports.run = async (client, message, args) => {
     let category = res.product_category;
     let name = res.name;
     let productURL = 'https://www.goat.com/sneakers/' + res.slug;
+    let description = res.story_html;
+    description = description.replace('<p>', '');
+    description = description.replace('</p>', '');
     let image = res.main_glow_picture_url;
     let colorway = res.details;
     let retail = res.retail_price_cents;
-    let sku = res.sku;
+    let SKU = res.sku;
     let date = res.release_date;
     let parsedDate = null;
 
@@ -39,17 +42,13 @@ exports.run = async (client, message, args) => {
       let [month, day, year] = new Date(date).toLocaleDateString().split('/');
       parsedDate = `${month.length == 1 ? '0' + month : month}/${day.length == 1 ? '0' + day : day}/${year}`;
     } else if (res.brand_name == 'Supreme' && category == 'clothing') {
-      parsedDate = sku.substring(0, 4);
+      parsedDate = SKU.substring(0, 4);
     } else {
       parsedDate = 'N/A';
     }
 
     if (!category) {
       category = 'N/A';
-    }
-
-    if (!name) {
-      name = 'N/A';
     }
 
     if (!image) {
@@ -66,14 +65,17 @@ exports.run = async (client, message, args) => {
       retail = '$' + retail / 100;
     }
 
-    if (!sku) {
-      sku = 'N/A';
+    if (!SKU) {
+      SKU = 'N/A';
     }
 
-    let pageData = await fetch(`https://www.goat.com/web-api/v1/product_variants?productTemplateId=${res.slug}`, {
-      method: 'GET',
-      headers: client.config.headers,
-    })
+    let pageData = await fetch(
+      `https://sell-api.goat.com/api/v1/analytics/products/${res.slug}/availability?box_condition=1&shoe_condition=1`,
+      {
+        method: 'GET',
+        headers: client.config.headers,
+      }
+    )
       .then((res) => {
         return res.json();
       })
@@ -81,45 +83,74 @@ exports.run = async (client, message, args) => {
         return json;
       });
 
-    let askAllString = '';
-    let priceAll = 0;
-    let i = 0;
+    let lowestPrice = '';
+    let highestOffer = '';
+    let lastSold = '';
+    let averageLowestPrice = 0;
+    let averageHighestOffer = 0;
+    let averageLastSold = 0;
+    let lowest = 0;
+    let highest = 0;
+    let last = 0;
 
-    pageData.forEach((variant) => {
-      if (variant.shoeCondition == 'new_no_defects' && variant.boxCondition == 'good_condition') {
-        let size = null;
+    pageData.availability.forEach((variant) => {
+      let size = variant.size;
 
-        if (category == 'shoes') {
-          size = variant.size;
-        } else if (category == 'clothing') {
-          size = variant.sizeOption.presentation.toUpperCase();
-        }
+      if (variant.lowest_price_cents != undefined) {
+        lowestPrice += `${size}   ----   $${variant.lowest_price_cents / 100}\n`;
+        averageLowestPrice += variant.lowest_price_cents / 100;
+        lowest++;
+      } else {
+        lowestPrice += `${size}   ----   N/A\n`;
+      }
 
-        priceAll += variant.lowestPriceCents.amount / 100;
-        let price = '$' + variant.lowestPriceCents.amount / 100;
-        i++;
+      if (variant.highest_offer_cents != undefined) {
+        highestOffer += `${size}   ----   $${variant.highest_offer_cents / 100}\n`;
+        averageHighestOffer += variant.highest_offer_cents / 100;
+        highest++;
+      } else {
+        highestOffer += `${size}   ----   N/A\n`;
+      }
 
-        askAllString += `${size}   ----   ${price}\n`;
+      if (variant.last_sold_price_cents != undefined) {
+        lastSold += `${size}   ----   $${variant.last_sold_price_cents / 100}\n`;
+        averageLastSold += variant.last_sold_price_cents / 100;
+        last++;
+      } else {
+        lastSold += `${size}   ----   N/A\n`;
       }
     });
 
-    priceAll = '$' + Math.round(priceAll / i);
+    averageLowestPrice = '$' + Math.round(averageLowestPrice / lowest);
+    averageHighestOffer = '$' + Math.round(averageHighestOffer / highest);
+    averageLastSold = '$' + Math.round(averageLastSold / last);
 
     const embed = new Discord.MessageEmbed()
       .setColor(16777214)
       .setTitle(name)
       .setURL(productURL)
       .setThumbnail(image)
+      .setDescription(description)
       .addFields(
-        { name: 'SKU', value: sku, inline: true },
+        { name: 'SKU', value: SKU, inline: true },
         { name: 'Colorway', value: `${colorway ? colorway : 'N/A'}`, inline: true },
         { name: 'Price', value: retail, inline: true },
-        { name: 'Release Date', value: parsedDate, inline: true },
-        { name: 'Average Price', value: priceAll }
+        { name: 'Release Date', value: parsedDate, inline: true }
       );
 
-    if (askAllString.length != 0) {
-      embed.addFields({ name: 'Lowest Asks', value: '```' + askAllString + '```' });
+    if (lowestPrice.length != 0) {
+      embed.addFields({ name: 'Lowest Asks', value: 'Average: ' + averageLowestPrice + '```' + lowestPrice + '```' });
+    }
+
+    if (highestOffer.length != 0) {
+      embed.addFields({
+        name: 'Highest Offers',
+        value: 'Average: ' + averageHighestOffer + '```' + highestOffer + '```',
+      });
+    }
+
+    if (lastSold.length != 0) {
+      embed.addFields({ name: 'Last Sold', value: 'Average: ' + averageLastSold + '```' + lastSold + '```' });
     }
 
     message.channel
