@@ -84,16 +84,24 @@ exports.run = async (client, message, args) => {
       });
 
     let lowestPrice = '';
-    let highestOffer = '';
+    let highestBid = '';
     let lastSold = '';
     let averageLowestPrice = 0;
-    let averageHighestOffer = 0;
+    let averageHighestBid = 0;
     let averageLastSold = 0;
     let lowest = 0;
     let highest = 0;
     let last = 0;
 
-    pageData.availability.forEach((variant) => {
+    for (variant of pageData.availability) {
+      if (
+        variant.lowest_price_cents == undefined &&
+        variant.highest_offer_cents == undefined &&
+        variant.last_sold_price_cents == undefined
+      ) {
+        continue;
+      }
+
       let size = variant.size;
 
       if (variant.lowest_price_cents != undefined) {
@@ -105,11 +113,11 @@ exports.run = async (client, message, args) => {
       }
 
       if (variant.highest_offer_cents != undefined) {
-        highestOffer += `${size}   ----   $${variant.highest_offer_cents / 100}\n`;
-        averageHighestOffer += variant.highest_offer_cents / 100;
+        highestBid += `${size}   ----   $${variant.highest_offer_cents / 100}\n`;
+        averageHighestBid += variant.highest_offer_cents / 100;
         highest++;
       } else {
-        highestOffer += `${size}   ----   N/A\n`;
+        highestBid += `${size}   ----   N/A\n`;
       }
 
       if (variant.last_sold_price_cents != undefined) {
@@ -119,10 +127,10 @@ exports.run = async (client, message, args) => {
       } else {
         lastSold += `${size}   ----   N/A\n`;
       }
-    });
+    }
 
     averageLowestPrice = '$' + Math.round(averageLowestPrice / lowest);
-    averageHighestOffer = '$' + Math.round(averageHighestOffer / highest);
+    averageHighestBid = '$' + Math.round(averageHighestBid / highest);
     averageLastSold = '$' + Math.round(averageLastSold / last);
 
     const embed = new Discord.MessageEmbed()
@@ -135,23 +143,14 @@ exports.run = async (client, message, args) => {
         { name: 'SKU', value: SKU, inline: true },
         { name: 'Colorway', value: `${colorway ? colorway : 'N/A'}`, inline: true },
         { name: 'Price', value: retail, inline: true },
-        { name: 'Release Date', value: parsedDate, inline: true }
+        { name: 'Release Date', value: parsedDate, inline: true },
+        { name: 'Lowest Asks', value: 'Average: ' + averageLowestPrice + '```' + lowestPrice + '```' },
+        {
+          name: 'Highest Bids',
+          value: 'Average: ' + averageHighestBid + '```' + highestBid + '```',
+        },
+        { name: 'Last Sold', value: 'Average: ' + averageLastSold + '```' + lastSold + '```' }
       );
-
-    if (lowestPrice.length != 0) {
-      embed.addFields({ name: 'Lowest Asks', value: 'Average: ' + averageLowestPrice + '```' + lowestPrice + '```' });
-    }
-
-    if (highestOffer.length != 0) {
-      embed.addFields({
-        name: 'Highest Offers',
-        value: 'Average: ' + averageHighestOffer + '```' + highestOffer + '```',
-      });
-    }
-
-    if (lastSold.length != 0) {
-      embed.addFields({ name: 'Last Sold', value: 'Average: ' + averageLastSold + '```' + lastSold + '```' });
-    }
 
     message.channel
       .send(embed)

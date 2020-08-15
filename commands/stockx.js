@@ -91,10 +91,10 @@ exports.run = async (client, message, args) => {
     let totalDollars = '$' + product.market.totalDollars.toLocaleString();
     let averageDeadstockPrice = '$' + product.market.averageDeadstockPrice;
     let lowestPrice = '';
-    let highestOffer = '';
+    let highestBid = '';
     let lastSold = '';
     let averageLowestPrice = 0;
-    let averageHighestOffer = 0;
+    let averageHighestBid = 0;
     let averageLastSold = 0;
     let lowest = 0;
     let highest = 0;
@@ -103,13 +103,21 @@ exports.run = async (client, message, args) => {
     for (variant in product.children) {
       let market = product.children[variant].market;
 
+      if (
+        (market.lowestAsk == undefined || market.lowestAsk == 0) &&
+        (market.highestBid == undefined || market.highestBid == 0) &&
+        (market.lastSale == undefined || market.lastSale == 0)
+      ) {
+        continue;
+      }
+
       let size = product.children[variant].shoeSize;
 
       if (size == null || size.length == 0) {
         size = 'OS';
       }
 
-      if (market.lowestAsk != 0) {
+      if (market.lowestAsk != 0 && market.lowestAsk != undefined) {
         lowestPrice += `${size}   ----   $${market.lowestAsk}\n`;
         averageLowestPrice += market.lowestAsk;
         lowest++;
@@ -117,15 +125,15 @@ exports.run = async (client, message, args) => {
         lowestPrice += `${size}   ----   N/A\n`;
       }
 
-      if (market.highestBid != 0) {
-        highestOffer += `${size}   ----   $${market.highestBid}\n`;
-        averageHighestOffer += market.highestBid;
+      if (market.highestBid != 0 && market.highestBid != undefined) {
+        highestBid += `${size}   ----   $${market.highestBid}\n`;
+        averageHighestBid += market.highestBid;
         highest++;
       } else {
-        highestOffer += `${size}   ----   N/A\n`;
+        highestBid += `${size}   ----   N/A\n`;
       }
 
-      if (market.lastSale != 0) {
+      if (market.lastSale != 0 && market.lastSale != undefined) {
         lastSold += `${size}   ----   $${market.lastSale}\n`;
         averageLastSold += market.lastSale;
         last++;
@@ -135,7 +143,7 @@ exports.run = async (client, message, args) => {
     }
 
     averageLowestPrice = '$' + Math.round(averageLowestPrice / lowest);
-    averageHighestOffer = '$' + Math.round(averageHighestOffer / highest);
+    averageHighestBid = '$' + Math.round(averageHighestBid / highest);
     averageLastSold = '$' + Math.round(averageLastSold / last);
 
     const embed = new Discord.MessageEmbed()
@@ -161,8 +169,8 @@ exports.run = async (client, message, args) => {
       { name: 'Average Sale Price', value: averageDeadstockPrice, inline: true },
       { name: 'Lowest Asks', value: 'Average: ' + averageLowestPrice + '```' + lowestPrice + '```' },
       {
-        name: 'Highest Offers',
-        value: 'Average: ' + averageHighestOffer + '```' + highestOffer + '```',
+        name: 'Highest Bids',
+        value: 'Average: ' + averageHighestBid + '```' + highestBid + '```',
       },
       { name: 'Last Sold', value: 'Average: ' + averageLastSold + '```' + lastSold + '```' }
     );
