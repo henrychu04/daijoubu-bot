@@ -29,7 +29,7 @@ exports.run = async (client, message, args) => {
     let name = res.name;
     let productURL = 'https://www.goat.com/sneakers/' + res.slug;
     let description = res.story_html;
-    if (description.length != 0) {
+    if (description != null) {
       description = description.replace('<p>', '');
       description = description.replace('</p>', '');
     }
