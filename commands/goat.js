@@ -28,8 +28,9 @@ exports.run = async (client, message, args) => {
     let category = res.product_category;
     let name = res.name;
     let productURL = 'https://www.goat.com/sneakers/' + res.slug;
-    let description = res.story_html;
-    if (description != null) {
+    let description = '';
+    if (res.story_html != null) {
+      description = res.story_html;
       description = description.replace('<p>', '');
       description = description.replace('</p>', '');
     }
