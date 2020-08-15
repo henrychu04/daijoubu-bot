@@ -29,8 +29,10 @@ exports.run = async (client, message, args) => {
     let name = res.name;
     let productURL = 'https://www.goat.com/sneakers/' + res.slug;
     let description = res.story_html;
-    description = description.replace('<p>', '');
-    description = description.replace('</p>', '');
+    if (description.length != 0) {
+      description = description.replace('<p>', '');
+      description = description.replace('</p>', '');
+    }
     let image = res.main_glow_picture_url;
     let colorway = res.details;
     let retail = res.retail_price_cents;
