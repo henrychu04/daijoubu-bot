@@ -12,7 +12,7 @@ exports.run = async (client, message, args) => {
 
     const domain = 'https://www.supremecommunity.com';
 
-    let droplistPage = await fetch(domain + '/season/fall-winter2020/droplists//', {
+    let droplistPage = await fetch(domain + '/season/fall-winter2020/droplists/', {
       headers: client.config.headers,
     })
       .then((res) => {
