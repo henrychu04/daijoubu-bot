@@ -80,7 +80,7 @@ exports.run = async (client, message, args) => {
           prop.name = $(el).find('h2').text();
 
           if ($(el).find('p[class="priceusd hidden"]').text() == 0) {
-            prop.price = 'Currently no price';
+            prop.price = 'N/A';
           } else {
             prop.price = $(el).find('.label-price').text().trim();
           }
@@ -93,7 +93,7 @@ exports.run = async (client, message, args) => {
           description = description.split('<')[0].trim();
 
           if (!description) {
-            prop.description = 'Currently no description';
+            prop.description = 'N/A';
           } else {
             prop.description = description;
           }
@@ -229,6 +229,6 @@ function editCategory(category) {
     case 'skate':
       return 'Skate';
     default:
-      return 'Category not available';
+      return 'N/A';
   }
 }
