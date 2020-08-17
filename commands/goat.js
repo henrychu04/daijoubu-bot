@@ -78,13 +78,9 @@ exports.run = async (client, message, args) => {
         method: 'GET',
         headers: client.config.headers,
       }
-    )
-      .then((res) => {
-        return res.json();
-      })
-      .then((json) => {
-        return json;
-      });
+    ).then((res) => {
+      return res.json();
+    });
 
     let lowestPrice = '';
     let highestBid = '';

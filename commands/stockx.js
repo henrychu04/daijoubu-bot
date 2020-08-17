@@ -153,7 +153,7 @@ exports.run = async (client, message, args) => {
       .setThumbnail(image)
       .setDescription(description);
 
-    if (SKU != 'N/A') {
+    if (season == 'N/A') {
       embed.addFields({ name: 'SKU', value: SKU, inline: true });
     } else {
       embed.addFields({ name: 'Season', value: season, inline: true });
