@@ -118,27 +118,27 @@ exports.run = async (client, message, args) => {
       }
 
       if (market.lowestAsk != 0 && market.lowestAsk != undefined) {
-        lowestPrice += `${size}   ----   $${market.lowestAsk}\n`;
+        lowestPrice += `${size}  --  $${market.lowestAsk}\n`;
         averageLowestPrice += market.lowestAsk;
         lowest++;
       } else {
-        lowestPrice += `${size}   ----   N/A\n`;
+        lowestPrice += `${size}  --  N/A\n`;
       }
 
       if (market.highestBid != 0 && market.highestBid != undefined) {
-        highestBid += `${size}   ----   $${market.highestBid}\n`;
+        highestBid += `${size}  --  $${market.highestBid}\n`;
         averageHighestBid += market.highestBid;
         highest++;
       } else {
-        highestBid += `${size}   ----   N/A\n`;
+        highestBid += `${size}  --  N/A\n`;
       }
 
       if (market.lastSale != 0 && market.lastSale != undefined) {
-        lastSold += `${size}   ----   $${market.lastSale}\n`;
+        lastSold += `${size}  --  $${market.lastSale}\n`;
         averageLastSold += market.lastSale;
         last++;
       } else {
-        lastSold += `${size}   ----   N/A\n`;
+        lastSold += `${size}  --  N/A\n`;
       }
     }
 
@@ -167,12 +167,15 @@ exports.run = async (client, message, args) => {
       { name: 'Sales Last 72 Hours', value: sales72, inline: true },
       { name: 'Total Sales', value: totalDollars, inline: true },
       { name: 'Average Sale Price', value: averageDeadstockPrice, inline: true },
-      { name: 'Lowest Asks', value: 'Average: ' + averageLowestPrice + '```' + lowestPrice + '```' },
+      { name: '\u200b', value: '\u200b', inline: true },
+      { name: '\u200b', value: '\u200b', inline: true },
+      { name: 'Lowest Asks', value: 'Average: ' + averageLowestPrice + '```' + lowestPrice + '```', inline: true },
       {
         name: 'Highest Bids',
         value: 'Average: ' + averageHighestBid + '```' + highestBid + '```',
+        inline: true,
       },
-      { name: 'Last Sold', value: 'Average: ' + averageLastSold + '```' + lastSold + '```' }
+      { name: 'Last Sold', value: 'Average: ' + averageLastSold + '```' + lastSold + '```', inline: true }
     );
 
     message.channel

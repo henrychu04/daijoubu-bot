@@ -104,27 +104,27 @@ exports.run = async (client, message, args) => {
       let size = variant.size;
 
       if (variant.lowest_price_cents != undefined) {
-        lowestPrice += `${size}   ----   $${variant.lowest_price_cents / 100}\n`;
+        lowestPrice += `${size}  --  $${variant.lowest_price_cents / 100}\n`;
         averageLowestPrice += variant.lowest_price_cents / 100;
         lowest++;
       } else {
-        lowestPrice += `${size}   ----   N/A\n`;
+        lowestPrice += `${size}  --  N/A\n`;
       }
 
       if (variant.highest_offer_cents != undefined) {
-        highestBid += `${size}   ----   $${variant.highest_offer_cents / 100}\n`;
+        highestBid += `${size}  --  $${variant.highest_offer_cents / 100}\n`;
         averageHighestBid += variant.highest_offer_cents / 100;
         highest++;
       } else {
-        highestBid += `${size}   ----   N/A\n`;
+        highestBid += `${size}  --  N/A\n`;
       }
 
       if (variant.last_sold_price_cents != undefined) {
-        lastSold += `${size}   ----   $${variant.last_sold_price_cents / 100}\n`;
+        lastSold += `${size}  --  $${variant.last_sold_price_cents / 100}\n`;
         averageLastSold += variant.last_sold_price_cents / 100;
         last++;
       } else {
-        lastSold += `${size}   ----   N/A\n`;
+        lastSold += `${size}  --  N/A\n`;
       }
     }
 
@@ -143,12 +143,15 @@ exports.run = async (client, message, args) => {
         { name: 'Colorway', value: `${colorway ? colorway : 'N/A'}`, inline: true },
         { name: 'Price', value: retail, inline: true },
         { name: 'Release Date', value: parsedDate, inline: true },
-        { name: 'Lowest Asks', value: 'Average: ' + averageLowestPrice + '```' + lowestPrice + '```' },
+        { name: '\u200b', value: '\u200b', inline: true },
+        { name: '\u200b', value: '\u200b', inline: true },
+        { name: 'Lowest Asks', value: 'Average: ' + averageLowestPrice + '```' + lowestPrice + '```', inline: true },
         {
           name: 'Highest Bids',
           value: 'Average: ' + averageHighestBid + '```' + highestBid + '```',
+          inline: true,
         },
-        { name: 'Last Sold', value: 'Average: ' + averageLastSold + '```' + lastSold + '```' }
+        { name: 'Last Sold', value: 'Average: ' + averageLastSold + '```' + lastSold + '```', inline: true }
       );
 
     message.channel
