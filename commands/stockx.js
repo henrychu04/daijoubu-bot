@@ -41,6 +41,7 @@ exports.run = async (client, message, args) => {
     let URL = `https://www.stockx.com/${product.urlKey}`;
     let description = product.description;
     description = description.replace(/<br>/g, '');
+    description = description.replace(/[\r\n]{2,}/g, '\n');
     let SKU = 'N/A';
     let season = 'N/A';
     let colorway = 'N/A';
