@@ -47,6 +47,7 @@ exports.run = async (client, message, args) => {
     let colorway = 'N/A';
     let price = 'NA';
     let date = 'N/A';
+    let parsedDate = '';
 
     if (product.traits[0].name == 'Season') {
       for (trait of product.traits) {
@@ -60,6 +61,8 @@ exports.run = async (client, message, args) => {
 
         if (trait.name == 'Release Date') {
           date = trait.value;
+          let [month, day, year] = new Date(date).toLocaleDateString().split('/');
+          parsedDate = `${month.length == 1 ? '0' + month : month}/${day.length == 1 ? '0' + day : day}/${year}`;
         }
 
         if (trait.name == 'Retail') {
@@ -82,6 +85,8 @@ exports.run = async (client, message, args) => {
 
         if (trait.name == 'Release Date') {
           date = trait.value;
+          let [month, day, year] = new Date(date).toLocaleDateString().split('/');
+          parsedDate = `${month.length == 1 ? '0' + month : month}/${day.length == 1 ? '0' + day : day}/${year}`;
         }
       }
     }
@@ -119,27 +124,27 @@ exports.run = async (client, message, args) => {
       }
 
       if (market.lowestAsk != 0 && market.lowestAsk != undefined) {
-        lowestPrice += `${size}  --  $${market.lowestAsk}\n`;
+        lowestPrice += `${size} - $${market.lowestAsk}\n`;
         averageLowestPrice += market.lowestAsk;
         lowest++;
       } else {
-        lowestPrice += `${size}  --  N/A\n`;
+        lowestPrice += `${size} - N/A\n`;
       }
 
       if (market.highestBid != 0 && market.highestBid != undefined) {
-        highestBid += `${size}  --  $${market.highestBid}\n`;
+        highestBid += `${size} - $${market.highestBid}\n`;
         averageHighestBid += market.highestBid;
         highest++;
       } else {
-        highestBid += `${size}  --  N/A\n`;
+        highestBid += `${size} - N/A\n`;
       }
 
       if (market.lastSale != 0 && market.lastSale != undefined) {
-        lastSold += `${size}  --  $${market.lastSale}\n`;
+        lastSold += `${size} - $${market.lastSale}\n`;
         averageLastSold += market.lastSale;
         last++;
       } else {
-        lastSold += `${size}  --  N/A\n`;
+        lastSold += `${size} - N/A\n`;
       }
     }
 
@@ -163,7 +168,7 @@ exports.run = async (client, message, args) => {
     embed.addFields(
       { name: 'Colorway', value: colorway, inline: true },
       { name: 'Price', value: price, inline: true },
-      { name: 'Release Date', value: date, inline: false },
+      { name: 'Release Date', value: parsedDate, inline: false },
       { name: 'Total Amount of Sales', value: totalSales, inline: true },
       { name: 'Sales Last 72 Hours', value: sales72, inline: true },
       { name: 'Total Sales', value: totalDollars, inline: true },

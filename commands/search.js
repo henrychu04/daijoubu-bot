@@ -1,5 +1,4 @@
 const fetch = require('node-fetch');
-const cheerio = require('cheerio');
 const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
@@ -80,7 +79,7 @@ exports.run = async (client, message, args) => {
     let goatRes = await fetch('https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query', {
       method: 'POST',
       headers: client.config.goatHeader,
-      body: `{"params":"query=${encodeURIComponent(goatSearch.trim().length != 0 ? goatSearch.trim() : query)}"}`,
+      body: `{"params":"query=${encodeURIComponent(query)}"}`,
     })
       .then((res) => {
         return res.json();
@@ -95,41 +94,23 @@ exports.run = async (client, message, args) => {
 
     let goatSKU = goatRes.sku;
 
-    let stockxLast72 = 0;
-    let stockxTotalSales = 0;
-
     let stockxRes = await fetch('https://xw7sbct9v6-dsn.algolia.net/1/indexes/products/query', {
       method: 'POST',
       headers: client.config.stockxHeader,
-      body: `{"params":"query=${encodeURIComponent(stockxSearch.trim().length != 0 ? stockxSearch.trim() : query)}"}`,
+      body: `{"params":"query=${encodeURIComponent(query)}"}`,
     })
       .then((res) => {
         return res.json();
       })
       .then((json) => {
         if (json.hits.length != 0) {
-          stockxLast72 = json.hits[0].sales_last_72;
-          stockxTotalSales = '$' + json.hits[0].total_dollars.toLocaleString();
           return json.hits[0];
         } else {
           throw new Error('Stockx no hits');
         }
       });
 
-    const stockxURL = `https://www.stockx.com/${stockxRes.url}`;
-
-    let stockxPage = await fetch(stockxURL, {
-      headers: client.config.headers,
-    })
-      .then((res) => {
-        return res.text();
-      })
-      .catch((err) => console.log(err));
-
-    const $ = cheerio.load(stockxPage);
-
-    const stockxPageDetails = $('.detail');
-    let stockxSKU = stockxPageDetails.find('[data-testid="product-detail-style"]').text().trim();
+    let stockxSKU = stockxRes.style_id;
 
     goatSKU = goatSKU.split(/\s+/);
 
@@ -138,7 +119,7 @@ exports.run = async (client, message, args) => {
     }
 
     let goatData = await getGoatData(client, goatRes);
-    let stockxData = await getStockxData(client, stockxPage);
+    let stockxData = await getStockxData(client, stockxRes);
 
     const embed = new Discord.MessageEmbed()
       .setColor(16777214)
@@ -147,25 +128,46 @@ exports.run = async (client, message, args) => {
       .setDescription(goatData[3])
       .setThumbnail(stockxData[1])
       .addFields(
-        { name: 'SKU', value: stockxSKU, inline: true },
-        { name: 'Colorway', value: stockxData[2], inline: true },
-        { name: 'Price', value: stockxData[3], inline: true },
-        { name: 'Release Date', value: stockxData[4], inline: false },
-        { name: 'Average StockX Selling Price', value: stockxData[6], inline: true },
-        { name: 'Number of StockX Sales', value: stockxData[5], inline: true },
-        { name: 'Total StockX Sales', value: stockxTotalSales, inline: true },
-        { name: 'StockX Sales Last 72 Hours', value: stockxLast72, inline: false },
         {
-          name: `StockX Lowest Asks`,
-          value:
-            `[${stockxData[0]}](${stockxURL})\n` + `Average Price: ${stockxData[7]}\n` + '```' + stockxData[8] + '```',
+          name: 'Links',
+          value: `StockX - [${stockxData[0]}](${stockxData[2]})\n` + `GOAT - [${goatData[1]}](${goatData[2]})\n`,
+        },
+        { name: 'SKU', value: stockxSKU, inline: true },
+        { name: 'Colorway', value: stockxData[3], inline: true },
+        { name: 'Price', value: stockxData[4], inline: true },
+        { name: 'Release Date', value: stockxData[5], inline: false },
+        { name: 'Total Amount of StockX Sales', value: stockxData[6], inline: true },
+        { name: 'StockX Sales Last 72 Hours', value: stockxData[7], inline: true },
+        { name: 'Total StockX Sales', value: stockxData[8], inline: true },
+        { name: 'Average StockX Sale Price', value: stockxData[9], inline: true },
+        { name: '\u200b', value: '\u200b', inline: true },
+        { name: '\u200b', value: '\u200b', inline: true },
+        {
+          name: 'StockX Lowest Asks',
+          value: 'Average: ' + stockxData[9] + '```' + stockxData[10] + '```',
           inline: true,
         },
         {
-          name: `GOAT Lowest Asks`,
-          value: `[${goatData[1]}](${goatData[2]})\n` + `Average Price: ${goatData[8]}\n` + '```' + goatData[9] + '```',
+          name: 'StockX Highest Bids',
+          value: 'Average: ' + stockxData[11] + '```' + stockxData[12] + '```',
           inline: true,
-        }
+        },
+        {
+          name: 'StockX Last Sold',
+          value: 'Average: ' + stockxData[13] + '```' + stockxData[14] + '```',
+          inline: true,
+        },
+        {
+          name: 'GOAT Lowest Asks',
+          value: 'Average: ' + goatData[9] + '```' + goatData[8] + '```',
+          inline: true,
+        },
+        {
+          name: 'GOAT Highest Bids',
+          value: 'Average: ' + goatData[11] + '```' + goatData[10] + '```',
+          inline: true,
+        },
+        { name: 'GOAT Last Sold', value: 'Average: ' + goatData[13] + '```' + goatData[12] + '```', inline: true }
       );
 
     message.channel
@@ -188,6 +190,8 @@ exports.run = async (client, message, args) => {
       message.channel.send('```Narrow search parameters, inconsistent products found```');
     } else if (err.message == 'Incorrect number parameters') {
       message.channel.send('```Incorrect number of search parameters```');
+    } else if (err.message == 'Searched non sneaker') {
+      message.channel.send('```Command only supports sneaker searches```');
     } else {
       message.channel.send('```Unexpected Error```');
     }
@@ -195,22 +199,32 @@ exports.run = async (client, message, args) => {
 };
 
 function valid(goatSKU, stockxSKU) {
-  for (SKU of goatSKU) {
-    if (!stockxSKU.includes(SKU)) {
-      return false;
+  try {
+    for (SKU of goatSKU) {
+      if (!stockxSKU.includes(SKU)) {
+        return false;
+      }
+    }
+
+    return true;
+  } catch (err) {
+    if (err.message == `Cannot read property 'includes' of null`) {
+      throw new Error('Searched non sneaker');
     }
   }
-
-  return true;
 }
 
 async function getGoatData(client, res) {
   let category = res.product_category;
   let name = res.name;
   let productURL = 'https://www.goat.com/sneakers/' + res.slug;
-  let description = res.story_html;
-  description = description.replace('<p>', '');
-  description = description.replace('</p>', '');
+  let description = '';
+  if (res.story_html != null) {
+    description = res.story_html;
+    description = description.replace('<p>', '');
+    description = description.replace('</p>', '');
+  }
+  let image = res.main_glow_picture_url;
   let colorway = res.details;
   let retail = res.retail_price_cents;
   let SKU = res.sku;
@@ -221,7 +235,7 @@ async function getGoatData(client, res) {
     let [month, day, year] = new Date(date).toLocaleDateString().split('/');
     parsedDate = `${month.length == 1 ? '0' + month : month}/${day.length == 1 ? '0' + day : day}/${year}`;
   } else if (res.brand_name == 'Supreme' && category == 'clothing') {
-    parsedDate = sku.substring(0, 4);
+    parsedDate = SKU.substring(0, 4);
   } else {
     parsedDate = 'N/A';
   }
@@ -230,8 +244,8 @@ async function getGoatData(client, res) {
     category = 'N/A';
   }
 
-  if (!name) {
-    name = 'N/A';
+  if (!image) {
+    image = null;
   }
 
   if (!colorway) {
@@ -248,111 +262,228 @@ async function getGoatData(client, res) {
     SKU = 'N/A';
   }
 
-  let goatpageData = await fetch(`https://www.goat.com/web-api/v1/product_variants?productTemplateId=${res.slug}`, {
-    method: 'GET',
-    headers: client.config.headers,
+  let pageData = await fetch(
+    `https://sell-api.goat.com/api/v1/analytics/products/${res.slug}/availability?box_condition=1&shoe_condition=1`,
+    {
+      method: 'GET',
+      headers: client.config.headers,
+    }
+  ).then((res) => {
+    return res.json();
+  });
+
+  let lowestPrice = '';
+  let highestBid = '';
+  let lastSold = '';
+  let averageLowestPrice = 0;
+  let averageHighestBid = 0;
+  let averageLastSold = 0;
+  let lowest = 0;
+  let highest = 0;
+  let last = 0;
+
+  for (variant of pageData.availability) {
+    if (
+      variant.lowest_price_cents == undefined &&
+      variant.highest_offer_cents == undefined &&
+      variant.last_sold_price_cents == undefined
+    ) {
+      continue;
+    }
+
+    let size = variant.size;
+
+    if (variant.lowest_price_cents != undefined) {
+      lowestPrice += `${size} - $${variant.lowest_price_cents / 100}\n`;
+      averageLowestPrice += variant.lowest_price_cents / 100;
+      lowest++;
+    } else {
+      lowestPrice += `${size} - N/A\n`;
+    }
+
+    if (variant.highest_offer_cents != undefined) {
+      highestBid += `${size} - $${variant.highest_offer_cents / 100}\n`;
+      averageHighestBid += variant.highest_offer_cents / 100;
+      highest++;
+    } else {
+      highestBid += `${size} - N/A\n`;
+    }
+
+    if (variant.last_sold_price_cents != undefined) {
+      lastSold += `${size} - $${variant.last_sold_price_cents / 100}\n`;
+      averageLastSold += variant.last_sold_price_cents / 100;
+      last++;
+    } else {
+      lastSold += `${size} - N/A\n`;
+    }
+  }
+
+  averageLowestPrice = '$' + Math.round(averageLowestPrice / lowest);
+  averageHighestBid = '$' + Math.round(averageHighestBid / highest);
+  averageLastSold = '$' + Math.round(averageLastSold / last);
+
+  return [
+    category,
+    name,
+    productURL,
+    description,
+    colorway,
+    retail,
+    SKU,
+    parsedDate,
+    lowestPrice,
+    averageLowestPrice,
+    highestBid,
+    averageHighestBid,
+    lastSold,
+    averageLastSold,
+  ];
+}
+
+async function getStockxData(client, res) {
+  const productURL = `https://gateway.stockx.com/api/v2/products/${res.objectID}?includes=market,360&currency=USD&country=US`;
+
+  let page = await fetch(productURL, {
+    headers: client.config.stockxHeaderMobile,
   })
     .then((res) => {
       return res.json();
     })
-    .then((json) => {
-      return json;
-    });
+    .catch((err) => console.log(err));
 
-  let askAllString = '';
-  let priceAll = 0;
-  let i = 0;
+  let product = page.Product;
 
-  goatpageData.forEach((variant) => {
-    if (variant.shoeCondition == 'new_no_defects' && variant.boxCondition == 'good_condition') {
-      let size = null;
+  let name = product.title;
+  let URL = `https://www.stockx.com/${product.urlKey}`;
+  let description = product.description;
+  description = description.replace(/<br>/g, '');
+  description = description.replace(/[\r\n]{2,}/g, '\n');
+  let SKU = 'N/A';
+  let season = 'N/A';
+  let colorway = 'N/A';
+  let price = 'NA';
+  let date = 'N/A';
+  let parsedDate = '';
 
-      if (category == 'shoes') {
-        size = variant.size;
-      } else if (category == 'clothing') {
-        size = variant.sizeOption.presentation.toUpperCase();
+  if (product.traits[0].name == 'Season') {
+    for (trait of product.traits) {
+      if (trait.name == 'Season') {
+        season = trait.value;
       }
 
-      priceAll += variant.lowestPriceCents.amount / 100;
-      let price = '$' + variant.lowestPriceCents.amount / 100;
-      i++;
-
-      askAllString += `${size}   ----   ${price}\n`;
-    }
-  });
-
-  priceAll = '$' + Math.round(priceAll / i).toLocaleString();
-
-  return [category, name, productURL, description, colorway, retail, SKU, parsedDate, priceAll, askAllString];
-}
-
-async function getStockxData(client, res) {
-  const $ = cheerio.load(res);
-
-  const pageDetails = $('.detail');
-
-  let colorway = pageDetails.find('[data-testid="product-detail-colorway"]').text().trim();
-  let price = pageDetails.find('[data-testid="product-detail-retail price"]').text().trim();
-  let date = pageDetails.find('[data-testid="product-detail-release date"]').text().trim();
-
-  const name = $('div[class="product-header hidden-xs"]')
-    .find('div[class="col-md-12"]')
-    .find('h1[class="name"]')
-    .text();
-
-  const image = $('[data-testid="product-detail-image"]').attr('src');
-
-  const salesData = $('.gauge-container');
-  let numberSales = '';
-  let averagePrice = '';
-
-  salesData.each((i, el) => {
-    if ($(el).find('.gauge-title').text() == '# of Sales') {
-      numberSales = $(el).find('.gauge-value').text();
-    }
-
-    if ($(el).find('.gauge-title').text() == 'Average Sale Price') {
-      averagePrice = $(el).find('.gauge-value').text();
-    }
-  });
-
-  const askTable = $('.market-summary').find('li[class="select-option"]');
-  let askAllString = '';
-  let totalPrice = 0;
-  let j = 0;
-
-  if (askTable.length == 0) {
-    let asks = $('.market-summary').find('.stats').find('div[class="en-us stat-value stat-small"]');
-    let lowestAsk = '';
-
-    asks.each((i, el) => {
-      if ($(el).next().text() == 'Lowest Ask') {
-        lowestAsk = $(el).text();
-
-        let price = lowestAsk.replace('$', '');
-        price = Number(price);
-        totalPrice += price;
-        j++;
+      if (trait.name == 'Color') {
+        colorway = trait.value;
       }
-    });
 
-    askAllString += `OS   ----   ${lowestAsk}`;
-  } else {
-    askTable.each((i, el) => {
-      let size = $(el).find('.title').text().trim();
-      let price = $(el).find('.subtitle').text();
+      if (trait.name == 'Release Date') {
+        date = trait.value;
+        let [month, day, year] = new Date(date).toLocaleDateString().split('/');
+        parsedDate = `${month.length == 1 ? '0' + month : month}/${day.length == 1 ? '0' + day : day}/${year}`;
+      }
 
-      askAllString += `${size}   ----   ${price}\n`;
+      if (trait.name == 'Retail') {
+        price = '$' + trait.value;
+      }
+    }
+  } else if (product.contentGroup == 'sneakers') {
+    for (trait of product.traits) {
+      if (trait.name == 'Style') {
+        SKU = trait.value;
+      }
 
-      price = price.replace('$', '');
-      price = price.replace(/,/g, '');
-      price = Number(price);
-      totalPrice += price;
-      j++;
-    });
+      if (trait.name == 'Colorway') {
+        colorway = trait.value;
+      }
+
+      if (trait.name == 'Retail Price') {
+        price = '$' + trait.value;
+      }
+
+      if (trait.name == 'Release Date') {
+        date = trait.value;
+        let [month, day, year] = new Date(date).toLocaleDateString().split('/');
+        parsedDate = `${month.length == 1 ? '0' + month : month}/${day.length == 1 ? '0' + day : day}/${year}`;
+      }
+    }
   }
 
-  totalPrice = '$' + Math.round(totalPrice / j).toLocaleString();
+  let image = product.media.imageUrl;
+  let sales72 = product.market.salesLast72Hours;
+  let totalSales = product.market.deadstockSold;
+  let totalDollars = '$' + product.market.totalDollars.toLocaleString();
+  let averageDeadstockPrice = '$' + product.market.averageDeadstockPrice;
+  let lowestPrice = '';
+  let highestBid = '';
+  let lastSold = '';
+  let averageLowestPrice = 0;
+  let averageHighestBid = 0;
+  let averageLastSold = 0;
+  let lowest = 0;
+  let highest = 0;
+  let last = 0;
 
-  return [name, image, colorway, price, date, numberSales, averagePrice, totalPrice, askAllString];
+  for (variant in product.children) {
+    let market = product.children[variant].market;
+
+    if (
+      (market.lowestAsk == undefined || market.lowestAsk == 0) &&
+      (market.highestBid == undefined || market.highestBid == 0) &&
+      (market.lastSale == undefined || market.lastSale == 0)
+    ) {
+      continue;
+    }
+
+    let size = product.children[variant].shoeSize;
+
+    if (size == null || size.length == 0) {
+      size = 'OS';
+    }
+
+    if (market.lowestAsk != 0 && market.lowestAsk != undefined) {
+      lowestPrice += `${size} - $${market.lowestAsk}\n`;
+      averageLowestPrice += market.lowestAsk;
+      lowest++;
+    } else {
+      lowestPrice += `${size} - N/A\n`;
+    }
+
+    if (market.highestBid != 0 && market.highestBid != undefined) {
+      highestBid += `${size} - $${market.highestBid}\n`;
+      averageHighestBid += market.highestBid;
+      highest++;
+    } else {
+      highestBid += `${size} - N/A\n`;
+    }
+
+    if (market.lastSale != 0 && market.lastSale != undefined) {
+      lastSold += `${size} - $${market.lastSale}\n`;
+      averageLastSold += market.lastSale;
+      last++;
+    } else {
+      lastSold += `${size} - N/A\n`;
+    }
+  }
+
+  averageLowestPrice = '$' + Math.round(averageLowestPrice / lowest);
+  averageHighestBid = '$' + Math.round(averageHighestBid / highest);
+  averageLastSold = '$' + Math.round(averageLastSold / last);
+
+  return [
+    name,
+    image,
+    URL,
+    colorway,
+    price,
+    parsedDate,
+    totalSales,
+    sales72,
+    totalDollars,
+    averageDeadstockPrice,
+    lowestPrice,
+    averageLowestPrice,
+    highestBid,
+    averageHighestBid,
+    lastSold,
+    averageLastSold,
+  ];
 }
