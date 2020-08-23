@@ -57,6 +57,22 @@ exports.run = async (client, message, args) => {
       } else {
         throw new Error('Unauthorized');
       }
+    } else if (query.substring(0, 8) == 'listings') {
+      if (message.author.id == '504000540804382741') {
+        await login();
+
+        let splitArray = query.substring(9).split(' ');
+
+        if (splitArray[0] != '') {
+          throw new Error('Too many parameters');
+        }
+
+        let listings = await getListings();
+
+        toReturn = allListings(listings);
+      } else {
+        throw new Error('Unauthorized');
+      }
     } else {
       toReturn = await goatSearch(client, query);
     }
@@ -85,6 +101,8 @@ exports.run = async (client, message, args) => {
       message.channel.send('```Command has too many parameters please try again```');
     } else if (err.message == 'Not enough parameters') {
       message.channel.send('```Not enough parameters please try again```');
+    } else if (err.message == 'No listings') {
+      message.channel.send('```No items are listed on account```');
     } else {
       message.channel.send('```Unexpected Error```');
     }
@@ -364,4 +382,20 @@ async function updateListing(obj) {
   });
 
   return updateRes;
+}
+
+function allListings(listings) {
+  let listingString = '';
+
+  if (listings.listing.length != 0) {
+    listings.listing.forEach((obj, i) => {
+      listingString += `${i}. ${obj.product.name} - ${obj.size_option.value} ${obj.price_cents / 100}\n\tid: ${
+        obj.id
+      }\n`;
+    });
+  } else {
+    throw new Error('No listings');
+  }
+
+  return '```' + listingString + '```';
 }
