@@ -104,7 +104,7 @@ exports.run = async (client, message, args) => {
     if (err.message == 'No hits') {
       message.channel.send('```No products found matching search parameters```');
     } else if (err.message == 'Empty command') {
-      message.channel.send('```Command is missing search parameters```');
+      message.channel.send('```Command is missing parameters```');
     } else if (err.message == 'Unauthorized') {
       message.channel.send('```Command not authorized for message author```');
     } else if (err.message == 'Not exist') {
@@ -112,9 +112,9 @@ exports.run = async (client, message, args) => {
     } else if (err.message == 'Error updating') {
       message.channel.send('```Error updating listing```');
     } else if (err.message == 'Too many parameters') {
-      message.channel.send('```Command has too many parameters please try again```');
+      message.channel.send('```Command has too many parameters```');
     } else if (err.message == 'Not enough parameters') {
-      message.channel.send('```Not enough parameters please try again```');
+      message.channel.send('```Command does not have enough parameters```');
     } else {
       message.channel.send('```Unexpected Error```');
     }
@@ -310,27 +310,27 @@ async function update(ids, all) {
 
   if (all && listingObj.length == 0) {
     updateRes = 300;
-  }
+  } else {
+    for (let i = 0; i < ids.length; i++) {
+      let exist = false;
 
-  for (let i = 0; i < ids.length; i++) {
-    let exist = false;
+      for (let j = 0; j < listingObj.length; j++) {
+        if (listingObj[j].id == ids[i]) {
+          exist = true;
+          let res = await updateListing(listingObj[j]);
 
-    for (let j = 0; j < listingObj.length; j++) {
-      if (listingObj[j].id == ids[i]) {
-        exist = true;
-        let res = await updateListing(listingObj[j]);
-
-        if (res == 200) {
-          updateRes = res;
-          break;
-        } else {
-          throw new Error('Error Updating');
+          if (res == 200) {
+            updateRes = res;
+            break;
+          } else {
+            throw new Error('Error Updating');
+          }
         }
       }
-    }
 
-    if (!exist && updateRes != 300) {
-      throw new Error('Not exist');
+      if (!exist && updateRes != 300) {
+        throw new Error('Not exist');
+      }
     }
   }
 }
