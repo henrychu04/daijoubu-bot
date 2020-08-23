@@ -2,7 +2,9 @@ const fetch = require('node-fetch');
 const Discord = require('discord.js');
 
 let loginToken = '';
+let checkRes = 0;
 let updateRes = 0;
+let listingRes = 0;
 
 exports.run = async (client, message, args) => {
   try {
@@ -26,7 +28,13 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        toReturn = '```' + toReturn + '```';
+        if (checkRes == 300) {
+          toReturn = '```All Listings Match Their Lowest Asks```';
+        } else if (checkRes == 200) {
+          toReturn = '```' + toReturn + '```';
+        } else if (checkRes == 404) {
+          toReturn = '```No Items Are Listed on Account```';
+        }
       } else {
         throw new Error('Unauthorized');
       }
@@ -50,7 +58,7 @@ exports.run = async (client, message, args) => {
         } else if (updateRes == 200 && all == true) {
           toReturn = 'All Listing(s) Updated Successfully!';
         } else if (updateRes == 300) {
-          toReturn = 'All Listing(s) Are Already Match Their Lowest Asks';
+          toReturn = 'All Listing(s) Already Match Their Lowest Asks';
         }
 
         toReturn = '```' + toReturn + '```';
@@ -70,6 +78,12 @@ exports.run = async (client, message, args) => {
         let listings = await getListings();
 
         toReturn = allListings(listings);
+
+        if (listingRes == 200) {
+          toReturn = '```' + toReturn + '```';
+        } else if ((listingRes = 404)) {
+          toReturn = '```No Items Are Listed on Account```';
+        }
       } else {
         throw new Error('Unauthorized');
       }
@@ -101,8 +115,6 @@ exports.run = async (client, message, args) => {
       message.channel.send('```Command has too many parameters please try again```');
     } else if (err.message == 'Not enough parameters') {
       message.channel.send('```Not enough parameters please try again```');
-    } else if (err.message == 'No listings') {
-      message.channel.send('```No items are listed on account```');
     } else {
       message.channel.send('```Unexpected Error```');
     }
@@ -259,26 +271,31 @@ async function goatSearch(client, query) {
 }
 
 async function noCommand() {
-  let listingRes = await getListings();
+  let listings = await getListings();
 
-  let listingObj = [];
-
-  for (let i = 0; i < listingRes.listing.length; i++) {
-    listingObj = await checkListings(listingRes.listing[i], listingObj);
-  }
-
-  if (listingObj.length == 0) {
-    return 'All listings are at their lowest asks';
+  if (listings.listing.length == 0) {
+    checkRes = 404;
   } else {
-    let newLowestAsksString = '';
+    let listingObj = [];
 
-    listingObj.forEach((obj, i) => {
-      newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.value} ${obj.price_cents / 100} => ${
-        obj.product.lowest_price_cents / 100
-      }\n\tid: ${obj.id}\n`;
-    });
+    for (let i = 0; i < listings.listing.length; i++) {
+      listingObj = await checkListings(listings.listing[i], listingObj);
+    }
 
-    return newLowestAsksString;
+    if (listingObj.length == 0) {
+      checkRes = 300;
+    } else {
+      let newLowestAsksString = '';
+
+      listingObj.forEach((obj, i) => {
+        newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.value} ${obj.price_cents / 100} => ${
+          obj.product.lowest_price_cents / 100
+        }\n\tid: ${obj.id}\n`;
+      });
+
+      checkRes = 200;
+      return newLowestAsksString;
+    }
   }
 }
 
@@ -394,8 +411,9 @@ function allListings(listings) {
       }\n`;
     });
   } else {
-    throw new Error('No listings');
+    listingRes = 404;
   }
 
-  return '```' + listingString + '```';
+  listingRes = 200;
+  return listingString;
 }
