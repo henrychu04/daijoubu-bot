@@ -49,6 +49,8 @@ exports.run = async (client, message, args) => {
           toReturn = 'Listing(s) Updated Successfully!';
         } else if (updateRes == 200 && all == true) {
           toReturn = 'All Listing(s) Updated Successfully!';
+        } else if (updateRes == 300) {
+          toReturn = 'All Listings Are Already At Their Lowest Asks';
         }
 
         toReturn = '```' + toReturn + '```';
@@ -272,11 +274,13 @@ async function update(ids, all) {
   }
 
   let res = 0;
+  let i = 0;
+  let j = 0;
 
-  for (let i = 0; i < ids.length; i++) {
+  for (i = 0; i < ids.length; i++) {
     let exist = false;
 
-    for (let j = 0; j < listingObj.length; j++) {
+    for (j = 0; j < listingObj.length; j++) {
       if (all) {
         exist = true;
 
@@ -302,6 +306,8 @@ async function update(ids, all) {
 
     if (res == 200) {
       updateRes = res;
+    } else if (i == ids.length && j == listingObj.length && res != 200) {
+      updateRes = 300;
     } else {
       throw new Error('Error Updating');
     }
