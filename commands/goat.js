@@ -310,7 +310,7 @@ async function update(ids, all) {
       updateRes = res;
     } else if (res == 300) {
       continue;
-    } else if (i == ids.length - 1 && j == listingObj.length - 1 && res != 200) {
+    } else if (i == ids.length && j == listingObj.length && res != 200) {
       updateRes = res;
     } else {
       throw new Error('Error Updating');
