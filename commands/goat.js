@@ -50,7 +50,7 @@ exports.run = async (client, message, args) => {
         } else if (updateRes == 200 && all == true) {
           toReturn = 'All Listing(s) Updated Successfully!';
         } else if (updateRes == 300) {
-          toReturn = 'All Listings Are Already At Their Lowest Asks';
+          toReturn = 'All Listing(s) Are Already Match Their Lowest Asks';
         }
 
         toReturn = '```' + toReturn + '```';
@@ -78,7 +78,7 @@ exports.run = async (client, message, args) => {
     } else if (err.message == 'Unauthorized') {
       message.channel.send('```Command not authorized for message author```');
     } else if (err.message == 'Not exist') {
-      message.channel.send('```Update command has one or more non-existing parameters please run !check again```');
+      message.channel.send('```Update command has one or more non-existing listing ids please run !check again```');
     } else if (err.message == 'Error updating') {
       message.channel.send('```Error updating listing```');
     } else if (err.message == 'Too many parameters') {
@@ -273,50 +273,28 @@ async function update(ids, all) {
     listingObj = await checkListings(listingRes.listing[i], listingObj);
   }
 
-  let res = 0;
-  let i = 0;
-  let j = 0;
+  if (all && listingObj.length == 0) {
+    updateRes = 300;
+  }
 
-  for (i = 0; i < ids.length; i++) {
+  for (let i = 0; i < ids.length; i++) {
     let exist = false;
 
-    for (j = 0; j < listingObj.length; j++) {
-      if (all) {
+    for (let j = 0; j < listingObj.length; j++) {
+      if (listingObj[j].id == ids[i]) {
         exist = true;
+        let res = await updateListing(listingObj[j]);
 
-        let ask = listingObj[j].price_cents;
-
-        let lowestAsk = listingObj[j].product.lowest_price_cents;
-        let lower = false;
-
-        if (parseInt(lowestAsk) < parseInt(ask)) {
-          lower = true;
-        }
-
-        if (lower) {
-          res = await updateListing(listingObj[j]);
+        if (res == 200) {
+          updateRes = res;
+          break;
         } else {
-          res = 300;
-        }
-      } else {
-        if (listingObj[j].id == ids[i]) {
-          exist = true;
-          res = await updateListing(listingObj[j]);
+          throw new Error('Error Updating');
         }
       }
     }
 
-    if (res == 200) {
-      updateRes = res;
-    } else if (res == 300) {
-      continue;
-    } else if (i == ids.length && j == listingObj.length && res != 200) {
-      updateRes = res;
-    } else {
-      throw new Error('Error Updating');
-    }
-
-    if (!exist) {
+    if (!exist && updateRes != 300) {
       throw new Error('Not exist');
     }
   }
