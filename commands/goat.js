@@ -295,6 +295,8 @@ async function update(ids, all) {
 
         if (lower) {
           res = await updateListing(listingObj[j]);
+        } else {
+          res = 300;
         }
       } else {
         if (listingObj[j].id == ids[i]) {
@@ -306,8 +308,10 @@ async function update(ids, all) {
 
     if (res == 200) {
       updateRes = res;
-    } else if (i == ids.length && j == listingObj.length && res != 200) {
-      updateRes = 300;
+    } else if (res == 300) {
+      continue;
+    } else if (i == ids.length - 1 && j == listingObj.length - 1 && res != 200) {
+      updateRes = res;
     } else {
       throw new Error('Error Updating');
     }
