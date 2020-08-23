@@ -35,15 +35,20 @@ exports.run = async (client, message, args) => {
         await login();
 
         let splitArray = query.substring(7).split(' ');
+        let all = false;
 
         if (splitArray[0] == '') {
           throw new Error('Not enough parameters');
+        } else if (splitArray[0] == 'all') {
+          all = true;
         }
 
-        await update(splitArray);
+        await update(splitArray, all);
 
-        if (updateRes == 200) {
+        if (updateRes == 200 && all == false) {
           toReturn = 'Listing(s) Updated Successfully!';
+        } else if (updateRes == 200 && all == true) {
+          toReturn = 'All Listing(s) Updated Successfully!';
         }
 
         toReturn = '```' + toReturn + '```';
@@ -257,7 +262,7 @@ async function noCommand() {
   }
 }
 
-async function update(ids) {
+async function update(ids, all) {
   let listingRes = await getListings();
 
   let listingObj = [];
@@ -266,21 +271,39 @@ async function update(ids) {
     listingObj = await checkListings(listingRes.listing[i], listingObj);
   }
 
+  let res = 0;
+
   for (let i = 0; i < ids.length; i++) {
     let exist = false;
 
     for (let j = 0; j < listingObj.length; j++) {
-      if (listingObj[j].id == ids[i]) {
+      if (all) {
         exist = true;
-        let res = await updateListing(listingObj[j]);
 
-        if (res == 200) {
-          updateRes = res;
-          break;
-        } else {
-          throw new Error('Error Updating');
+        let ask = listingObj[j].price_cents;
+
+        let lowestAsk = listingObj[j].product.lowest_price_cents;
+        let lower = false;
+
+        if (parseInt(lowestAsk) < parseInt(ask)) {
+          lower = true;
+        }
+
+        if (lower) {
+          res = await updateListing(listingObj[j]);
+        }
+      } else {
+        if (listingObj[j].id == ids[i]) {
+          exist = true;
+          res = await updateListing(listingObj[j]);
         }
       }
+    }
+
+    if (res == 200) {
+      updateRes = res;
+    } else {
+      throw new Error('Error Updating');
     }
 
     if (!exist) {
