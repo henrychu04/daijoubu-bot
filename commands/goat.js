@@ -310,13 +310,26 @@ async function update(ids, all) {
 
   if (all && listingObj.length == 0) {
     updateRes = 300;
-  } else {
-    for (let i = 0; i < ids.length; i++) {
-      let exist = false;
+  }
 
-      for (let j = 0; j < listingObj.length; j++) {
-        if (listingObj[j].id == ids[i]) {
-          exist = true;
+  for (let i = 0; i < ids.length; i++) {
+    let exist = false;
+
+    for (let j = 0; j < listingObj.length; j++) {
+      if (listingObj[j].id == ids[i]) {
+        exist = true;
+        let res = await updateListing(listingObj[j]);
+
+        if (res == 200) {
+          updateRes = res;
+          break;
+        } else {
+          throw new Error('Error Updating');
+        }
+      } else if (all) {
+        exist = true;
+
+        if (listingObj[j].price_cents > listingObj[j].product.lowest_price_cents) {
           let res = await updateListing(listingObj[j]);
 
           if (res == 200) {
@@ -327,10 +340,10 @@ async function update(ids, all) {
           }
         }
       }
+    }
 
-      if (!exist && updateRes != 300) {
-        throw new Error('Not exist');
-      }
+    if (!exist && updateRes != 300) {
+      throw new Error('Not exist');
     }
   }
 }
