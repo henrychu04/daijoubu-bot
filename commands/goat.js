@@ -1,13 +1,13 @@
 const fetch = require('node-fetch');
 const Discord = require('discord.js');
+const config = require('../config.json');
 
-let loginToken = '';
+let loginToken = config.goatLogin;
 let checkRes = 0;
 let updateRes = 0;
 let listingRes = 0;
 
 exports.run = async (client, message, args) => {
-  loginToken = client.config.goatLogin;
   try {
     const query = message.content.slice(6);
 
@@ -343,20 +343,6 @@ async function update(ids, all) {
       throw new Error('Not exist');
     }
   }
-}
-
-async function login() {
-  let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
-    method: 'POST',
-    headers: {
-      'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
-    },
-    body: '{"grantType":"password","username":"henrychu04@outlook.com","password":"#Eu2u5sOOx7v"}',
-  }).then((res) => {
-    return res.json();
-  });
-
-  loginToken = loginRes.auth_token.access_token;
 }
 
 async function getListings() {

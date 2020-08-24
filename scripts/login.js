@@ -1,8 +1,11 @@
+const fs = require('fs');
 const fetch = require('node-fetch');
 
-module.exports = async function login(client) {
+module.exports = async function login() {
   return new Promise(async (resolve) => {
     while (true) {
+      let edited = false;
+
       let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
         method: 'POST',
         headers: {
@@ -15,9 +18,20 @@ module.exports = async function login(client) {
 
       let loginToken = loginRes.auth_token.access_token;
 
-      client.config.loginToken = loginToken;
+      fs.readFile('config.json', (err, data) => {
+        if (err) throw err;
+        let file = JSON.parse(data);
+        file.goatLogin = loginToken;
 
-      if (client.config.loginToken != '') {
+        let newFile = JSON.stringify(file, null, 2);
+
+        fs.writeFile('config.json', newFile, (err) => {
+          if (err) throw err;
+          edited = true;
+        });
+      });
+
+      if (edited) {
         resolve();
         break;
       }
