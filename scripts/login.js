@@ -5,7 +5,6 @@ module.exports = async function login() {
   let goatRes = 0;
 
   while (goatRes != 200) {
-    console.log('here');
     let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
       method: 'POST',
       headers: {
