@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const Enmap = require('enmap');
 const fs = require('fs');
+const login = require('./scripts/login');
 
 const client = new Discord.Client();
 const config = require('./config.json');
@@ -27,8 +28,9 @@ fs.readdir('./commands/', (err, files) => {
   });
 });
 
-client.on('ready', () => {
+client.on('ready', async () => {
+  await login(client).then(console.log('Logged into GOAT'));
   client.user.setActivity('!help for more info');
 });
 
-client.login(client.config.botToken).then(console.log('Ready!'));
+client.login(client.config.botToken).then().then(console.log('Ready!'));

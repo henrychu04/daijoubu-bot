@@ -7,6 +7,7 @@ let updateRes = 0;
 let listingRes = 0;
 
 exports.run = async (client, message, args) => {
+  loginToken = client.config.goatLogin;
   try {
     const query = message.content.slice(6);
 
@@ -18,8 +19,6 @@ exports.run = async (client, message, args) => {
 
     if (query.substring(0, 5) == 'check') {
       if (message.author.id == '504000540804382741') {
-        await login();
-
         const checkQuery = message.content.slice(11);
 
         if (checkQuery.length == 0) {
@@ -40,8 +39,6 @@ exports.run = async (client, message, args) => {
       }
     } else if (query.substring(0, 6) == 'update') {
       if (message.author.id == '504000540804382741') {
-        await login();
-
         let splitArray = query.substring(7).split(' ');
         let all = false;
 
