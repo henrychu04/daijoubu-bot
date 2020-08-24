@@ -15,6 +15,7 @@ fs.readFile('config.json', (err, data) => {
 
 exports.run = async (client, message, args) => {
   try {
+    console.log(loginToken);
     const query = message.content.slice(6);
 
     if (query.length == 0) {
