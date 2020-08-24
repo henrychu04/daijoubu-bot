@@ -64,8 +64,6 @@ exports.run = async (client, message, args) => {
       }
     } else if (query.substring(0, 8) == 'listings') {
       if (message.author.id == '504000540804382741') {
-        await login();
-
         let splitArray = query.substring(9).split(' ');
 
         if (splitArray[0] != '') {
