@@ -1,11 +1,17 @@
 const fetch = require('node-fetch');
 const Discord = require('discord.js');
-const config = require('../config.json');
+const fs = require('fs');
 
-let loginToken = config.goatLogin;
+let loginToken = '';
 let checkRes = 0;
 let updateRes = 0;
 let listingRes = 0;
+
+fs.readFile('config.json', (err, data) => {
+  if (err) throw err;
+  let file = JSON.parse(data);
+  loginToken = file.goatLogin;
+});
 
 exports.run = async (client, message, args) => {
   try {
