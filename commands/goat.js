@@ -1,21 +1,14 @@
 const fetch = require('node-fetch');
 const Discord = require('discord.js');
-const fs = require('fs');
+const Login = require('../models/login');
+const encryption = require('../scripts/encryption');
 
-let loginToken = '';
 let checkRes = 0;
 let updateRes = 0;
 let listingRes = 0;
 
-fs.readFile('config.json', (err, data) => {
-  if (err) throw err;
-  let file = JSON.parse(data);
-  loginToken = file.goatLogin;
-});
-
 exports.run = async (client, message, args) => {
   try {
-    console.log(loginToken);
     const query = message.content.slice(6);
 
     if (query.length == 0) {
@@ -117,6 +110,8 @@ exports.run = async (client, message, args) => {
       message.channel.send('```Command has too many parameters```');
     } else if (err.message == 'Not enough parameters') {
       message.channel.send('```Command does not have enough parameters```');
+    } else if (err.message == 'Login expired') {
+      message.channel.send('```Login expired```');
     } else {
       message.channel.send('```Unexpected Error```');
     }
@@ -351,14 +346,25 @@ async function update(ids, all) {
 }
 
 async function getListings() {
+  let loginToken = await Login.find();
+
   let listingRes = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
     headers: {
       'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
-      authorization: `Bearer ${loginToken}`,
+      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
-  }).then((res) => {
-    return res.json();
-  });
+  })
+    .then((res) => {
+      return res.json();
+    })
+    .catch((err) => {
+      if (
+        err.message ==
+        'invalid json response body at https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1 reason: Unexpected end of JSON input'
+      ) {
+        throw new Error('Login expired');
+      }
+    });
 
   return listingRes;
 }
@@ -386,18 +392,29 @@ async function checkListings(obj, listingObj) {
 }
 
 async function updateListing(obj) {
+  let loginToken = await Login.find();
+
   obj.price_cents = obj.product.lowest_price_cents;
 
   let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${obj.id}`, {
     method: 'PUT',
     headers: {
       'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
-      authorization: `Bearer ${loginToken}`,
+      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `{"listing":${JSON.stringify(obj)}}`,
-  }).then((res) => {
-    return res.status;
-  });
+  })
+    .then((res) => {
+      return res.status;
+    })
+    .catch((err) => {
+      if (
+        err.message.includes('invalid json response body at') &&
+        err.message.includes('Unexpected end of JSON input')
+      ) {
+        throw new Error('Login expired');
+      }
+    });
 
   return updateRes;
 }

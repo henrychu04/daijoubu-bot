@@ -1,44 +1,96 @@
-const fs = require('fs');
 const fetch = require('node-fetch');
+const encryption = require('./encryption');
+require('dotenv').config();
+
+const PW = process.env.PW;
+
+const Login = require('../models/login');
 
 module.exports = async function login() {
-  return new Promise(async (resolve) => {
-    let goatRes = 0;
+  try {
+    initialLogin();
 
-    while (goatRes != 200) {
-      let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
-        method: 'POST',
-        headers: {
-          'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
-        },
-        body: '{"grantType":"password","username":"henrychu04@outlook.com","password":"#Eu2u5sOOx7v"}',
+    setInterval(loggingIn, 3600000);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+async function initialLogin() {
+  let goatRes = 0;
+
+  while (goatRes != 200) {
+    let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
+      method: 'POST',
+      headers: {
+        'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      },
+      body: `{"grantType":"password","username":"henrychu04@outlook.com","password":"${PW}"}`,
+    })
+      .then((res) => {
+        goatRes = res.status;
+        return res.json();
       })
-        .then((res) => {
-          goatRes = res.status;
-          return res.json();
-        })
+      .catch((err) => {
+        console.log(err);
+      });
+
+    let loginToken = encryption.encrypt(loginRes.auth_token.access_token);
+
+    let crntLogin = await Login.find();
+
+    if (crntLogin.length != 0) {
+      crntLogin[0]
+        .overwrite({ login: loginToken })
+        .save()
+        .then(console.log('Initial GOAT Login Successfully Updated'))
         .catch((err) => {
           console.log(err);
         });
-
-      let loginToken = loginRes.auth_token.access_token;
-
-      fs.readFile('config.json', (err, data) => {
-        if (err) throw err;
-        let file = JSON.parse(data);
-        file.goatLogin = loginToken;
-
-        let newFile = JSON.stringify(file, null, 2);
-
-        fs.writeFile('config.json', newFile, (err) => {
-          if (err) throw err;
-        });
+    } else {
+      const login = new Login({
+        login: loginToken,
       });
 
-      if (goatRes == 200) {
-        resolve();
-        break;
-      }
+      login
+        .save()
+        .then(console.log('Initial GOAT Login Successfully Updated'))
+        .catch((err) => {
+          console.log(err);
+        });
     }
-  });
-};
+  }
+}
+
+async function loggingIn() {
+  let goatRes = 0;
+
+  while (goatRes != 200) {
+    let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
+      method: 'POST',
+      headers: {
+        'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      },
+      body: `{"grantType":"password","username":"henrychu04@outlook.com","password":"${PW}"}`,
+    })
+      .then((res) => {
+        goatRes = res.status;
+        return res.json();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+
+    let loginToken = encryption.encrypt(loginRes.auth_token.access_token);
+
+    let crntLogins = await Login.find();
+
+    crntLogins[0]
+      .overwrite({ login: loginToken })
+      .save()
+      .then(console.log('GOAT Login Successfully Updated'))
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+}
