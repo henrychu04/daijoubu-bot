@@ -15,7 +15,7 @@ exports.run = async (client, message, args) => {
       throw new Error('Empty command');
     }
 
-    let toReturn;
+    let toReturn = '';
     let split = query.split(' ');
 
     switch (split[0]) {
@@ -299,14 +299,12 @@ async function update(ids, all) {
 
   if (all && listingObj.length == 0) {
     updateRes = 300;
+    return;
   }
 
-  for (let i = 0; i < ids.length; i++) {
-    let exist = false;
-
+  if (all) {
     for (let j = 0; j < listingObj.length; j++) {
-      if (listingObj[j].id == ids[i]) {
-        exist = true;
+      if (listingObj[j].price_cents > listingObj[j].product.lowest_price_cents) {
         let res = await updateListing(listingObj[j]);
 
         if (res == 200) {
@@ -315,10 +313,15 @@ async function update(ids, all) {
         } else {
           throw new Error('Error Updating');
         }
-      } else if (all) {
-        exist = true;
+      }
+    }
+  } else {
+    for (let i = 0; i < ids.length; i++) {
+      let exist = false;
 
-        if (listingObj[j].price_cents > listingObj[j].product.lowest_price_cents) {
+      for (let j = 0; j < listingObj.length; j++) {
+        if (listingObj[j].id == ids[i]) {
+          exist = true;
           let res = await updateListing(listingObj[j]);
 
           if (res == 200) {
@@ -329,10 +332,10 @@ async function update(ids, all) {
           }
         }
       }
-    }
 
-    if (!exist && updateRes != 300) {
-      throw new Error('Not exist');
+      if (!exist && updateRes != 300) {
+        throw new Error('Not exist');
+      }
     }
   }
 }
