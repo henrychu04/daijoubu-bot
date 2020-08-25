@@ -412,7 +412,7 @@ async function updateListing(obj) {
 }
 
 function allListings(listings) {
-  let listingString;
+  let listingString = '';
 
   if (listings.listing.length != 0) {
     listings.listing.forEach((obj, i) => {
