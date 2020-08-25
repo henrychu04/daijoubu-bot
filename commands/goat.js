@@ -15,13 +15,12 @@ exports.run = async (client, message, args) => {
       throw new Error('Empty command');
     }
 
-    let toReturn = '';
+    let toReturn;
+    let split = query.split(' ');
 
-    if (query.substring(0, 5) == 'check') {
-      if (message.author.id == '504000540804382741') {
-        const checkQuery = message.content.slice(11);
-
-        if (checkQuery.length == 0) {
+    switch (split[0]) {
+      case 'check':
+        if (!split[1]) {
           toReturn = await noCommand(client);
         } else {
           throw new Error('Too many parameters');
@@ -34,39 +33,34 @@ exports.run = async (client, message, args) => {
         } else if (checkRes == 404) {
           toReturn = '```No Items Are Listed on Account```';
         }
-      } else {
-        throw new Error('Unauthorized');
-      }
-    } else if (query.substring(0, 6) == 'update') {
-      if (message.author.id == '504000540804382741') {
-        let splitArray = query.substring(7).split(' ');
+        break;
+      case 'update':
         let all = false;
 
-        if (splitArray[0] == '') {
+        if (!split[1]) {
           throw new Error('Not enough parameters');
-        } else if (splitArray[0] == 'all') {
+        } else if (split[1] == 'all') {
           all = true;
+          split.shift();
+          split.shift();
+        } else {
+          split.shift();
         }
 
-        await update(splitArray, all);
+        await update(split, all);
 
         if (updateRes == 200 && all == false) {
-          toReturn = 'Listing(s) Updated Successfully!';
+          toReturn = '```Listing(s) Updated Successfully!```';
         } else if (updateRes == 200 && all == true) {
-          toReturn = 'All Listing(s) Updated Successfully!';
+          toReturn = '```All Listing(s) Updated Successfully!```';
         } else if (updateRes == 300) {
-          toReturn = 'All Listing(s) Already Match Their Lowest Asks';
+          toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
         }
+        break;
+      case 'listings':
+        const checkQuery = split[1];
 
-        toReturn = '```' + toReturn + '```';
-      } else {
-        throw new Error('Unauthorized');
-      }
-    } else if (query.substring(0, 8) == 'listings') {
-      if (message.author.id == '504000540804382741') {
-        let splitArray = query.substring(9).split(' ');
-
-        if (splitArray[0] != '') {
+        if (checkQuery) {
           throw new Error('Too many parameters');
         }
 
@@ -79,11 +73,9 @@ exports.run = async (client, message, args) => {
         } else if ((listingRes = 404)) {
           toReturn = '```No Items Are Listed on Account```';
         }
-      } else {
-        throw new Error('Unauthorized');
-      }
-    } else {
-      toReturn = await goatSearch(client, query);
+        break;
+      default:
+        toReturn = await goatSearch(client, query);
     }
 
     message.channel
@@ -138,7 +130,7 @@ async function goatSearch(client, query) {
   let category = res.product_category;
   let name = res.name;
   let productURL = 'https://www.goat.com/sneakers/' + res.slug;
-  let description = '';
+  let description;
   if (res.story_html != null) {
     description = res.story_html;
     description = description.replace('<p>', '');
@@ -192,9 +184,9 @@ async function goatSearch(client, query) {
     return res.json();
   });
 
-  let lowestPrice = '';
-  let highestBid = '';
-  let lastSold = '';
+  let lowestPrice;
+  let highestBid;
+  let lastSold;
   let averageLowestPrice = 0;
   let averageHighestBid = 0;
   let averageLastSold = 0;
@@ -282,12 +274,12 @@ async function noCommand() {
     if (listingObj.length == 0) {
       checkRes = 300;
     } else {
-      let newLowestAsksString = '';
+      let newLowestAsksString;
 
       listingObj.forEach((obj, i) => {
-        newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.value} ${obj.price_cents / 100} => ${
-          obj.product.lowest_price_cents / 100
-        }\n\tid: ${obj.id}\n`;
+        newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
+          obj.price_cents / 100
+        } => ${obj.product.lowest_price_cents / 100}\n\tid: ${obj.id}\n`;
       });
 
       checkRes = 200;
@@ -420,13 +412,13 @@ async function updateListing(obj) {
 }
 
 function allListings(listings) {
-  let listingString = '';
+  let listingString;
 
   if (listings.listing.length != 0) {
     listings.listing.forEach((obj, i) => {
-      listingString += `${i}. ${obj.product.name} - ${obj.size_option.value} ${obj.price_cents / 100}\n\tid: ${
-        obj.id
-      }\n`;
+      listingString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
+        obj.price_cents / 100
+      }\n\tid: ${obj.id}\n`;
     });
   } else {
     listingRes = 404;
