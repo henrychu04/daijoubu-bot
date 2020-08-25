@@ -274,7 +274,7 @@ async function noCommand() {
     if (listingObj.length == 0) {
       checkRes = 300;
     } else {
-      let newLowestAsksString;
+      let newLowestAsksString = '';
 
       listingObj.forEach((obj, i) => {
         newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
