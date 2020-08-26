@@ -184,9 +184,9 @@ async function goatSearch(client, query) {
     return res.json();
   });
 
-  let lowestPrice;
-  let highestBid;
-  let lastSold;
+  let lowestPrice = '';
+  let highestBid = '';
+  let lastSold = '';
   let averageLowestPrice = 0;
   let averageHighestBid = 0;
   let averageLastSold = 0;
