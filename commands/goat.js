@@ -130,7 +130,7 @@ async function goatSearch(client, query) {
   let category = res.product_category;
   let name = res.name;
   let productURL = 'https://www.goat.com/sneakers/' + res.slug;
-  let description;
+  let description = '';
   if (res.story_html != null) {
     description = res.story_html;
     description = description.replace('<p>', '');
