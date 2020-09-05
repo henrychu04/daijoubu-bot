@@ -342,7 +342,7 @@ async function update(ids, all) {
       for (let j = 0; j < listingObj.length; j++) {
         if (listingObj[j].id == ids[i]) {
           exist = true;
-          updatees = await updateListing(listingObj[j], loginToken);
+          updateRes = await updateListing(listingObj[j], loginToken);
         }
       }
 
