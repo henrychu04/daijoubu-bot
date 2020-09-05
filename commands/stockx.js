@@ -187,13 +187,13 @@ exports.run = async (client, message, args) => {
       { name: 'Average Sale Price', value: averageDeadstockPrice, inline: true },
       { name: '\u200b', value: '\u200b', inline: true },
       { name: '\u200b', value: '\u200b', inline: true },
-      { name: 'Lowest Asks', value: `Average: ${averageLowestPrice}` + '```' + lowestPrice + '```', inline: true },
+      { name: 'Lowest Asks', value: `Average: $${averageLowestPrice}` + '```' + lowestPrice + '```', inline: true },
       {
         name: 'Highest Bids',
-        value: `Average: ${averageHighestBid}` + '```' + highestBid + '```',
+        value: `Average: $${averageHighestBid}` + '```' + highestBid + '```',
         inline: true,
       },
-      { name: 'Last Sold', value: `Average: ${averageLastSold}` + '```' + lastSold + '```', inline: true }
+      { name: 'Last Sold', value: `Average: $${averageLastSold}` + '```' + lastSold + '```', inline: true }
     );
 
     message.channel

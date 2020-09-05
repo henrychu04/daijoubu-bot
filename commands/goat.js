@@ -265,7 +265,7 @@ async function goatSearch(client, query) {
         value: `Average: $${averageHighestBid}` + '```' + highestBid + '```',
         inline: true,
       },
-      { name: 'Last Sold', value: `Average: ${averageLastSold}` + '```' + lastSold + '```', inline: true }
+      { name: 'Last Sold', value: `Average: $${averageLastSold}` + '```' + lastSold + '```', inline: true }
     );
 
   return embed;
