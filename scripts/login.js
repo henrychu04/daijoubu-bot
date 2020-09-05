@@ -8,7 +8,7 @@ const Login = require('../models/login');
 
 module.exports = async function login() {
   try {
-    initialLogin();
+    await initialLogin();
 
     setInterval(loggingIn, 3600000);
   } catch (err) {
