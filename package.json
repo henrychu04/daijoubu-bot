@@ -16,14 +16,16 @@
     "node-fetch": "^2.6.0",
     "url": "^0.11.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "nodemon index.js"
   },
   "author": "Henry Chu",
   "license": "MIT",
   "engines": {
     "node": "12.16.1"
-  },
-  "heroku-run-build-script": true
+  }
 }

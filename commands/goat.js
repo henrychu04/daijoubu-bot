@@ -3,9 +3,7 @@ const Discord = require('discord.js');
 const Login = require('../models/login');
 const encryption = require('../scripts/encryption');
 
-let checkRes = 0;
-let updateRes = 0;
-let listingRes = 0;
+let tempRes = 0;
 
 exports.run = async (client, message, args) => {
   try {
@@ -20,25 +18,25 @@ exports.run = async (client, message, args) => {
 
     switch (split[0]) {
       case 'check':
-        if (!split[1]) {
+        if (split.length < 2) {
           toReturn = await noCommand(client);
         } else {
           throw new Error('Too many parameters');
         }
 
-        if (checkRes == 300) {
+        if (tempRes == 300) {
           toReturn = '```All Listings Match Their Lowest Asks```';
-        } else if (checkRes == 200) {
+        } else if (tempRes == 200) {
           toReturn = '```' + toReturn + '```';
-        } else if (checkRes == 404) {
+        } else if (tempRes == 404) {
           toReturn = '```No Items Are Listed on Account```';
         }
         break;
       case 'update':
         let all = false;
 
-        if (!split[1]) {
-          throw new Error('Not enough parameters');
+        if (split.length < 2) {
+          throw new Error('Too little parameters');
         } else if (split[1] == 'all') {
           all = true;
           split.shift();
@@ -49,18 +47,16 @@ exports.run = async (client, message, args) => {
 
         await update(split, all);
 
-        if (updateRes == 200 && all == false) {
+        if (tempRes == 200 && all == false) {
           toReturn = '```Listing(s) Updated Successfully!```';
-        } else if (updateRes == 200 && all == true) {
+        } else if (tempRes == 200 && all == true) {
           toReturn = '```All Listing(s) Updated Successfully!```';
-        } else if (updateRes == 300) {
+        } else if (tempRes == 300) {
           toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
         }
         break;
       case 'listings':
-        const checkQuery = split[1];
-
-        if (checkQuery) {
+        if (split.length > 1) {
           throw new Error('Too many parameters');
         }
 
@@ -68,14 +64,29 @@ exports.run = async (client, message, args) => {
 
         toReturn = allListings(listings);
 
-        if (listingRes == 200) {
+        if (tempRes == 200) {
           toReturn = '```' + toReturn + '```';
-        } else if ((listingRes = 404)) {
+        } else if ((tempRes = 404)) {
           toReturn = '```No Items Are Listed on Account```';
         }
         break;
+      case 'delete':
+        if (split.length < 2) {
+          throw new Error('Too little parameters');
+        } else {
+          split.shift();
+        }
+
+        await deleteSearch(split);
+
+        if (tempRes == 200) {
+          toReturn = '```Specifided Listing(s) Have Been Deleted```';
+        }
+
+        break;
       default:
         toReturn = await goatSearch(client, query);
+        break;
     }
 
     message.channel
@@ -95,13 +106,15 @@ exports.run = async (client, message, args) => {
     } else if (err.message == 'Unauthorized') {
       message.channel.send('```Command not authorized for message author```');
     } else if (err.message == 'Not exist') {
-      message.channel.send('```Update command has one or more non-existing listing ids please run !check again```');
+      message.channel.send('```Update command has one or more non-existing listing ids```');
     } else if (err.message == 'Error updating') {
-      message.channel.send('```Error updating listing```');
+      message.channel.send('```Error updating listing(s)```');
     } else if (err.message == 'Too many parameters') {
       message.channel.send('```Command has too many parameters```');
-    } else if (err.message == 'Not enough parameters') {
-      message.channel.send('```Command does not have enough parameters```');
+    } else if (err.message == 'Too little parameters') {
+      message.channel.send('```Command has too little parameters```');
+    } else if (err.message == 'Error deleting') {
+      message.channel.send('```Error deleting listing(s)```');
     } else if (err.message == 'Login expired') {
       message.channel.send('```Login expired```');
     } else {
@@ -275,7 +288,7 @@ async function noCommand() {
   let listings = await getListings();
 
   if (listings.listing.length == 0) {
-    checkRes = 404;
+    tempRes = 404;
   } else {
     let listingObj = [];
 
@@ -284,7 +297,7 @@ async function noCommand() {
     }
 
     if (listingObj.length == 0) {
-      checkRes = 300;
+      tempRes = 300;
     } else {
       let newLowestAsksString = '';
 
@@ -294,68 +307,60 @@ async function noCommand() {
         } => ${obj.product.lowest_price_cents / 100}\n\tid: ${obj.id}\n`;
       });
 
-      checkRes = 200;
+      tempRes = 200;
       return newLowestAsksString;
     }
   }
 }
 
 async function update(ids, all) {
-  let listingRes = await getListings();
+  let loginToken = await Login.find();
+  let listings = await getListings();
 
   let listingObj = [];
 
-  for (let i = 0; i < listingRes.listing.length; i++) {
-    listingObj = await checkListings(listingRes.listing[i], listingObj);
+  for (let i = 0; i < listings.listing.length; i++) {
+    listingObj = await checkListings(listings.listing[i], listingObj);
   }
 
   if (all && listingObj.length == 0) {
-    updateRes = 300;
+    tempRes = 300;
     return;
   }
+
+  let updateRes = 0;
 
   if (all) {
     for (let j = 0; j < listingObj.length; j++) {
       if (listingObj[j].price_cents > listingObj[j].product.lowest_price_cents) {
-        let res = await updateListing(listingObj[j]);
-
-        if (res == 200) {
-          updateRes = res;
-          break;
-        } else {
-          throw new Error('Error Updating');
-        }
+        updateRes = await updateListing(listingObj[j], loginToken);
       }
     }
   } else {
+    let exist = false;
     for (let i = 0; i < ids.length; i++) {
-      let exist = false;
-
       for (let j = 0; j < listingObj.length; j++) {
         if (listingObj[j].id == ids[i]) {
           exist = true;
-          let res = await updateListing(listingObj[j]);
-
-          if (res == 200) {
-            updateRes = res;
-            break;
-          } else {
-            throw new Error('Error Updating');
-          }
+          updatees = await updateListing(listingObj[j], loginToken);
         }
       }
 
-      if (!exist && updateRes != 300) {
+      if (!exist) {
         throw new Error('Not exist');
       }
     }
+  }
+
+  if (updateRes == 200) {
+    tempRes = 200;
   }
 }
 
 async function getListings() {
   let loginToken = await Login.find();
 
-  let listingRes = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
+  let listings = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
     headers: {
       'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
@@ -373,10 +378,10 @@ async function getListings() {
       }
     });
 
-  return listingRes;
+  return listings;
 }
 
-async function checkListings(obj, listingObj) {
+function checkListings(obj, listingObj) {
   if (!obj.is_consigned) {
     let ask = obj.price_cents;
 
@@ -395,9 +400,7 @@ async function checkListings(obj, listingObj) {
   return listingObj;
 }
 
-async function updateListing(obj) {
-  let loginToken = await Login.find();
-
+async function updateListing(obj, loginToken) {
   obj.price_cents = obj.product.lowest_price_cents;
 
   let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${obj.id}`, {
@@ -420,6 +423,10 @@ async function updateListing(obj) {
       }
     });
 
+  if (updateRes != 200) {
+    throw new Error('Error Updating');
+  }
+
   return updateRes;
 }
 
@@ -433,9 +440,72 @@ function allListings(listings) {
       }\n\tid: ${obj.id}\n`;
     });
   } else {
-    listingRes = 404;
+    tempRes = 404;
   }
 
-  listingRes = 200;
+  tempRes = 200;
   return listingString;
+}
+
+async function deleteSearch(split) {
+  let listings = await getListings();
+  let loginToken = await Login.find();
+  let exist = false;
+  let deleteRes = 0;
+
+  for (let i = 0; i < listings.listing.length; i++) {
+    for (let j = 0; j < split.length; j++) {
+      if (listings.listing[i].id == split[j]) {
+        exist = true;
+        deleteRes = await deletion(split[j], loginToken);
+      }
+    }
+
+    if (!exist) {
+      throw new Error('Not exist');
+    }
+  }
+
+  if (deleteRes == 200) {
+    tempRes = 200;
+  }
+}
+
+async function deletion(listingId, loginToken) {
+  let deactivateRes = 0;
+  let cancelRes = 0;
+
+  deactivateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingId}/deactivate`, {
+    method: 'PUT',
+    headers: {
+      'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+    },
+    body: `{"id":"${listingId}"}`,
+  }).then((res) => {
+    return res.status;
+  });
+
+  if (deactivateRes == 200) {
+    cancelRes = await fetch(` https://sell-api.goat.com/api/v1/listings/${listingId}/cancel`, {
+      method: 'PUT',
+      headers: {
+        'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+        authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+      },
+      body: `{"id":"${listingId}"}`,
+    })
+      .then((res) => {
+        return res.status;
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+
+  if (deactivateRes != 200 && cancelRes != 200) {
+    throw new Error('Error deleting');
+  } else if (deactivateRes == 200 && cancelRes == 200) {
+    return 200;
+  }
 }
