@@ -377,10 +377,7 @@ async function getListings() {
 }
 
 async function checkListings(obj, listingObj) {
-  if (
-    obj.id != 'air-jordan-1-retro-high-og-bloodline-f7ce71bc-875b-4cd2-9ba7-571ebb758c92' &&
-    obj.id != 'air-jordan-1-mid-gs-chicago-black-toe-8dd9b928-07ca-487c-960b-37fcec82cbe9'
-  ) {
+  if (!obj.is_consigned) {
     let ask = obj.price_cents;
 
     let lowestAsk = obj.product.lowest_price_cents;
