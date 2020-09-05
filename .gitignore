@@ -1,4 +1,5 @@
 /node_modules
 discord-bot-tools.code-workspace
 /commands/stockxData.js
+/commands/track.js
 .env
