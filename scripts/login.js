@@ -88,7 +88,6 @@ async function loggingIn() {
     crntLogins[0]
       .overwrite({ login: loginToken })
       .save()
-      .then(console.log('GOAT Login Successfully Updated'))
       .catch((err) => {
         console.log(err);
       });
