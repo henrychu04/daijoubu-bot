@@ -13,17 +13,16 @@ exports.run = async (client, message, args) => {
   try {
     const query = message.content.slice(6);
 
-    if (query.length == 0) {
+    if (args.length == 0) {
       throw new Error('Empty command');
     }
 
     let toReturn = '';
-    let split = query.split(' ');
     let returnedEnum = null;
 
-    switch (split[0]) {
+    switch (args[0]) {
       case 'check':
-        if (split.length < 2) {
+        if (args.length < 2) {
           [toReturn, returnedEnum] = await noCommand(client);
         } else {
           throw new Error('Too many parameters');
@@ -40,17 +39,17 @@ exports.run = async (client, message, args) => {
       case 'update':
         let all = false;
 
-        if (split.length < 2) {
+        if (args.length < 2) {
           throw new Error('Too little parameters');
-        } else if (split[1] == 'all') {
+        } else if (args[1] == 'all') {
           all = true;
-          split.shift();
-          split.shift();
+          args.shift();
+          args.shift();
         } else {
-          split.shift();
+          args.shift();
         }
 
-        returnedEnum = await update(split, all);
+        returnedEnum = await update(args, all);
 
         if (returnedEnum == response.SUCCESS && !all) {
           toReturn = '```Listing(s) Updated Successfully!```';
@@ -63,7 +62,7 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'listings':
-        if (split.length > 1) {
+        if (args.length > 1) {
           throw new Error('Too many parameters');
         }
 
@@ -78,13 +77,13 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'delete':
-        if (split.length < 2) {
+        if (args.length < 2) {
           throw new Error('Too little parameters');
         } else {
-          split.shift();
+          args.shift();
         }
 
-        returnedEnum = await deleteSearch(split);
+        returnedEnum = await deleteSearch(args);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```Specifided Listing(s) Have Been Deleted```';
@@ -453,17 +452,17 @@ function allListings(listings) {
   return [listingString, response.SUCCESS];
 }
 
-async function deleteSearch(split) {
+async function deleteSearch(args) {
   let listings = await getListings();
   let loginToken = await Login.find();
   let exist = false;
   let deleteRes = 0;
 
   for (let i = 0; i < listings.listing.length; i++) {
-    for (let j = 0; j < split.length; j++) {
-      if (listings.listing[i].id == split[j]) {
+    for (let j = 0; j < args.length; j++) {
+      if (listings.listing[i].id == args[j]) {
         exist = true;
-        deleteRes = await deletion(split[j], loginToken);
+        deleteRes = await deletion(args[j], loginToken);
       }
     }
 

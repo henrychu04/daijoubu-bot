@@ -2,17 +2,17 @@ const Money = require('js-money');
 
 exports.run = async (client, message, args) => {
   try {
-    let command = message.content.slice(5);
-
-    if (command.length == 0) {
-      throw new Error('Empty command'); 
+    if (args.length == 0) {
+      throw new Error('Empty command');
+    } else if (args.length > 1) {
+      throw new Error('Too many args');
     }
 
-    if (isNaN(command)) {
+    if (isNaN(args[0])) {
       throw new Error('Enter num');
     }
 
-    let num = Money.fromDecimal(parseInt(command), 'USD');
+    let num = Money.fromDecimal(parseInt(args[0]), 'USD');
 
     let StockXFee1 = num.multiply(0.095);
     let StockXFee2 = num.multiply(0.09, Math.ceil);
@@ -89,6 +89,8 @@ exports.run = async (client, message, args) => {
       message.channel.send('```Command is missing valid fee```');
     } else if (err.message == 'Enter num') {
       message.channel.send('```Invalid command enter a valid number```');
+    } else if (err.message == 'Too many args') {
+      message.channel.send('```Command has too many arguments```');
     } else {
       message.channel.send('```Unexpected Error```');
     }
