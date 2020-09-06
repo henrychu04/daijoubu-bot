@@ -47,7 +47,7 @@ exports.run = async (client, message, args) => {
     let colorway = 'N/A';
     let price = 'NA';
     let date = 'N/A';
-    let parsedDate = '';
+    let parsedDate = 'N/A';
 
     if (product.traits[0].name == 'Season') {
       for (trait of product.traits) {

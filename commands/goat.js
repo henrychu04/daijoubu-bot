@@ -3,8 +3,6 @@ const Discord = require('discord.js');
 const Login = require('../models/login');
 const encryption = require('../scripts/encryption');
 
-let tempRes = 0;
-
 const response = {
   SUCCESS: 'success',
   NO_ITEMS: 'no_items',
@@ -21,7 +19,7 @@ exports.run = async (client, message, args) => {
 
     let toReturn = '';
     let split = query.split(' ');
-    let returnedEnum = '';
+    let returnedEnum = null;
 
     switch (split[0]) {
       case 'check':
