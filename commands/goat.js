@@ -5,6 +5,12 @@ const encryption = require('../scripts/encryption');
 
 let tempRes = 0;
 
+const response = {
+  SUCCESS: 'success',
+  NO_ITEMS: 'no_items',
+  NO_CHANGE: 'no_change',
+};
+
 exports.run = async (client, message, args) => {
   try {
     const query = message.content.slice(6);
@@ -15,21 +21,22 @@ exports.run = async (client, message, args) => {
 
     let toReturn = '';
     let split = query.split(' ');
+    let returnedEnum = '';
 
     switch (split[0]) {
       case 'check':
         if (split.length < 2) {
-          toReturn = await noCommand(client);
+          [toReturn, returnedEnum] = await noCommand(client);
         } else {
           throw new Error('Too many parameters');
         }
 
-        if (tempRes == 300) {
+        if (returnedEnum == response.NO_CHANGE) {
           toReturn = '```All Listings Match Their Lowest Asks```';
-        } else if (tempRes == 200) {
-          toReturn = '```' + toReturn + '```';
-        } else if (tempRes == 404) {
+        } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```No Items Are Listed on Account```';
+        } else {
+          toReturn = '```' + toReturn + '```';
         }
         break;
       case 'update':
@@ -45,14 +52,16 @@ exports.run = async (client, message, args) => {
           split.shift();
         }
 
-        await update(split, all);
+        returnedEnum = await update(split, all);
 
-        if (tempRes == 200 && all == false) {
+        if (returnedEnum == response.SUCCESS && !all) {
           toReturn = '```Listing(s) Updated Successfully!```';
-        } else if (tempRes == 200 && all == true) {
+        } else if (returnedEnum == response.SUCCESS && all) {
           toReturn = '```All Listing(s) Updated Successfully!```';
-        } else if (tempRes == 300) {
+        } else if (returnedEnum == response.NO_CHANGE) {
           toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
+        } else if (returnedEnum == response.NO_ITEMS) {
+          toReturn = '```No Items Are Listed on Account```';
         }
         break;
       case 'listings':
@@ -62,11 +71,11 @@ exports.run = async (client, message, args) => {
 
         let listings = await getListings();
 
-        toReturn = allListings(listings);
+        [toReturn, returnedEnum] = allListings(listings);
 
-        if (tempRes == 200) {
+        if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + toReturn + '```';
-        } else if ((tempRes = 404)) {
+        } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```No Items Are Listed on Account```';
         }
         break;
@@ -77,12 +86,11 @@ exports.run = async (client, message, args) => {
           split.shift();
         }
 
-        await deleteSearch(split);
+        returnedEnum = await deleteSearch(split);
 
-        if (tempRes == 200) {
+        if (returnedEnum == response.SUCCESS) {
           toReturn = '```Specifided Listing(s) Have Been Deleted```';
         }
-
         break;
       default:
         toReturn = await goatSearch(client, query);
@@ -288,7 +296,7 @@ async function noCommand() {
   let listings = await getListings();
 
   if (listings.listing.length == 0) {
-    tempRes = 404;
+    return ['', response.NO_ITEMS];
   } else {
     let listingObj = [];
 
@@ -297,7 +305,7 @@ async function noCommand() {
     }
 
     if (listingObj.length == 0) {
-      tempRes = 300;
+      return ['', response.NO_CHANGE];
     } else {
       let newLowestAsksString = '';
 
@@ -308,7 +316,7 @@ async function noCommand() {
       });
 
       tempRes = 200;
-      return newLowestAsksString;
+      return [newLowestAsksString, response.SUCCESS];
     }
   }
 }
@@ -324,8 +332,9 @@ async function update(ids, all) {
   }
 
   if (all && listingObj.length == 0) {
-    tempRes = 300;
-    return;
+    return response.NO_CHANGE;
+  } else if (!all && listingOobj.length == 0) {
+    return response.NO_ITEMS;
   }
 
   let updateRes = 0;
@@ -353,7 +362,7 @@ async function update(ids, all) {
   }
 
   if (updateRes == 200) {
-    tempRes = 200;
+    return response.SUCCESS;
   }
 }
 
@@ -440,11 +449,10 @@ function allListings(listings) {
       }\n\tid: ${obj.id}\n`;
     });
   } else {
-    tempRes = 404;
+    return ['', response.NO_ITEMS];
   }
 
-  tempRes = 200;
-  return listingString;
+  return [listingString, response.SUCCESS];
 }
 
 async function deleteSearch(split) {
@@ -467,7 +475,7 @@ async function deleteSearch(split) {
   }
 
   if (deleteRes == 200) {
-    tempRes = 200;
+    return response.SUCCESS;
   }
 }
 
