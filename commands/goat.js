@@ -99,7 +99,6 @@ exports.run = async (client, message, args) => {
       .then(console.log(`${message} completed`))
       .catch((err) => {
         console.log(err);
-        throw new Error('Unable to send embed');
       });
   } catch (err) {
     console.log(err);
