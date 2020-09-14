@@ -23,6 +23,11 @@ async function confirm() {
   try {
     console.log('Checking Goat Orders');
 
+    let crnt = new Date();
+    let day = crnt.getDate();
+    let month = crnt.getMonth() + 1;
+    let date = `${month}/${day}`;
+
     let loginToken = await Login.find();
     let orders = [];
     let pages = 0;
@@ -98,14 +103,14 @@ async function confirm() {
       });
 
       await webhookClient
-        .send('```' + returnString + '```')
+        .send('```' + date + '\n' + returnString + '```')
         .then(console.log('Successfully Confirmed Goat Orders\n'))
         .catch((err) => {
           throw new Error(err);
         });
     } else {
       await webhookClient
-        .send('```No orders to confirm.```')
+        .send('```' + date + '\n' + 'No orders to confirm.```')
         .then(console.log('Successfully Confirmed Goat Orders\n'))
         .catch((err) => {
           throw new Error(err);
