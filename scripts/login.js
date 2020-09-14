@@ -43,7 +43,7 @@ async function initialLogin() {
       crntLogin[0]
         .overwrite({ login: loginToken })
         .save()
-        .then(console.log('Initial GOAT Login Successfully Updated'))
+        .then(console.log('Initial GOAT Login Successfully Updated\n'))
         .catch((err) => {
           console.log(err);
         });
@@ -54,7 +54,7 @@ async function initialLogin() {
 
       login
         .save()
-        .then(console.log('Initial GOAT Login Successfully Updated'))
+        .then(console.log('Initial GOAT Login Successfully Updated\n'))
         .catch((err) => {
           console.log(err);
         });

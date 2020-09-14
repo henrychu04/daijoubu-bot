@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const Enmap = require('enmap');
 const fs = require('fs');
 const loginGoat = require('./scripts/login');
+const goatOrders = require('./scripts/goatOrders');
 const mongoose = require('mongoose');
 require('dotenv').config();
 const uri = process.env.URI;
@@ -37,4 +38,4 @@ client.on('ready', async () => {
   client.user.setActivity('!help for more info');
 });
 
-client.login(process.env.BOT_TOKEN).then(loginGoat()).then(console.log('Ready!'));
+client.login(process.env.BOT_TOKEN).then(loginGoat()).then(console.log('Ready!')).then(goatOrders());
