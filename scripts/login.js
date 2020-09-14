@@ -32,7 +32,7 @@ async function initialLogin() {
         return res.json();
       })
       .catch((err) => {
-        console.log(err);
+        throw new Error(err);
       });
 
     let loginToken = encryption.encrypt(loginRes.auth_token.access_token);
@@ -45,7 +45,7 @@ async function initialLogin() {
         .save()
         .then(console.log('Initial GOAT Login Successfully Updated\n'))
         .catch((err) => {
-          console.log(err);
+          throw new Error(err);
         });
     } else {
       const login = new Login({
@@ -56,7 +56,7 @@ async function initialLogin() {
         .save()
         .then(console.log('Initial GOAT Login Successfully Updated\n'))
         .catch((err) => {
-          console.log(err);
+          throw new Error(err);
         });
     }
   }
@@ -78,7 +78,7 @@ async function loggingIn() {
         return res.json();
       })
       .catch((err) => {
-        console.log(err);
+        throw new Error(err);
       });
 
     let loginToken = encryption.encrypt(loginRes.auth_token.access_token);
@@ -89,7 +89,7 @@ async function loggingIn() {
       .overwrite({ login: loginToken })
       .save()
       .catch((err) => {
-        console.log(err);
+        throw new Error(err);
       });
   }
 }

@@ -143,6 +143,9 @@ async function goatSearch(client, query) {
       } else {
         throw new Error('No hits');
       }
+    })
+    .catch((err) => {
+      throw new Error(err);
     });
 
   let category = res.product_category;
@@ -198,9 +201,13 @@ async function goatSearch(client, query) {
       method: 'GET',
       headers: client.config.headers,
     }
-  ).then((res) => {
-    return res.json();
-  });
+  )
+    .then((res) => {
+      return res.json();
+    })
+    .catch((err) => {
+      throw new Error(err);
+    });
 
   let lowestPrice = '';
   let highestBid = '';
@@ -381,6 +388,8 @@ async function getListings() {
         'invalid json response body at https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1 reason: Unexpected end of JSON input'
       ) {
         throw new Error('Login expired');
+      } else {
+        throw new Error(err);
       }
     });
 
@@ -426,6 +435,8 @@ async function updateListing(obj, loginToken) {
         err.message.includes('Unexpected end of JSON input')
       ) {
         throw new Error('Login expired');
+      } else {
+        throw new Error(err);
       }
     });
 
@@ -487,9 +498,13 @@ async function deletion(listingId, loginToken) {
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `{"id":"${listingId}"}`,
-  }).then((res) => {
-    return res.status;
-  });
+  })
+    .then((res) => {
+      return res.status;
+    })
+    .catch((err) => {
+      throw new Error(err);
+    });
 
   if (deactivateRes == 200) {
     cancelRes = await fetch(` https://sell-api.goat.com/api/v1/listings/${listingId}/cancel`, {
@@ -504,7 +519,7 @@ async function deletion(listingId, loginToken) {
         return res.status;
       })
       .catch((err) => {
-        console.log(err);
+        throw new Error(err);
       });
   }
 
