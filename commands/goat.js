@@ -98,7 +98,7 @@ exports.run = async (client, message, args) => {
       .send(toReturn)
       .then(console.log(`${message} completed`))
       .catch((err) => {
-        console.log(err);
+        throw new Error(err);
       });
   } catch (err) {
     console.log(err);
