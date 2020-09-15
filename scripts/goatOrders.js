@@ -94,7 +94,10 @@ async function confirm() {
             .catch((err) => {
               throw new Error(err);
             });
-          break;
+
+          if (confirmation == 200 && shipping == 200) {
+            break;
+          }
         }
 
         returnString += `\t${i} ${order.listing.product.name} - ${order.listing.size_option.name.toUpperCase()} $${
