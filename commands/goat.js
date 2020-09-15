@@ -144,7 +144,9 @@ async function goatSearch(client, query) {
       }
     })
     .catch((err) => {
-      throw new Error(err);
+      if (err.message != 'No hits') {
+        throw new Error(err);
+      }
     });
 
   let category = res.product_category;
@@ -388,7 +390,9 @@ async function getListings() {
       ) {
         throw new Error('Login expired');
       } else {
-        throw new Error(err);
+        if (err.message != 'Login expired') {
+          throw new Error(err);
+        }
       }
     });
 
@@ -435,7 +439,9 @@ async function updateListing(obj, loginToken) {
       ) {
         throw new Error('Login expired');
       } else {
-        throw new Error(err);
+        if (err.message != 'Login expired') {
+          throw new Error(err);
+        }
       }
     });
 
