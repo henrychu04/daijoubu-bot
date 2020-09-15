@@ -9,7 +9,7 @@ const webhookClient = new Discord.WebhookClient(process.env.GOAT_ORDERS_ID, proc
 
 module.exports = function main() {
   try {
-    let job = new CronJob('00 01 00 * * *', function () {
+    let job = new CronJob('01 00 * * *', function () {
       confirm();
     });
 
