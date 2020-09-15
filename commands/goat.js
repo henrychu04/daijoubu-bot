@@ -144,7 +144,9 @@ async function goatSearch(client, query) {
       }
     })
     .catch((err) => {
-      if (err.message != 'No hits') {
+      if (err.message == 'No hits') {
+        throw new Error('No hits');
+      } else {
         throw new Error(err);
       }
     });
@@ -390,7 +392,9 @@ async function getListings() {
       ) {
         throw new Error('Login expired');
       } else {
-        if (err.message != 'Login expired') {
+        if (err.message == 'Login expired') {
+          throw new Error('Login expired');
+        } else {
           throw new Error(err);
         }
       }
@@ -439,7 +443,9 @@ async function updateListing(obj, loginToken) {
       ) {
         throw new Error('Login expired');
       } else {
-        if (err.message != 'Login expired') {
+        if (err.message == 'Login expired') {
+          throw new Error('Login expired');
+        } else {
           throw new Error(err);
         }
       }
