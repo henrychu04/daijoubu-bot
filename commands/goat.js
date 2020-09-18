@@ -2,7 +2,6 @@ const fetch = require('node-fetch');
 const Discord = require('discord.js');
 const Login = require('../models/login');
 const encryption = require('../scripts/encryption');
-const { estimatedDocumentCount } = require('../models/login');
 
 const response = {
   SUCCESS: 'success',
@@ -91,7 +90,7 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'edit':
-        if (args.length < 3) {
+        if (args.length == 4) {
           throw new Error('Too little parameters');
         } else {
           args.shift();
@@ -151,6 +150,8 @@ async function goatSearch(client, query) {
     body: `{"params":"query=${encodeURIComponent(query)}"}`,
   })
     .then((res) => {
+      thenError(res);
+
       return res.json();
     })
     .then((json) => {
@@ -161,6 +162,8 @@ async function goatSearch(client, query) {
       }
     })
     .catch((err) => {
+      catchError(err);
+
       if (err.message == 'No hits') {
         throw new Error('No hits');
       } else {
@@ -223,9 +226,13 @@ async function goatSearch(client, query) {
     }
   )
     .then((res) => {
+      thenError(res);
+
       return res.json();
     })
     .catch((err) => {
+      catchError(err);
+
       throw new Error(err);
     });
 
@@ -370,18 +377,8 @@ async function update(ids, all) {
       }
     }
   } else {
-    let exist = false;
     for (let i = 0; i < ids.length; i++) {
-      for (let j = 0; j < listingObj.length; j++) {
-        if (listingObj[j].id == ids[i]) {
-          exist = true;
-          updateRes = await updateListing(listingObj[j], loginToken);
-        }
-      }
-
-      if (!exist) {
-        throw new Error('Not exist');
-      }
+      updateRes = await updateListing(ids[i], loginToken);
     }
   }
 
@@ -400,21 +397,12 @@ async function getListings() {
     },
   })
     .then((res) => {
+      thenError(res);
+
       return res.json();
     })
     .catch((err) => {
-      if (
-        err.message ==
-        'invalid json response body at https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1 reason: Unexpected end of JSON input'
-      ) {
-        throw new Error('Login expired');
-      } else {
-        if (err.message == 'Login expired') {
-          throw new Error('Login expired');
-        } else {
-          throw new Error(err);
-        }
-      }
+      catchError(err);
     });
 
   return listings;
@@ -451,21 +439,12 @@ async function updateListing(obj, loginToken) {
     body: `{"listing":${JSON.stringify(obj)}}`,
   })
     .then((res) => {
+      thenError(res);
+
       return res.status;
     })
     .catch((err) => {
-      if (
-        err.message.includes('invalid json response body at') &&
-        err.message.includes('Unexpected end of JSON input')
-      ) {
-        throw new Error('Login expired');
-      } else {
-        if (err.message == 'Login expired') {
-          throw new Error('Login expired');
-        } else {
-          throw new Error(err);
-        }
-      }
+      catchError(err);
     });
 
   if (updateRes != 200) {
@@ -492,22 +471,11 @@ function allListings(listings) {
 }
 
 async function deleteSearch(args) {
-  let listings = await getListings();
   let loginToken = await Login.find();
-  let exist = false;
   let deleteRes = 0;
 
-  for (let i = 0; i < listings.listing.length; i++) {
-    for (let j = 0; j < args.length; j++) {
-      if (listings.listing[i].id == args[j]) {
-        exist = true;
-        deleteRes = await deletion(args[j], loginToken);
-      }
-    }
-
-    if (!exist) {
-      throw new Error('Not exist');
-    }
+  for (let j = 0; j < args.length; j++) {
+    deleteRes = await deletion(args[j], loginToken);
   }
 
   if (deleteRes == 200) {
@@ -528,10 +496,12 @@ async function deletion(listingId, loginToken) {
     body: `{"id":"${listingId}"}`,
   })
     .then((res) => {
+      thenError(res);
+
       return res.status;
     })
     .catch((err) => {
-      throw new Error(err);
+      catchError(err);
     });
 
   if (deactivateRes == 200) {
@@ -544,10 +514,12 @@ async function deletion(listingId, loginToken) {
       body: `{"id":"${listingId}"}`,
     })
       .then((res) => {
+        thenError(res);
+
         return res.status;
       })
       .catch((err) => {
-        throw new Error(err);
+        catchError(err);
       });
   }
 
@@ -567,31 +539,16 @@ async function editListing(args) {
     method: 'GET',
     headers: {
       'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
-      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+      authorization: `Bearer ${token}`,
     },
   })
     .then((res) => {
-      if (res.status == 404) {
-        throw new Error('Not exist');
-      } else if (res.status == 200) {
-        return res.json();
-      }
+      thenError(res);
+
+      return res.json();
     })
     .catch((err) => {
-      if (
-        err.message.includes('invalid json response body at') &&
-        err.message.includes('Unexpected end of JSON input')
-      ) {
-        throw new Error('Login expired');
-      } else {
-        if (err.message == 'Login expired') {
-          throw new Error('Login expired');
-        } else if (err.message == 'Not exist') {
-          throw new Error('Not exist');
-        } else {
-          throw new Error(err);
-        }
-      }
+      catchError(err);
     });
 
   getJSON.listing.price_cents = (parseInt(price) * 100).toString();
@@ -605,17 +562,12 @@ async function editListing(args) {
     body: `${JSON.stringify(getJSON)}`,
   })
     .then((res) => {
+      thenError(res);
+
       return res.status;
     })
     .catch((err) => {
-      if (
-        err.message.includes('invalid json response body at') &&
-        err.message.includes('Unexpected end of JSON input')
-      ) {
-        throw new Error('Login expired');
-      } else {
-        throw new Error(err);
-      }
+      catchError(err);
     });
 
   if (editRes != 200) {
@@ -623,4 +575,24 @@ async function editListing(args) {
   }
 
   return response.SUCCESS;
+}
+
+function thenError(res) {
+  if (res.status == 404) {
+    throw new Error('Not exist');
+  } else if (res.status == 401) {
+    throw new Error('Login expired');
+  } else {
+    console.log('Res status is', res.status);
+  }
+}
+
+function catchError(err) {
+  if (err.message == 'Not exist') {
+    throw new Error('Not exist');
+  } else if (err.message == 'Login expired') {
+    throw new Error('Login expired');
+  } else {
+    throw new Error(err);
+  }
 }
