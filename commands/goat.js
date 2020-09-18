@@ -593,6 +593,6 @@ function catchError(err) {
   } else if (err.message == 'Login expired') {
     throw new Error('Login expired');
   } else {
-    throw new Error(err);
+    throw new Error(err.message);
   }
 }
