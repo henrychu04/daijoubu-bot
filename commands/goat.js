@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const Discord = require('discord.js');
 const Login = require('../models/login');
 const encryption = require('../scripts/encryption');
+const { estimatedDocumentCount } = require('../models/login');
 
 const response = {
   SUCCESS: 'success',
@@ -89,6 +90,20 @@ exports.run = async (client, message, args) => {
           toReturn = '```Specifided Listing(s) Have Been Deleted```';
         }
         break;
+      case 'edit':
+        if (args.length < 3) {
+          throw new Error('Too little parameters');
+        } else {
+          args.shift();
+        }
+
+        returnedEnum = await editListing(args);
+
+        if (returnedEnum == response.SUCCESS) {
+          toReturn = '```Item edited successfully```';
+        }
+
+        break;
       default:
         toReturn = await goatSearch(client, query);
         break;
@@ -110,7 +125,7 @@ exports.run = async (client, message, args) => {
     } else if (err.message == 'Unauthorized') {
       message.channel.send('```Command not authorized for message author```');
     } else if (err.message == 'Not exist') {
-      message.channel.send('```Update command has one or more non-existing listing ids```');
+      message.channel.send('```command has one or more non-existing listing ids```');
     } else if (err.message == 'Error updating') {
       message.channel.send('```Error updating listing(s)```');
     } else if (err.message == 'Too many parameters') {
@@ -121,6 +136,8 @@ exports.run = async (client, message, args) => {
       message.channel.send('```Error deleting listing(s)```');
     } else if (err.message == 'Login expired') {
       message.channel.send('```Login expired```');
+    } else if (err.message == 'Error editing') {
+      message.channel.send('```Error editing listing```');
     } else {
       message.channel.send('```Unexpected Error```');
     }
@@ -539,4 +556,71 @@ async function deletion(listingId, loginToken) {
   } else if (deactivateRes == 200 && cancelRes == 200) {
     return 200;
   }
+}
+
+async function editListing(args) {
+  let loginToken = await Login.find();
+  let id = args[0];
+  let price = args[1];
+
+  let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
+    method: 'GET',
+    headers: {
+      'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+    },
+  })
+    .then((res) => {
+      if (res.status == 404) {
+        throw new Error('Not exist');
+      } else if (res.status == 200) {
+        return res.json();
+      }
+    })
+    .catch((err) => {
+      if (
+        err.message.includes('invalid json response body at') &&
+        err.message.includes('Unexpected end of JSON input')
+      ) {
+        throw new Error('Login expired');
+      } else {
+        if (err.message == 'Login expired') {
+          throw new Error('Login expired');
+        } else if (err.message == 'Not exist') {
+          throw new Error('Not exist');
+        } else {
+          throw new Error(err);
+        }
+      }
+    });
+
+  getJSON.listing.price_cents = (parseInt(price) * 100).toString();
+
+  let editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
+    method: 'PUT',
+    headers: {
+      'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+    },
+    body: `${JSON.stringify(getJSON)}`,
+  })
+    .then((res) => {
+      return res.status;
+    })
+    .catch((err) => {
+      if (
+        err.message.includes('invalid json response body at') &&
+        err.message.includes('Unexpected end of JSON input')
+      ) {
+        throw new Error('Login expired');
+      } else {
+        throw new Error(err);
+      }
+    });
+
+  if (editRes != 200) {
+    throw new Error('Error editing');
+  }
+
+  return response.SUCCESS;
 }
