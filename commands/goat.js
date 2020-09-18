@@ -90,8 +90,8 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'edit':
-        if (args.length == 4) {
-          throw new Error('Too little parameters');
+        if (args.length != 4) {
+          throw new Error('Incorrect format');
         } else {
           args.shift();
         }
@@ -101,7 +101,6 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```Item edited successfully```';
         }
-
         break;
       default:
         toReturn = await goatSearch(client, query);
@@ -131,6 +130,8 @@ exports.run = async (client, message, args) => {
       message.channel.send('```Command has too many parameters```');
     } else if (err.message == 'Too little parameters') {
       message.channel.send('```Command has too little parameters```');
+    } else if (err.message == 'Incorrect format') {
+      message.channel.send('```Incorrect format```');
     } else if (err.message == 'Error deleting') {
       message.channel.send('```Error deleting listing(s)```');
     } else if (err.message == 'Login expired') {
