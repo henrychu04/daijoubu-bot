@@ -28,12 +28,18 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```All Listings Match Their Lowest Asks```';
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```No Items Are Listed on Account```';
-        } else {
-          toReturn = '```' + toReturn + '```';
+        switch (returnedEnum) {
+          case response.SUCCESS:
+            toReturn = '```' + toReturn + '```';
+            break;
+          case response.NO_CHANGE:
+            toReturn = '```All Listings Match Their Lowest Asks```';
+            break;
+          case response.NO_ITEMS:
+            toReturn = '```No Items Are Listed on Account```';
+            break;
+          default:
+            break;
         }
         break;
       case 'update':
@@ -51,14 +57,22 @@ exports.run = async (client, message, args) => {
 
         returnedEnum = await update(args, all);
 
-        if (returnedEnum == response.SUCCESS && !all) {
-          toReturn = '```Listing(s) Updated Successfully!```';
-        } else if (returnedEnum == response.SUCCESS && all) {
-          toReturn = '```All Listing(s) Updated Successfully!```';
-        } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```No Items Are Listed on Account```';
+        switch (returnedEnum) {
+          case response.SUCCESS:
+            if (all) {
+              toReturn = '```All Listing(s) Updated Successfully!```';
+            } else {
+              toReturn = '```Listing(s) Updated Successfully!```';
+            }
+            break;
+          case response.NO_CHANGE:
+            toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
+            break;
+          case response.NO_ITEMS:
+            toReturn = '```No Items Are Listed on Account```';
+            break;
+          default:
+            break;
         }
         break;
       case 'listings':
@@ -70,10 +84,15 @@ exports.run = async (client, message, args) => {
 
         [toReturn, returnedEnum] = allListings(listings);
 
-        if (returnedEnum == response.SUCCESS) {
-          toReturn = '```' + toReturn + '```';
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```No Items Are Listed on Account```';
+        switch (returnedEnum) {
+          case response.SUCCESS:
+            toReturn = '```' + toReturn + '```';
+            break;
+          case response.NO_ITEMS:
+            toReturn = '```No Items Are Listed on Account```';
+            break;
+          default:
+            break;
         }
         break;
       case 'delete':
