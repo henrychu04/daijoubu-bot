@@ -116,30 +116,42 @@ exports.run = async (client, message, args) => {
   } catch (err) {
     console.log(err);
 
-    if (err.message == 'No hits') {
-      message.channel.send('```No products found matching search parameters```');
-    } else if (err.message == 'Empty command') {
-      message.channel.send('```Command is missing parameters```');
-    } else if (err.message == 'Unauthorized') {
-      message.channel.send('```Command not authorized for message author```');
-    } else if (err.message == 'Not exist') {
-      message.channel.send('```command has one or more non-existing listing ids```');
-    } else if (err.message == 'Error updating') {
-      message.channel.send('```Error updating listing(s)```');
-    } else if (err.message == 'Too many parameters') {
-      message.channel.send('```Command has too many parameters```');
-    } else if (err.message == 'Too little parameters') {
-      message.channel.send('```Command has too little parameters```');
-    } else if (err.message == 'Incorrect format') {
-      message.channel.send('```Incorrect format```');
-    } else if (err.message == 'Error deleting') {
-      message.channel.send('```Error deleting listing(s)```');
-    } else if (err.message == 'Login expired') {
-      message.channel.send('```Login expired```');
-    } else if (err.message == 'Error editing') {
-      message.channel.send('```Error editing listing```');
-    } else {
-      message.channel.send('```Unexpected Error```');
+    switch (err.message) {
+      case 'No hits':
+        message.channel.send('```No products found matching search parameters```');
+        break;
+      case 'Empty command':
+        message.channel.send('```Command is missing parameters```');
+        break;
+      case 'Unauthorized':
+        message.channel.send('```Command not authorized for message author```');
+        break;
+      case 'Not exist':
+        message.channel.send('```Command has one or more non-existing listing ids```');
+        break;
+      case 'Error updating':
+        message.channel.send('```Error updating listing(s)```');
+        break;
+      case 'Too many parameters':
+        message.channel.send('```Command has too many parameters```');
+        break;
+      case 'Too little parameters':
+        message.channel.send('```Command has too little parameters```');
+        break;
+      case 'Incorrect format':
+        message.channel.send('```Incorrect format```');
+        break;
+      case 'Error deleting':
+        message.channel.send('```Error deleting listing(s)```');
+        break;
+      case 'Login expired':
+        message.channel.send('```Login expired```');
+        break;
+      case 'Error editing':
+        message.channel.send('```Error editing listing```');
+        break;
+      default:
+        message.channel.send('```Unexpected Error```');
     }
   }
 };
