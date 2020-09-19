@@ -161,16 +161,16 @@ async function goatSearch(client, query) {
       } else {
         throw new Error('No hits');
       }
-    })
-    .catch((err) => {
-      catchError(err);
-
-      if (err.message == 'No hits') {
-        throw new Error('No hits');
-      } else {
-        throw new Error(err);
-      }
     });
+  // .catch((err) => {
+  //   catchError(err);
+
+  //   if (err.message == 'No hits') {
+  //     throw new Error('No hits');
+  //   } else {
+  //     throw new Error(err);
+  //   }
+  // });
 
   let category = res.product_category;
   let name = res.name;
@@ -225,17 +225,16 @@ async function goatSearch(client, query) {
       method: 'GET',
       headers: client.config.headers,
     }
-  )
-    .then((res) => {
-      thenError(res);
+  ).then((res) => {
+    thenError(res);
 
-      return res.json();
-    })
-    .catch((err) => {
-      catchError(err);
+    return res.json();
+  });
+  // .catch((err) => {
+  //   catchError(err);
 
-      throw new Error(err);
-    });
+  //   throw new Error(err);
+  // });
 
   let lowestPrice = '';
   let highestBid = '';
@@ -396,15 +395,14 @@ async function getListings() {
       'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
-  })
-    .then((res) => {
-      thenError(res);
+  }).then((res) => {
+    thenError(res);
 
-      return res.json();
-    })
-    .catch((err) => {
-      catchError(err);
-    });
+    return res.json();
+  });
+  // .catch((err) => {
+  //   catchError(err);
+  // });
 
   return listings;
 }
@@ -438,15 +436,14 @@ async function updateListing(obj, loginToken) {
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `{"listing":${JSON.stringify(obj)}}`,
-  })
-    .then((res) => {
-      thenError(res);
+  }).then((res) => {
+    thenError(res);
 
-      return res.status;
-    })
-    .catch((err) => {
-      catchError(err);
-    });
+    return res.status;
+  });
+  // .catch((err) => {
+  //   catchError(err);
+  // });
 
   if (updateRes != 200) {
     throw new Error('Error Updating');
@@ -495,15 +492,14 @@ async function deletion(listingId, loginToken) {
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `{"id":"${listingId}"}`,
-  })
-    .then((res) => {
-      thenError(res);
+  }).then((res) => {
+    thenError(res);
 
-      return res.status;
-    })
-    .catch((err) => {
-      catchError(err);
-    });
+    return res.status;
+  });
+  // .catch((err) => {
+  //   catchError(err);
+  // });
 
   if (deactivateRes == 200) {
     cancelRes = await fetch(` https://sell-api.goat.com/api/v1/listings/${listingId}/cancel`, {
@@ -513,15 +509,14 @@ async function deletion(listingId, loginToken) {
         authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
       },
       body: `{"id":"${listingId}"}`,
-    })
-      .then((res) => {
-        thenError(res);
+    }).then((res) => {
+      thenError(res);
 
-        return res.status;
-      })
-      .catch((err) => {
-        catchError(err);
-      });
+      return res.status;
+    });
+    // .catch((err) => {
+    //   catchError(err);
+    // });
   }
 
   if (deactivateRes != 200 && cancelRes != 200) {
@@ -542,15 +537,14 @@ async function editListing(args) {
       'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
       authorization: `Bearer ${token}`,
     },
-  })
-    .then((res) => {
-      thenError(res);
+  }).then((res) => {
+    thenError(res);
 
-      return res.json();
-    })
-    .catch((err) => {
-      catchError(err);
-    });
+    return res.json();
+  });
+  // .catch((err) => {
+  //   catchError(err);
+  // });
 
   getJSON.listing.price_cents = (parseInt(price) * 100).toString();
 
@@ -561,15 +555,14 @@ async function editListing(args) {
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `${JSON.stringify(getJSON)}`,
-  })
-    .then((res) => {
-      thenError(res);
+  }).then((res) => {
+    thenError(res);
 
-      return res.status;
-    })
-    .catch((err) => {
-      catchError(err);
-    });
+    return res.status;
+  });
+  // .catch((err) => {
+  //   catchError(err);
+  // });
 
   if (editRes != 200) {
     throw new Error('Error editing');
