@@ -282,6 +282,8 @@ async function getGoatData(client, res) {
   let highest = 0;
   let last = 0;
 
+  let array = [];
+
   for (variant of pageData.availability) {
     if (
       variant.lowest_price_cents == undefined &&
@@ -291,30 +293,67 @@ async function getGoatData(client, res) {
       continue;
     }
 
-    let size = variant.size;
+    let obj = {
+      size: variant.size,
+      lowest_price_cents: 0,
+      highest_offer_cents: 0,
+      last_sold_price_cents: 0,
+    };
 
     if (variant.lowest_price_cents != undefined) {
-      lowestPrice += `${size} - $${variant.lowest_price_cents / 100}\n`;
-      averageLowestPrice += variant.lowest_price_cents / 100;
-      lowest++;
-    } else {
-      lowestPrice += `${size} - N/A\n`;
+      obj.lowest_price_cents = variant.lowest_price_cents / 100;
     }
 
     if (variant.highest_offer_cents != undefined) {
-      highestBid += `${size} - $${variant.highest_offer_cents / 100}\n`;
-      averageHighestBid += variant.highest_offer_cents / 100;
-      highest++;
-    } else {
-      highestBid += `${size} - N/A\n`;
+      obj.highest_offer_cents = variant.highest_offer_cents / 100;
     }
 
     if (variant.last_sold_price_cents != undefined) {
-      lastSold += `${size} - $${variant.last_sold_price_cents / 100}\n`;
-      averageLastSold += variant.last_sold_price_cents / 100;
+      obj.last_sold_price_cents = variant.last_sold_price_cents / 100;
+    }
+
+    let exist = false;
+
+    for (temp of array) {
+      if (temp.size == obj.size) {
+        exist = true;
+
+        if (temp.lowest_price_cents < obj.lowest_price_cents) {
+          temp = obj;
+        }
+
+        break;
+      }
+    }
+
+    if (!exist) {
+      array.push(obj);
+    }
+  }
+
+  for (obj of array) {
+    if (obj.lowest_price_cents != 0) {
+      lowestPrice += `${obj.size} - $${obj.lowest_price_cents}\n`;
+      averageLowestPrice += obj.lowest_price_cents;
+      lowest++;
+    } else {
+      lowestPrice += `${obj.size} - N/A\n`;
+    }
+
+    if (obj.highest_offer_cents != 0) {
+      highestBid += `${obj.size} - $${obj.highest_offer_cents}\n`;
+      averageHighestBid += obj.highest_offer_cents;
+      highest++;
+    } else {
+      highestBid += `${obj.size} - N/A\n`;
+    }
+
+    if (obj.last_sold_price_cents != 0) {
+      lastSold += `${obj.size} - $${obj.last_sold_price_cents}\n`;
+      averageLastSold += obj.last_sold_price_cents;
       last++;
     } else {
-      lastSold += `${size} - N/A\n`;
+      lastSold += `${obj.size} - N/A\n`;
     }
   }
 
