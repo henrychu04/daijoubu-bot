@@ -181,10 +181,16 @@ async function goatSearch(client, query) {
     headers: client.config.goatHeader,
     body: `{"params":"query=${encodeURIComponent(query)}"}`,
   })
-    .then((res) => {
-      thenError(res);
+    .then((res, err) => {
+      if (res.status == 200) {
+        return res.json();
+      } else {
+        console.log('Res is', res.status);
 
-      return res.json();
+        if (err) {
+          throw new Error(err.message);
+        }
+      }
     })
     .then((json) => {
       if (json.hits.length != 0) {
@@ -193,15 +199,6 @@ async function goatSearch(client, query) {
         throw new Error('No hits');
       }
     });
-  // .catch((err) => {
-  //   catchError(err);
-
-  //   if (err.message == 'No hits') {
-  //     throw new Error('No hits');
-  //   } else {
-  //     throw new Error(err);
-  //   }
-  // });
 
   let category = res.product_category;
   let name = res.name;
@@ -253,19 +250,19 @@ async function goatSearch(client, query) {
   let pageData = await fetch(
     `https://sell-api.goat.com/api/v1/analytics/products/${res.slug}/availability?box_condition=1&shoe_condition=1`,
     {
-      method: 'GET',
       headers: client.config.headers,
     }
-  ).then((res) => {
-    thenError(res);
+  ).then((res, err) => {
+    if (res.status == 200) {
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
 
-    return res.json();
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
   });
-  // .catch((err) => {
-  //   catchError(err);
-
-  //   throw new Error(err);
-  // });
 
   let lowestPrice = '';
   let highestBid = '';
@@ -465,14 +462,19 @@ async function getListings() {
       'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
-  }).then((res) => {
-    thenError(res);
+  }).then((res, err) => {
+    if (res.status == 200) {
+      return res.json();
+    } else if (res.status == 401) {
+      throw new Error('Login expired');
+    } else {
+      console.log('Res is', res.status);
 
-    return res.json();
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
   });
-  // .catch((err) => {
-  //   catchError(err);
-  // });
 
   return listings;
 }
@@ -506,14 +508,19 @@ async function updateListing(obj, loginToken) {
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `{"listing":${JSON.stringify(obj)}}`,
-  }).then((res) => {
-    thenError(res);
+  }).then((res, err) => {
+    if (res.status == 200) {
+      return res.status;
+    } else if (res.status == 401) {
+      throw new Error('Login expired');
+    } else {
+      console.log('Res is', res.status);
 
-    return res.status;
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
   });
-  // .catch((err) => {
-  //   catchError(err);
-  // });
 
   if (updateRes != 200) {
     throw new Error('Error Updating');
@@ -562,14 +569,19 @@ async function deletion(listingId, loginToken) {
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `{"id":"${listingId}"}`,
-  }).then((res) => {
-    thenError(res);
+  }).then((res, err) => {
+    if (res.status == 200) {
+      return res.status;
+    } else if (res.status == 401) {
+      throw new Error('Login expired');
+    } else {
+      console.log('Res is', res.status);
 
-    return res.status;
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
   });
-  // .catch((err) => {
-  //   catchError(err);
-  // });
 
   if (deactivateRes == 200) {
     cancelRes = await fetch(` https://sell-api.goat.com/api/v1/listings/${listingId}/cancel`, {
@@ -579,14 +591,19 @@ async function deletion(listingId, loginToken) {
         authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
       },
       body: `{"id":"${listingId}"}`,
-    }).then((res) => {
-      thenError(res);
+    }).then((res, err) => {
+      if (res.status == 200) {
+        return res.status;
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
 
-      return res.status;
+        if (err) {
+          throw new Error(err.message);
+        }
+      }
     });
-    // .catch((err) => {
-    //   catchError(err);
-    // });
   }
 
   if (deactivateRes != 200 && cancelRes != 200) {
@@ -602,19 +619,23 @@ async function editListing(args) {
   let price = args[1];
 
   let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
-    method: 'GET',
     headers: {
       'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
       authorization: `Bearer ${token}`,
     },
-  }).then((res) => {
-    thenError(res);
+  }).then((res, err) => {
+    if (res.status == 200) {
+      return res.json();
+    } else if (res.status == 401) {
+      throw new Error('Login expired');
+    } else {
+      console.log('Res is', res.status);
 
-    return res.json();
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
   });
-  // .catch((err) => {
-  //   catchError(err);
-  // });
 
   getJSON.listing.price_cents = (parseInt(price) * 100).toString();
 
@@ -626,39 +647,22 @@ async function editListing(args) {
     },
     body: `${JSON.stringify(getJSON)}`,
   }).then((res) => {
-    thenError(res);
+    if (res.status == 200) {
+      return res.status;
+    } else if (res.status == 401) {
+      throw new Error('Login expired');
+    } else {
+      console.log('Res is', res.status);
 
-    return res.status;
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
   });
-  // .catch((err) => {
-  //   catchError(err);
-  // });
 
   if (editRes != 200) {
     throw new Error('Error editing');
   }
 
   return response.SUCCESS;
-}
-
-function thenError(res) {
-  if (res.status == 404) {
-    throw new Error('Not exist');
-  } else if (res.status == 401) {
-    throw new Error('Login expired');
-  } else {
-    if (res.status != 200) {
-      console.log('Res status is', res.status);
-    }
-  }
-}
-
-function catchError(err) {
-  if (err.message == 'Not exist') {
-    throw new Error('Not exist');
-  } else if (err.message == 'Login expired') {
-    throw new Error('Login expired');
-  } else {
-    throw new Error(err.message);
-  }
 }
