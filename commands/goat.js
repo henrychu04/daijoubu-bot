@@ -513,6 +513,8 @@ async function updateListing(obj, loginToken) {
       return res.status;
     } else if (res.status == 401) {
       throw new Error('Login expired');
+    } else if (res.status == 404) {
+      throw new Error('Not exist');
     } else {
       console.log('Res is', res.status);
 
@@ -574,6 +576,8 @@ async function deletion(listingId, loginToken) {
       return res.status;
     } else if (res.status == 401) {
       throw new Error('Login expired');
+    } else if (res.status == 404) {
+      throw new Error('Not exist');
     } else {
       console.log('Res is', res.status);
 
@@ -596,6 +600,8 @@ async function deletion(listingId, loginToken) {
         return res.status;
       } else if (res.status == 401) {
         throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
       } else {
         console.log('Res is', res.status);
 
@@ -628,6 +634,8 @@ async function editListing(args) {
       return res.json();
     } else if (res.status == 401) {
       throw new Error('Login expired');
+    } else if (res.status == 404) {
+      throw new Error('Not exist');
     } else {
       console.log('Res is', res.status);
 
@@ -651,6 +659,8 @@ async function editListing(args) {
       return res.status;
     } else if (res.status == 401) {
       throw new Error('Login expired');
+    } else if (res.status == 404) {
+      throw new Error('Not exist');
     } else {
       console.log('Res is', res.status);
 
