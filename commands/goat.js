@@ -647,7 +647,9 @@ function thenError(res) {
   } else if (res.status == 401) {
     throw new Error('Login expired');
   } else {
-    console.log('Res status is', res.status);
+    if (res.status != 200) {
+      console.log('Res status is', res.status);
+    }
   }
 }
 
