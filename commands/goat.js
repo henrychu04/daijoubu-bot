@@ -128,7 +128,7 @@ exports.run = async (client, message, args) => {
 
     message.channel
       .send(toReturn)
-      .then(console.log(`${message} completed`))
+      .then(console.log(`${message} completed\n`))
       .catch((err) => {
         throw new Error(err);
       });

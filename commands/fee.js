@@ -81,7 +81,7 @@ exports.run = async (client, message, args) => {
           ],
         },
       })
-      .then(console.log(`${message} completed`));
+      .then(console.log(`${message} completed\n`));
   } catch (err) {
     console.log(err);
 

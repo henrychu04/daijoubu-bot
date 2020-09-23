@@ -140,7 +140,7 @@ exports.run = async (client, message, args) => {
               description: `${numItems} items\n[Link](${domain + link})`,
             },
           })
-          .then(console.log(`${message} completed`))
+          .then(console.log(`${message} completed\n`))
           .catch((err) => {
             console.log(err);
             throw new Error('Unable to send embed');
@@ -154,7 +154,7 @@ exports.run = async (client, message, args) => {
               description: 'Stay tuned!',
             },
           })
-          .then(console.log(`${message} completed`))
+          .then(console.log(`${message} completed\n`))
           .catch((err) => {
             console.log(err);
             throw new Error('Unable to send embed');
@@ -169,7 +169,7 @@ exports.run = async (client, message, args) => {
             description: `Week ${num}`,
           },
         })
-        .then(console.log(`${message} completed`))
+        .then(console.log(`${message} completed\n`))
         .catch((err) => {
           console.log(err);
           throw new Error('Unable to send embed');
@@ -183,7 +183,7 @@ exports.run = async (client, message, args) => {
             description: 'Enter a new week num',
           },
         })
-        .then(console.log(`${message} completed`))
+        .then(console.log(`${message} complete\nd`))
         .catch((err) => {
           console.log(err);
           throw new Error('Unable to send embed');

@@ -44,7 +44,7 @@ exports.run = async (client, message, args) => {
 
       await message.channel
         .send(embed3)
-        .then(console.log(`${message} completed`))
+        .then(console.log(`${message} completed\n`))
         .catch((err) => {
           console.log(err);
           throw new Error('Unable to send embed2');
