@@ -67,17 +67,17 @@ exports.run = async (client, message, args) => {
       }
     }
 
+    let image = '';
+
+    if (data['product']['image']['src'] != undefined) {
+      image = data['product']['image']['src'];
+    }
+
     const embed = new Discord.MessageEmbed()
       .setColor(16777214)
       .setTitle(data['product']['title'])
       .setURL(link)
-      .setThumbnail(function () {
-        if (data['product']['image']['src'] != undefined) {
-          return data['product']['image']['src'];
-        } else {
-          return null;
-        }
-      })
+      .setThumbnail(image != '' ? image : null)
       .addFields(
         { name: 'Price', value: `$${data['product']['variants'][0]['price']}`, inline: true },
         { name: 'Site', value: domain, inline: true },
