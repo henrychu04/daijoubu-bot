@@ -85,7 +85,7 @@ exports.run = async (client, message, args) => {
   } catch (err) {
     console.log(err);
 
-    if (err.message == 'Empty Command') {
+    if (err.message == 'Empty command') {
       message.channel.send('```Command is missing valid fee```');
     } else if (err.message == 'Enter num') {
       message.channel.send('```Invalid command enter a valid number```');
