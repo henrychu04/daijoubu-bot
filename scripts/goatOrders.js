@@ -21,7 +21,7 @@ module.exports = function main() {
 
 async function confirm() {
   try {
-    console.log('Checking Goat Orders');
+    console.log('Checking Goat Orders\n');
 
     let crnt = new Date();
     let day = crnt.getDate();
@@ -48,69 +48,72 @@ async function confirm() {
       .catch((err) => {
         throw new Error(err);
       });
+    console.log(purchaseOrders);
 
     pages = purchaseOrders.metadata.total_pages;
 
-    purchaseOrders.purchase_orders.forEach((order) => {
-      if (order.status == 'NEEDS_CONFIRMATION') {
-        orders.push(order);
-      }
-    });
+    if (purchaseOrders.purchase_orders) {
+      purchaseOrders.purchase_orders.forEach((order) => {
+        if (order.status == 'NEEDS_CONFIRMATION') {
+          orders.push(order);
+        }
+      });
 
-    if (orders.length != 0) {
-      orders.forEach(async (order, i) => {
-        let number = order.number;
+      if (orders.length != 0) {
+        orders.forEach(async (order, i) => {
+          let number = order.number;
 
-        while (true) {
-          let confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
-            method: 'PUT',
-            headers: {
-              'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
-              authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
-            },
-            body: `{"number":"${number}"}`,
-          })
-            .then((res) => {
-              return res.status;
-            })
-            .catch((err) => {
-              throw new Error(err);
-            });
-
-          let shipping = await fetch(
-            `https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`,
-            {
+          while (true) {
+            let confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
               method: 'PUT',
               headers: {
                 'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
                 authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
               },
               body: `{"number":"${number}"}`,
-            }
-          )
-            .then((res) => {
-              return res.status;
             })
-            .catch((err) => {
-              throw new Error(err);
-            });
+              .then((res) => {
+                return res.status;
+              })
+              .catch((err) => {
+                throw new Error(err);
+              });
 
-          if (confirmation == 200 && shipping == 200) {
-            break;
+            let shipping = await fetch(
+              `https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`,
+              {
+                method: 'PUT',
+                headers: {
+                  'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+                  authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+                },
+                body: `{"number":"${number}"}`,
+              }
+            )
+              .then((res) => {
+                return res.status;
+              })
+              .catch((err) => {
+                throw new Error(err);
+              });
+
+            if (confirmation == 200 && shipping == 200) {
+              break;
+            }
           }
-        }
 
-        returnString += `\t${i} ${order.listing.product.name} - ${order.listing.size_option.name.toUpperCase()} $${
-          order.listing.price_cents / 100
-        }\n`;
-      });
-
-      await webhookClient
-        .send('```' + date + '\n' + returnString + '```')
-        .then(console.log('Successfully Confirmed Goat Orders\n'))
-        .catch((err) => {
-          throw new Error(err);
+          returnString += `\t${i} ${order.listing.product.name} - ${order.listing.size_option.name.toUpperCase()} $${
+            order.listing.price_cents / 100
+          }\n`;
         });
+
+        await webhookClient
+          .send('```' + date + '\n' + returnString + '```')
+          .then(console.log('Successfully Confirmed Goat Orders\n'))
+          .catch((err) => {
+            throw new Error(err);
+          });
+      }
     } else {
       await webhookClient
         .send('```' + date + '\n' + 'No orders to confirm.```')
