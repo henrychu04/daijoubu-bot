@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const Discord = require('discord.js');
 const Login = require('../models/login');
 const encryption = require('../scripts/encryption');
+const config = require('../config.json');
 
 const response = {
   SUCCESS: 'success',
@@ -459,7 +460,7 @@ async function getListings() {
 
   let listings = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
     headers: {
-      'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      'user-agent': config.aliasHeader,
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
   }).then((res, err) => {
@@ -504,7 +505,7 @@ async function updateListing(obj, loginToken) {
   let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${obj.id}`, {
     method: 'PUT',
     headers: {
-      'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      'user-agent': config.aliasHeader,
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `{"listing":${JSON.stringify(obj)}}`,
@@ -567,7 +568,7 @@ async function deletion(listingId, loginToken) {
   deactivateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingId}/deactivate`, {
     method: 'PUT',
     headers: {
-      'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      'user-agent': config.aliasHeader,
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `{"id":"${listingId}"}`,
@@ -591,7 +592,7 @@ async function deletion(listingId, loginToken) {
     cancelRes = await fetch(` https://sell-api.goat.com/api/v1/listings/${listingId}/cancel`, {
       method: 'PUT',
       headers: {
-        'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+        'user-agent': config.aliasHeader,
         authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
       },
       body: `{"id":"${listingId}"}`,
@@ -626,7 +627,7 @@ async function editListing(args) {
 
   let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
     headers: {
-      'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      'user-agent': config.aliasHeader,
       authorization: `Bearer ${token}`,
     },
   }).then((res, err) => {
@@ -650,7 +651,7 @@ async function editListing(args) {
   let editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
     method: 'PUT',
     headers: {
-      'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+      'user-agent': config.aliasHeader,
       authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
     body: `${JSON.stringify(getJSON)}`,

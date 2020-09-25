@@ -3,6 +3,7 @@ const CronJob = require('cron').CronJob;
 const Discord = require('discord.js');
 const Login = require('../models/login');
 const encryption = require('../scripts/encryption');
+const config = require('../config.json')
 require('dotenv').config();
 
 const webhookClient = new Discord.WebhookClient(process.env.GOAT_ORDERS_ID, process.env.GOAT_ORDERS_TOKEN);
@@ -37,7 +38,7 @@ async function confirm() {
       'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
       {
         headers: {
-          'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+          'user-agent': config.aliasHeader,
           authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
         },
       }
@@ -67,7 +68,7 @@ async function confirm() {
             let confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
               method: 'PUT',
               headers: {
-                'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+                'user-agent': config.aliasHeader,
                 authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
               },
               body: `{"number":"${number}"}`,
@@ -84,7 +85,7 @@ async function confirm() {
               {
                 method: 'PUT',
                 headers: {
-                  'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+                  'user-agent': config.aliasHeader,
                   authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
                 },
                 body: `{"number":"${number}"}`,

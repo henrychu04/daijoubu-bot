@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const encryption = require('./encryption');
+const config = require('../config.json');
 require('dotenv').config();
 
 const PW = process.env.PW;
@@ -23,7 +24,7 @@ async function initialLogin() {
     let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
       method: 'POST',
       headers: {
-        'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+        'user-agent': config.aliasHeader,
       },
       body: `{"grantType":"password","username":"henrychu04@outlook.com","password":"${PW}"}`,
     })
@@ -69,7 +70,7 @@ async function loggingIn() {
     let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
       method: 'POST',
       headers: {
-        'user-agent': 'alias/1.1.1 (iPhone; iOS 14.0; Scale/2.00)',
+        'user-agent': config.aliasHeader,
       },
       body: `{"grantType":"password","username":"henrychu04@outlook.com","password":"${PW}"}`,
     })
