@@ -445,7 +445,11 @@ async function update(ids, all) {
     }
   } else {
     for (let i = 0; i < ids.length; i++) {
-      updateRes = await updateListing(ids[i], loginToken);
+      for (let j = 0; j < listingObj.length; j++) {
+        if (ids[i] == listingObj[j].id) {
+          updateRes = await updateListing(listingObj[j], loginToken);
+        }
+      }
     }
   }
 
