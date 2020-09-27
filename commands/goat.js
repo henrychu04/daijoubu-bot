@@ -409,9 +409,8 @@ async function noCommand() {
       let newLowestAsksString = '';
 
       listingObj.forEach((obj, i) => {
-        newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
-          obj.price_cents / 100
-        } => ${obj.product.lowest_price_cents / 100}\n\tid: ${obj.id}\n`;
+        newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${obj.price_cents / 100
+          } => ${obj.product.lowest_price_cents / 100}\n\tid: ${obj.id}\n`;
       });
 
       tempRes = 200;
@@ -432,7 +431,7 @@ async function update(ids, all) {
 
   if (all && listingObj.length == 0) {
     return response.NO_CHANGE;
-  } else if (!all && listingOobj.length == 0) {
+  } else if (!all && listingObj.length == 0) {
     return response.NO_ITEMS;
   }
 
@@ -537,9 +536,8 @@ function allListings(listings) {
 
   if (listings.listing.length != 0) {
     listings.listing.forEach((obj, i) => {
-      listingString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
-        obj.price_cents / 100
-      }\n\tid: ${obj.id}\n`;
+      listingString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${obj.price_cents / 100
+        }\n\tid: ${obj.id}\n`;
     });
   } else {
     return ['', response.NO_ITEMS];
