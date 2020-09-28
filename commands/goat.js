@@ -431,7 +431,7 @@ async function update(ids, all) {
     return response.NO_ITEMS;
   }
 
-  if (all && listingObj.length == 0) {
+  if (listingObj.length == 0) {
     return response.NO_CHANGE;
   }
 
