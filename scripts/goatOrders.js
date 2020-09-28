@@ -79,6 +79,12 @@ async function confirm() {
                 throw new Error(err);
               });
 
+            if (confirmation == 200) {
+              break;
+            }
+          }
+
+          while (true) {
             let shipping = await fetch(
               `https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`,
               {
@@ -97,7 +103,7 @@ async function confirm() {
                 throw new Error(err);
               });
 
-            if (confirmation == 200 && shipping == 200) {
+            if (shipping == 200) {
               break;
             }
           }
