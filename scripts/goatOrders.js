@@ -49,7 +49,6 @@ async function confirm() {
       .catch((err) => {
         throw new Error(err);
       });
-    console.log(purchaseOrders);
 
     pages = purchaseOrders.metadata.total_pages;
 
@@ -61,8 +60,8 @@ async function confirm() {
       });
 
       if (orders.length != 0) {
-        orders.forEach(async (order, i) => {
-          let number = order.number;
+        for (let i = 0; i < orders.length; i++) {
+          let number = orders[i].number;
 
           while (true) {
             let confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
@@ -103,10 +102,9 @@ async function confirm() {
             }
           }
 
-          returnString += `\t${i} ${order.listing.product.name} - ${order.listing.size_option.name.toUpperCase()} $${
-            order.listing.price_cents / 100
-          }\n`;
-        });
+          returnString += `\t${i} ${orders[i].listing.product.name} - ${orders[i].listing.size_option.name.toUpperCase()} $${order.listing.price_cents / 100
+            }\n`;
+        }
 
         await webhookClient
           .send('```' + date + '\n' + returnString + '```')
