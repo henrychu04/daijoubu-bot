@@ -392,7 +392,7 @@ async function goatSearch(client, query) {
 async function noCommand() {
   let listings = await getListings();
 
-  if (listings.listing.length == 0) {
+  if (!listings.listing) {
     return ['', response.NO_ITEMS];
   } else {
     let listingObj = [];
