@@ -50,8 +50,6 @@ exports.run = async (client, message, args) => {
           throw new Error('Too little parameters');
         } else if (args[1] == 'all') {
           all = true;
-          args.shift();
-          args.shift();
         } else {
           args.shift();
         }
