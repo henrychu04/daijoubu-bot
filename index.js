@@ -34,7 +34,7 @@ fs.readdir('./commands/', (err, files) => {
   });
 });
 
-client.on('ready', async () => {
+client.on('ready', () => {
   client.user.setActivity('!help for more info');
 });
 
