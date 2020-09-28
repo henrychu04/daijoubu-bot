@@ -423,14 +423,16 @@ async function update(ids, all) {
 
   let listingObj = [];
 
-  for (let i = 0; i < listings.listing.length; i++) {
-    listingObj = await checkListings(listings.listing[i], listingObj);
+  if (listings.listing) {
+    for (let i = 0; i < listings.listing.length; i++) {
+      listingObj = await checkListings(listings.listing[i], listingObj);
+    }
+  } else {
+    return response.NO_ITEMS;
   }
 
   if (all && listingObj.length == 0) {
     return response.NO_CHANGE;
-  } else if (!all && listingObj.length == 0) {
-    return response.NO_ITEMS;
   }
 
   let updateRes = 0;
