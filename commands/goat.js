@@ -536,7 +536,7 @@ async function updateListing(obj, loginToken) {
 function allListings(listings) {
   let listingString = '';
 
-  if (listings.listing.length != 0) {
+  if (listings.listing) {
     listings.listing.forEach((obj, i) => {
       listingString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${obj.price_cents / 100
         }\n\tid: ${obj.id}\n`;
