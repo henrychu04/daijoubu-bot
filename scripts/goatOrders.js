@@ -22,7 +22,7 @@ module.exports = function main() {
 
 async function confirm() {
   try {
-    console.log('Checking Goat Orders\n');
+    console.log('Checking Goat Orders');
 
     let crnt = new Date();
     let day = crnt.getDate();
