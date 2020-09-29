@@ -110,7 +110,7 @@ async function confirm() {
 
           returnString += `\t${i} ${orders[i].listing.product.name} - ${orders[
             i
-          ].listing.size_option.name.toUpperCase()} $${order.listing.price_cents / 100}\n`;
+          ].listing.size_option.name.toUpperCase()} $${orders[i].listing.price_cents / 100}\n`;
         }
 
         await webhookClient
