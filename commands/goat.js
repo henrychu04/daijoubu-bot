@@ -34,7 +34,7 @@ exports.run = async (client, message, args) => {
             toReturn = '```' + toReturn + '```';
             break;
           case response.NO_CHANGE:
-            toReturn = '```All Listings Match Their Lowest Asks```';
+            toReturn = '```All Listing(s) Match Their Lowest Asks```';
             break;
           case response.NO_ITEMS:
             toReturn = '```No Items Are Listed on Account```';
@@ -407,8 +407,9 @@ async function noCommand() {
       let newLowestAsksString = '';
 
       listingObj.forEach((obj, i) => {
-        newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${obj.price_cents / 100
-          } => ${obj.product.lowest_price_cents / 100}\n\tid: ${obj.id}\n`;
+        newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
+          obj.price_cents / 100
+        } => ${obj.product.lowest_price_cents / 100}\n\tid: ${obj.id}\n`;
       });
 
       tempRes = 200;
@@ -540,8 +541,9 @@ function allListings(listings) {
 
   if (listings.listing) {
     listings.listing.forEach((obj, i) => {
-      listingString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${obj.price_cents / 100
-        }\n\tid: ${obj.id}\n`;
+      listingString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
+        obj.price_cents / 100
+      }\n\tid: ${obj.id}\n`;
     });
   } else {
     return ['', response.NO_ITEMS];
