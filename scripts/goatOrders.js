@@ -3,7 +3,7 @@ const CronJob = require('cron').CronJob;
 const Discord = require('discord.js');
 const Login = require('../models/login');
 const encryption = require('../scripts/encryption');
-const config = require('../config.json')
+const config = require('../config.json');
 require('dotenv').config();
 
 const webhookClient = new Discord.WebhookClient(process.env.GOAT_ORDERS_ID, process.env.GOAT_ORDERS_TOKEN);
@@ -108,12 +108,20 @@ async function confirm() {
             }
           }
 
-          returnString += `\t${i} ${orders[i].listing.product.name} - ${orders[i].listing.size_option.name.toUpperCase()} $${order.listing.price_cents / 100
-            }\n`;
+          returnString += `\t${i} ${orders[i].listing.product.name} - ${orders[
+            i
+          ].listing.size_option.name.toUpperCase()} $${order.listing.price_cents / 100}\n`;
         }
 
         await webhookClient
           .send('```' + date + '\n' + returnString + '```')
+          .then(console.log('Successfully Confirmed Goat Orders\n'))
+          .catch((err) => {
+            throw new Error(err);
+          });
+      } else {
+        await webhookClient
+          .send('```' + date + '\n' + 'No orders to confirm.```')
           .then(console.log('Successfully Confirmed Goat Orders\n'))
           .catch((err) => {
             throw new Error(err);
