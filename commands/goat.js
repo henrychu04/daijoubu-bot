@@ -120,6 +120,20 @@ exports.run = async (client, message, args) => {
           toReturn = '```Item edited successfully```';
         }
         break;
+      case 'orders':
+        if (args.length > 1) {
+          throw new Error('Too many parameters');
+        }
+
+        [toReturn, returnedEnum] = await getOrders();
+
+        if (returnedEnum == response.SUCCESS) {
+          toReturn = '```' + toReturn + '```';
+        } else if (returnedEnum == response.NO_ITEMS) {
+          toReturn = '```Account currently has no open orders.```';
+        }
+
+        break;
       default:
         toReturn = await goatSearch(client, query);
         break;
@@ -680,4 +694,37 @@ async function editListing(args) {
   }
 
   return response.SUCCESS;
+}
+
+async function getOrders() {
+  let loginToken = await Login.find();
+  let returnString = 'Current open orders:\n';
+
+  let purchaseOrders = await fetch(
+    'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
+    {
+      headers: {
+        'user-agent': config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+      },
+    }
+  )
+    .then((res) => {
+      return res.json();
+    })
+    .catch((err) => {
+      throw new Error(err);
+    });
+
+  if (purchaseOrders.purchase_orders) {
+    purchaseOrders.purchase_orders.forEach((order, i) => {
+      returnString += `\t${i}. ${order.listing.product.name} $${order.listing.price_cents / 100} - ${
+        order.listing.size_option.name
+      }\n\t\tStatus: ${order.status}`;
+    });
+
+    return [returnString, response.SUCCESS];
+  } else {
+    return ['', response.NO_ITEMS];
+  }
 }
