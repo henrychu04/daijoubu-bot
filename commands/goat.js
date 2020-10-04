@@ -108,7 +108,7 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'edit':
-        if (args.length < 4) {
+        if (args.length < 3) {
           throw new Error('Incorrect format');
         } else {
           args.shift();
