@@ -182,6 +182,9 @@ exports.run = async (client, message, args) => {
       case 'Error editing':
         message.channel.send('```Error editing listing```');
         break;
+      case 'No data':
+        message.channel.send('```Matched product has no data```');
+        break;
       default:
         message.channel.send('```Unexpected Error```');
     }
@@ -276,6 +279,10 @@ async function goatSearch(client, query) {
       }
     }
   });
+
+  if (Object.keys(pageData).length == 0) {
+    throw new Error('No data');
+  }
 
   let lowestPrice = '';
   let highestBid = '';
@@ -646,7 +653,7 @@ async function editListing(args) {
   let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
     headers: {
       'user-agent': config.aliasHeader,
-      authorization: `Bearer ${token}`,
+      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
     },
   }).then((res, err) => {
     if (res.status == 200) {
