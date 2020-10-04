@@ -720,7 +720,15 @@ async function getOrders() {
     purchaseOrders.purchase_orders.forEach((order, i) => {
       returnString += `\t${i}. ${order.listing.product.name} $${order.listing.price_cents / 100} - ${
         order.listing.size_option.name
-      }\n\t\tStatus: ${order.status}`;
+      }\n\t\tStatus: ${order.status}\n`;
+
+      let date = new Date(order.take_action_by);
+
+      if (order.status == 'NEEDS_SHIPPING') {
+        returnString += `\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      } else if (order.status == 'NEEDS_CONFIRMATION') {
+        returnString += `\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      }
     });
 
     return [returnString, response.SUCCESS];
