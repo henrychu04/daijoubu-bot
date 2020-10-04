@@ -20,6 +20,6 @@
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4136"
   },
   "aliasHeader": {
-    "agent": "alias/1.2.0 (iPhone; iOS 14.0; Scale/2.00)"
+    "user_agent": "alias/1.2.0 (iPhone; iOS 14.0.1; Scale/2.00)"
   }
 }
