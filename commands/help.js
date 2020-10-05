@@ -13,10 +13,10 @@ exports.run = async (client, message, args) => {
           },
           { name: 'Returns information and lowest asks of a StockX product', value: '!stockx <search parameters>' },
           {
-            name: 'Returns information and lowest asks of a GOAT product. Able to edit listings for a given account.',
-            value: '!goat <search parameters>',
+            name: 'Returns information and lowest asks of a GOAT product',
+            value: '!goat <search parameters>\n!goat help for more commands',
           },
-          { name: 'Returns information from StockX and GOAT', value: '!search <search parameters>' },
+          { name: 'Returns information from both StockX and GOAT', value: '!search <search parameters>' },
         ],
       },
     })

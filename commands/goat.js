@@ -156,12 +156,20 @@ exports.run = async (client, message, args) => {
 
         break;
       case 'confirm':
-      // if (args.length < 3) {
-      //   [toReturn, returnedEnum] = await confirm(client, loginToken, args);
-      // } else {
-      //   throw new Error('Too many parameters');
-      // }
-      // break;
+        // if (args.length < 3) {
+        //   [toReturn, returnedEnum] = await confirm(client, loginToken, args);
+        // } else {
+        //   throw new Error('Too many parameters');
+        // }
+        toReturn = 'Not available yet';
+        break;
+      case 'help':
+        if (args.length > 1) {
+          throw new Error('Too many parameters');
+        } else {
+          toReturn = help();
+        }
+        break;
       default:
         toReturn = await goatSearch(client, query);
         break;
@@ -810,3 +818,38 @@ async function confirm(client, loginToken, args) {
 }
 
 async function confirmation(client, loginToken, number) {}
+
+function help() {
+  const helpEmbed = new Discord.MessageEmbed()
+    .setColor('#7756fe')
+    .setTitle('GOAT / alias Help')
+    .setDescription(
+      'All the GOAT / alias account commands\n\nAn alias account is required to use the commands. To gain access to an alias account, you must have a GOAT account with a score of 150 or greater. Each command will only work for the bound alias account. It is not possible to control the listings for another alias account.\n\n[Click for more info](https://apps.apple.com/us/app/alias-sell-sneakers-apparel/id1467090341)\n\nIf no alias account is bound to the Discord account, DM ``!login <email> <password>`` to the daijoubu bot to login.'
+    )
+    .addFields(
+      { name: '!goat listings', value: 'Returns all the current listings for the attached account.' },
+      {
+        name: '!goat check',
+        value: 'Checks if all the listings for the attached account match the current lowest ask.',
+      },
+      {
+        name: '!goat update ( all / <listing id(s)> )',
+        value: 'Updates the listings to the current lowest ask. Able to take in multiple listing ids at once.',
+      },
+      {
+        name: '!goat edit <listing id(s)>',
+        value: 'Edits the ask for the listings that are sent. Able to take in multiple listing ids at once.',
+      },
+      {
+        name: '!goat delete <listing id(s)>',
+        value: 'Deletes the listings for the account. Able to take in multiple listing ids at once.',
+      },
+      { name: '!goat orders', value: 'Returns all the current orders for the attached account.' },
+      {
+        name: '!goat confirm <order num(s)>',
+        value: 'Confirms the orders that are passed in. Able to take in multiple order ids at once.',
+      }
+    );
+
+  return helpEmbed;
+}
