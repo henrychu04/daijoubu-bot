@@ -3,7 +3,7 @@ const Discord = require('discord.js');
 const encryption = require('../scripts/encryption');
 const config = require('../config.json');
 
-const Login = require('../models/logins');
+const Login = require('../models/login');
 
 const response = {
   SUCCESS: 'success',
