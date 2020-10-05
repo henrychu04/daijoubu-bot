@@ -4,8 +4,6 @@ const encryption = require('../scripts/encryption');
 
 const Login = require('../models/logins');
 
-const Login = require('../models/login');
-
 const response = {
   SUCCESS: 'success',
   NO_ITEMS: 'no_items',
