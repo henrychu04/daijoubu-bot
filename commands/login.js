@@ -63,6 +63,8 @@ exports.run = async (client, message, args) => {
       } else {
         message.channel.send('```Incorrect format\nCorrect format is !login <email> <password>```');
       }
+    } else {
+      message.channel.send('```To login to alias, send a dm to daijoubu in the format:\n!login <email> <password>```');
     }
   } catch (err) {
     console.log(err);
