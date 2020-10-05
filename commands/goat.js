@@ -746,7 +746,7 @@ async function getOrders(client, loginToken) {
     purchaseOrders.purchase_orders.forEach((order, i) => {
       returnString += `\t${i}. ${order.listing.product.name} $${order.listing.price_cents / 100} - ${
         order.listing.size_option.name
-      }\n\t\tStatus: ${order.status}\n`;
+      }\n\t\tStatus: ${order.status}\n\t\tOrder number: ${order.number}\n`;
 
       let date = new Date(order.take_action_by);
 
