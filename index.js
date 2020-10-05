@@ -38,4 +38,4 @@ client.on('ready', () => {
   client.user.setActivity('!help for more info');
 });
 
-client.login(process.env.BOT_TOKEN).then(loginGoat()).then(console.log('Ready!')).then(goatOrders());
+client.login(process.env.BOT_TOKEN).then(loginGoat()).then(console.log('Ready!')).then(goatOrders(client));
