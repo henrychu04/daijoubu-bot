@@ -11,9 +11,9 @@ module.exports = (client, message) => {
   if (!cmd) return;
 
   if (command == 'login') {
-    console.log(`Command: !login ${args[0]}\n`);
+    console.log(`Command: !login ${args[0]}`);
   } else {
-    console.log(`Command: ${message.content}\n`);
+    console.log(`Command: ${message.content}`);
   }
 
   cmd.run(client, message, args);

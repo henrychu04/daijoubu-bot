@@ -7,7 +7,7 @@ exports.run = async (client, message, args) => {
   try {
     if (message.channel.type == 'dm') {
       if (args.length == 2) {
-        const id = message.channel.id;
+        const id = message.author.id;
         const email = args[0];
         const pw = args[1];
 
@@ -53,12 +53,12 @@ exports.run = async (client, message, args) => {
               pw: encryption.encrypt(pw),
             })
             .save()
-            .then(console.log('Initial GOAT Login Successfully Updated\n'))
+            .then(console.log('Initial alias Login Successfully Updated\n'))
             .catch((err) => {
               throw new Error(err);
             });
 
-          message.channel.send('```Password Updated Successfully```');
+          message.channel.send('```alias Password Updated Successfully```');
         }
       } else {
         message.channel.send('```Incorrect format\nCorrect format is !login <email> <password>```');
