@@ -26,7 +26,8 @@ exports.run = async (client, message, args) => {
       command == 'listings' ||
       command == 'delete' ||
       command == 'edit' ||
-      command == 'orders'
+      command == 'orders' ||
+      command == 'confirm'
     ) {
       const id = message.author.id;
       const login = await Login.find({ d_id: id });
@@ -154,6 +155,13 @@ exports.run = async (client, message, args) => {
         }
 
         break;
+      case 'confirm':
+      // if (args.length < 3) {
+      //   [toReturn, returnedEnum] = await confirm(client, loginToken, args);
+      // } else {
+      //   throw new Error('Too many parameters');
+      // }
+      // break;
       default:
         toReturn = await goatSearch(client, query);
         break;
@@ -762,3 +770,43 @@ async function getOrders(client, loginToken) {
     return ['', response.NO_ITEMS];
   }
 }
+
+async function confirm(client, loginToken, args) {
+  let purchaseOrders = await fetch(
+    'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
+    {
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+    }
+  )
+    .then((res) => {
+      return res.json();
+    })
+    .catch((err) => {
+      throw new Error(err);
+    });
+
+  purchaseOrders.purchase_orders.forEach(async (order, i) => {
+    let exist = false;
+
+    for (let j = 0; j < args.length; j++) {
+      if (order.number == args[j]) {
+        exist = true;
+      }
+
+      if (exist && order.status != 'NEEDS_CONFIRMATION') {
+        continue;
+      }
+    }
+
+    if (exist) {
+      await confirmation(client, loginToken, order.number);
+    } else {
+      throw new Error('Order not exist');
+    }
+  });
+}
+
+async function confirmation(client, loginToken, number) {}
