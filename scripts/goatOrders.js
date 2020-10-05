@@ -29,7 +29,7 @@ async function confirm() {
     let month = crnt.getMonth() + 1;
     let date = `${month}/${day}`;
 
-    let loginToken = await Login.find();
+    const loginToken = await Login.find({ d_id: '504000540804382741' });
     let orders = [];
     let pages = 0;
     let returnString = 'Orders successfully confirmed:\n';
@@ -39,7 +39,7 @@ async function confirm() {
       {
         headers: {
           'user-agent': config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
         },
       }
     )
@@ -68,7 +68,7 @@ async function confirm() {
               method: 'PUT',
               headers: {
                 'user-agent': config.aliasHeader,
-                authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+                authorization: `Bearer ${encryption.decrypt(loginToken)}`,
               },
               body: `{"number":"${number}"}`,
             })
@@ -91,7 +91,7 @@ async function confirm() {
                 method: 'PUT',
                 headers: {
                   'user-agent': config.aliasHeader,
-                  authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+                  authorization: `Bearer ${encryption.decrypt(loginToken)}`,
                 },
                 body: `{"number":"${number}"}`,
               }
