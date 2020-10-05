@@ -30,7 +30,7 @@ exports.run = async (client, message, args) => {
         if (exist.length == 0) {
           const newLogin = new Login({
             d_id: id,
-            email: encryption.encrypt(email),
+            email: email,
             pw: encryption.encrypt(pw),
             login: encryption.encrypt(loginRes.auth_token.access_token),
           });
