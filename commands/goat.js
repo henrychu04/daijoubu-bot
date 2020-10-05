@@ -1,8 +1,9 @@
 const fetch = require('node-fetch');
 const Discord = require('discord.js');
-const Login = require('../models/login');
 const encryption = require('../scripts/encryption');
 const config = require('../config.json');
+
+const Login = require('../models/logins');
 
 const response = {
   SUCCESS: 'success',
@@ -104,7 +105,7 @@ exports.run = async (client, message, args) => {
         returnedEnum = await deleteSearch(args);
 
         if (returnedEnum == response.SUCCESS) {
-          toReturn = '```Specifided Listing(s) Have Been Deleted```';
+          toReturn = '```Specified Listing(s) Have Been Deleted```';
         }
         break;
       case 'edit':
