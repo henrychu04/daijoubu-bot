@@ -46,6 +46,4 @@ async function loggingIn() {
       });
     }
   }
-
-  console.log('All Initial Logins Successfully Updated\n');
 }
