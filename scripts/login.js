@@ -1,9 +1,6 @@
 const fetch = require('node-fetch');
 const encryption = require('./encryption');
 const config = require('../config.json');
-require('dotenv').config();
-
-const PW = process.env.PW;
 
 const Login = require('../models/logins');
 
@@ -11,7 +8,7 @@ module.exports = async function login() {
   try {
     await loggingIn();
 
-    console.log('All Initial Logins Successfully Updated\n');
+    console.log('All Initial alias Logins Successfully Updated\n');
 
     setInterval(loggingIn, 3600000);
   } catch (err) {
