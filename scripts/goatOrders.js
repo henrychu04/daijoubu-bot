@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 const CronJob = require('cron').CronJob;
 const Discord = require('discord.js');
-const Login = require('../models/login');
+const Login = require('../models/logins');
 const encryption = require('../scripts/encryption');
 const config = require('../config.json');
 require('dotenv').config();

@@ -1,7 +1,8 @@
 const fetch = require('node-fetch');
 const Discord = require('discord.js');
 const encryption = require('../scripts/encryption');
-const config = require('../config.json');
+
+const Login = require('../models/logins');
 
 const Login = require('../models/login');
 
@@ -14,18 +15,38 @@ const response = {
 exports.run = async (client, message, args) => {
   try {
     const query = message.content.slice(6);
+    const command = args[0];
+    let loginToken = '';
 
     if (args.length == 0) {
       throw new Error('Empty command');
     }
 
+    if (
+      command == 'check' ||
+      command == 'update' ||
+      command == 'listings' ||
+      command == 'delete' ||
+      command == 'edit' ||
+      command == 'orders'
+    ) {
+      const id = message.author.id;
+      const login = await Login.find({ d_id: id });
+
+      if (login.length == 0) {
+        throw new Error('Not logged in');
+      }
+
+      loginToken = login[0].login;
+    }
+
     let toReturn = '';
     let returnedEnum = null;
 
-    switch (args[0]) {
+    switch (command) {
       case 'check':
         if (args.length < 2) {
-          [toReturn, returnedEnum] = await noCommand(client);
+          [toReturn, returnedEnum] = await noCommand(client, loginToken);
         } else {
           throw new Error('Too many parameters');
         }
@@ -55,7 +76,7 @@ exports.run = async (client, message, args) => {
           args.shift();
         }
 
-        returnedEnum = await update(args, all);
+        returnedEnum = await update(client, loginToken, args, all);
 
         switch (returnedEnum) {
           case response.SUCCESS:
@@ -80,7 +101,7 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        let listings = await getListings();
+        let listings = await getListings(client, loginToken);
 
         [toReturn, returnedEnum] = allListings(listings);
 
@@ -102,7 +123,7 @@ exports.run = async (client, message, args) => {
           args.shift();
         }
 
-        returnedEnum = await deleteSearch(args);
+        returnedEnum = await deleteSearch(client, loginToken, args);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```Specified Listing(s) Have Been Deleted```';
@@ -115,7 +136,7 @@ exports.run = async (client, message, args) => {
           args.shift();
         }
 
-        returnedEnum = await editListing(args);
+        returnedEnum = await editListing(client, loginToken, args);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```Item edited successfully```';
@@ -126,7 +147,7 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        [toReturn, returnedEnum] = await getOrders();
+        [toReturn, returnedEnum] = await getOrders(client, loginToken);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + toReturn + '```';
@@ -185,6 +206,11 @@ exports.run = async (client, message, args) => {
         break;
       case 'No data':
         message.channel.send('```Matched product has no data```');
+        break;
+      case 'Not logged in':
+        message.channel.send(
+          '```Command not available\nPlease login via daijoubu DMS with the format:\n\t!login <email> <password>```'
+        );
         break;
       default:
         message.channel.send('```Unexpected Error```');
@@ -411,8 +437,8 @@ async function goatSearch(client, query) {
   return embed;
 }
 
-async function noCommand() {
-  let listings = await getListings();
+async function noCommand(client, loginToken) {
+  let listings = await getListings(client, loginToken);
 
   if (!listings.listing) {
     return ['', response.NO_ITEMS];
@@ -440,9 +466,8 @@ async function noCommand() {
   }
 }
 
-async function update(ids, all) {
-  let loginToken = await Login.find();
-  let listings = await getListings();
+async function update(client, loginToken, ids, all) {
+  let listings = await getListings(client, loginToken);
 
   let listingObj = [];
 
@@ -463,14 +488,14 @@ async function update(ids, all) {
   if (all) {
     for (let j = 0; j < listingObj.length; j++) {
       if (listingObj[j].price_cents > listingObj[j].product.lowest_price_cents) {
-        updateRes = await updateListing(listingObj[j], loginToken);
+        updateRes = await updateListing(client, loginToken, listingObj[j]);
       }
     }
   } else {
     for (let i = 0; i < ids.length; i++) {
       for (let j = 0; j < listingObj.length; j++) {
         if (ids[i] == listingObj[j].id) {
-          updateRes = await updateListing(listingObj[j], loginToken);
+          updateRes = await updateListing(client, loginToken, listingObj[j]);
         }
       }
     }
@@ -481,13 +506,11 @@ async function update(ids, all) {
   }
 }
 
-async function getListings() {
-  let loginToken = await Login.find();
-
+async function getListings(client, loginToken) {
   let listings = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
     headers: {
-      'user-agent': config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
     },
   }).then((res, err) => {
     if (res.status == 200) {
@@ -525,14 +548,14 @@ function checkListings(obj, listingObj) {
   return listingObj;
 }
 
-async function updateListing(obj, loginToken) {
+async function updateListing(client, loginToken, obj) {
   obj.price_cents = obj.product.lowest_price_cents;
 
   let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${obj.id}`, {
     method: 'PUT',
     headers: {
-      'user-agent': config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
     },
     body: `{"listing":${JSON.stringify(obj)}}`,
   }).then((res, err) => {
@@ -574,12 +597,11 @@ function allListings(listings) {
   return [listingString, response.SUCCESS];
 }
 
-async function deleteSearch(args) {
-  let loginToken = await Login.find();
+async function deleteSearch(client, loginToken, args) {
   let deleteRes = 0;
 
   for (let j = 0; j < args.length; j++) {
-    deleteRes = await deletion(args[j], loginToken);
+    deleteRes = await deletion(client, loginToken, args[j]);
   }
 
   if (deleteRes == 200) {
@@ -587,15 +609,15 @@ async function deleteSearch(args) {
   }
 }
 
-async function deletion(listingId, loginToken) {
+async function deletion(client, loginToken, listingId) {
   let deactivateRes = 0;
   let cancelRes = 0;
 
   deactivateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingId}/deactivate`, {
     method: 'PUT',
     headers: {
-      'user-agent': config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
     },
     body: `{"id":"${listingId}"}`,
   }).then((res, err) => {
@@ -618,8 +640,8 @@ async function deletion(listingId, loginToken) {
     cancelRes = await fetch(` https://sell-api.goat.com/api/v1/listings/${listingId}/cancel`, {
       method: 'PUT',
       headers: {
-        'user-agent': config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
       },
       body: `{"id":"${listingId}"}`,
     }).then((res, err) => {
@@ -646,15 +668,14 @@ async function deletion(listingId, loginToken) {
   }
 }
 
-async function editListing(args) {
-  let loginToken = await Login.find();
+async function editListing(client, loginToken, args) {
   let id = args[0];
   let price = args[1];
 
   let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
     headers: {
-      'user-agent': config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
     },
   }).then((res, err) => {
     if (res.status == 200) {
@@ -677,8 +698,8 @@ async function editListing(args) {
   let editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
     method: 'PUT',
     headers: {
-      'user-agent': config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
     },
     body: `${JSON.stringify(getJSON)}`,
   }).then((res) => {
@@ -704,16 +725,15 @@ async function editListing(args) {
   return response.SUCCESS;
 }
 
-async function getOrders() {
-  let loginToken = await Login.find();
+async function getOrders(client, loginToken) {
   let returnString = 'Current open orders:\n';
 
   let purchaseOrders = await fetch(
     'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
     {
       headers: {
-        'user-agent': config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken[0].login)}`,
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
       },
     }
   )
