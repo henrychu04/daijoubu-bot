@@ -881,7 +881,7 @@ async function confirmation(client, loginToken, number) {
   let shipping = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`, {
     method: 'PUT',
     headers: {
-      'user-agent': cliient.config.aliasHeader,
+      'user-agent': client.config.aliasHeader,
       authorization: `Bearer ${encryption.decrypt(loginToken)}`,
     },
     body: `{"number":"${number}"}`,
