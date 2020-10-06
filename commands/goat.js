@@ -156,12 +156,32 @@ exports.run = async (client, message, args) => {
 
         break;
       case 'confirm':
-        // if (args.length < 3) {
-        //   [toReturn, returnedEnum] = await confirm(client, loginToken, args);
-        // } else {
-        //   throw new Error('Too many parameters');
-        // }
-        toReturn = 'Not available yet';
+        let all = false;
+
+        if (args.length < 2) {
+          throw new Error('Too little parameters');
+        } else if (args[1] == 'all') {
+          all = true;
+        } else {
+          args.shift();
+        }
+
+        returnedEnum = await confirm(client, loginToken, args, all);
+
+        switch (returnedEnum) {
+          case response.SUCCESS:
+            if (all) {
+              toReturn = '```All Order(s) Confirmed Successfully!```';
+            } else {
+              toReturn = '```Orders(s) Updated Successfully!```';
+            }
+            break;
+          case response.NO_ITEMS:
+            toReturn = '```No Open Orders Currently On Account```';
+            break;
+          default:
+            break;
+        }
         break;
       case 'help':
         if (args.length > 1) {
@@ -225,6 +245,9 @@ exports.run = async (client, message, args) => {
         message.channel.send(
           '```Command not available\nPlease login via daijoubu DMS with the format:\n\t!login <email> <password>```'
         );
+        break;
+      case 'Error confirming':
+        message.channel.send('```Error confirming order(s)```');
         break;
       default:
         message.channel.send('```Unexpected Error```');
@@ -499,17 +522,15 @@ async function update(client, loginToken, ids, all) {
 
   let updateRes = 0;
 
-  if (all) {
-    for (let j = 0; j < listingObj.length; j++) {
-      if (listingObj[j].price_cents > listingObj[j].product.lowest_price_cents) {
-        updateRes = await updateListing(client, loginToken, listingObj[j]);
-      }
+  for (let i = 0; i < listingObj.length; i++) {
+    if (all && listingObj[i].price_cents > listingObj[i].product.lowest_price_cents) {
+      updateRes = await updateListing(client, loginToken, listingObj[i]);
     }
-  } else {
-    for (let i = 0; i < ids.length; i++) {
-      for (let j = 0; j < listingObj.length; j++) {
-        if (ids[i] == listingObj[j].id) {
-          updateRes = await updateListing(client, loginToken, listingObj[j]);
+
+    if (!all) {
+      for (let j = 0; j < ids.length; j++) {
+        if (ids[j] == listingObj[i].id) {
+          updateRes = await updateListing(client, loginToken, listingObj[i]);
         }
       }
     }
@@ -779,7 +800,7 @@ async function getOrders(client, loginToken) {
   }
 }
 
-async function confirm(client, loginToken, args) {
+async function confirm(client, loginToken, args, all) {
   let purchaseOrders = await fetch(
     'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
     {
@@ -796,28 +817,80 @@ async function confirm(client, loginToken, args) {
       throw new Error(err);
     });
 
-  purchaseOrders.purchase_orders.forEach(async (order, i) => {
+  let orders = purchaseOrders.purchase_orders;
+
+  if (!orders) {
+    return response.NO_ITEMS;
+  }
+
+  let confirmRes = 0;
+
+  for (let i = 0; i < orders.length; i++) {
     let exist = false;
 
-    for (let j = 0; j < args.length; j++) {
-      if (order.number == args[j]) {
-        exist = true;
-      }
-
-      if (exist && order.status != 'NEEDS_CONFIRMATION') {
-        continue;
-      }
+    if (all && orders[i].status == 'NEEDS_CONFIRMATION') {
+      confirmRes = await confirmation(client, loginToken, orders[i].number);
     }
 
-    if (exist) {
-      await confirmation(client, loginToken, order.number);
-    } else {
-      throw new Error('Order not exist');
+    if (!all) {
+      for (let j = 0; j < args.length; j++) {
+        if (orders[i].number == args[j]) {
+          exist = true;
+        }
+
+        if (!exist) {
+          throw new Error('Order not exist');
+        }
+        
+        if (exist && orders[i].status == 'NEEDS_CONFIRMATION') {
+          confirmRes = await confirmation(client, loginToken, orders[i].number);
+        }
+      }
     }
-  });
+  }
+
+  if (confirmRes == 200) {
+    return response.SUCCESS;
+  }
 }
 
-async function confirmation(client, loginToken, number) {}
+async function confirmation(client, loginToken, number) {
+  let confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
+    method: 'PUT',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+    body: `{"number":"${number}"}`,
+  })
+    .then((res) => {
+      return res.status;
+    })
+    .catch((err) => {
+      throw new Error(err);
+    });
+
+  let shipping = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`, {
+    method: 'PUT',
+    headers: {
+      'user-agent': cliient.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+    body: `{"number":"${number}"}`,
+  })
+    .then((res) => {
+      return res.status;
+    })
+    .catch((err) => {
+      throw new Error(err);
+    });
+
+  if (confirmation != 200 || shipping != 200) {
+    throw new Error('Error confirming');
+  } else if (confirmation == 200 && shipping == 200) {
+    return 200;
+  }
+}
 
 function help() {
   const helpEmbed = new Discord.MessageEmbed()
