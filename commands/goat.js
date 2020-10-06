@@ -15,6 +15,8 @@ exports.run = async (client, message, args) => {
     const query = message.content.slice(6);
     const command = args[0];
     let loginToken = '';
+    const id = message.author.id;
+    let user = null;
 
     if (args.length == 0) {
       throw new Error('Empty command');
@@ -30,14 +32,14 @@ exports.run = async (client, message, args) => {
       command == 'confirm' ||
       command == 'settings'
     ) {
-      const id = message.author.id;
-      const user = await Users.find({ d_id: id });
+      user = await Users.find({ d_id: id });
 
       if (user.length == 0) {
         throw new Error('Not logged in');
       }
 
-      loginToken = user[0].login;
+      user = user[0];
+      loginToken = user.login;
     }
 
     let toReturn = '';
@@ -187,11 +189,17 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'settings':
-        if (args.length > 1) {
+        let edit = false;
+
+        if (args.length > 2) {
           throw new Error('Too many parameters');
+        } else if (args[1] == 'edit') {
+          edit = true;
+        } else if (args[1] != 'edit') {
+          throw new Error('Incorrect format');
         }
 
-        
+        toReturn = settings(client, user, edit);
 
         break;
       case 'help':
@@ -221,9 +229,6 @@ exports.run = async (client, message, args) => {
         break;
       case 'Empty command':
         message.channel.send('```Command is missing parameters```');
-        break;
-      case 'Unauthorized':
-        message.channel.send('```Command not authorized for message author```');
         break;
       case 'Not exist':
         message.channel.send('```Command has one or more non-existing listing ids```');
@@ -904,6 +909,22 @@ async function confirmation(client, loginToken, number) {
 
   if (confirmation != 200 || shipping != 200) {
     throw new Error('Error confirming');
+  }
+}
+
+function settings(client, user, edit) {
+  if (!edit) {
+    const userSettings = new Discord.MessageEmbed()
+      .setColor('#7756fe')
+      .setTitle('GOAT / alias Settings')
+      .addFields({
+        name: 'Order Confirmation Refresh Rate:',
+        value: user.settings.orderRefresh == 'Live' ? 'Live' : 'Daily',
+      });
+
+    return userSettings;
+  } else {
+
   }
 }
 
