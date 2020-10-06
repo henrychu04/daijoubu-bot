@@ -925,7 +925,7 @@ function help() {
       },
       { name: '!goat orders', value: 'Returns all the current orders for the attached account.' },
       {
-        name: '!goat confirm <order num(s)>',
+        name: '!goat confirm ( all / <order num(s)> )',
         value: 'Confirms the orders that are passed in. Able to take in multiple order ids at once.',
       },
       {
