@@ -903,7 +903,7 @@ function help() {
     .setColor('#7756fe')
     .setTitle('GOAT / alias Help')
     .setDescription(
-      'All the GOAT / alias account commands\n\nAn alias account is required to use the commands. To gain access to an alias account, you must have a GOAT account with a score of 150 or greater. Each command will only work for the bound alias account. It is not possible to control the listings for another alias account.\n\n[Click for more info](https://apps.apple.com/us/app/alias-sell-sneakers-apparel/id1467090341)\n\nIf no alias account is bound to the Discord account, DM ``!login <email> <password>`` to the daijoubu bot to login.'
+      'All the GOAT / alias account commands\n\nAn alias account is required to use the commands. To gain access to an alias account, you must have a GOAT account with a score of 150 or greater. Each command will only work for the bound alias account. It is not possible to control the listings for another alias account.\n\n[Click for more info](https://apps.apple.com/us/app/alias-sell-sneakers-apparel/id1467090341)\n\nIf no alias account is bound to the Discord account, DM \n``!login <email> <password>`` to the daijoubu bot to login.'
     )
     .addFields(
       { name: '!goat listings', value: 'Returns all the current listings for the attached account.' },
