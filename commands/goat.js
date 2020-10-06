@@ -180,7 +180,7 @@ exports.run = async (client, message, args) => {
             toReturn = '```No Open Order(s) Currently On Account```';
             break;
           case response.NO_CHANGE:
-            toReturn = '```Currently All Open Order(s) Are Confirmed```'
+            toReturn = '```Currently All Open Order(s) Are Confirmed```';
           default:
             break;
         }
@@ -250,6 +250,9 @@ exports.run = async (client, message, args) => {
         break;
       case 'Error confirming':
         message.channel.send('```Error confirming order(s)```');
+        break;
+      case 'Order not exist':
+        message.channel.send('```Command has one or more non-existing order numbers```');
         break;
       default:
         message.channel.send('```Unexpected Error```');
