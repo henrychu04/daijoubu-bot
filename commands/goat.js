@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 const Discord = require('discord.js');
 const encryption = require('../scripts/encryption');
 
-const Login = require('../models/logins');
+const Users = require('../models/users');
 
 const response = {
   SUCCESS: 'success',
@@ -30,13 +30,13 @@ exports.run = async (client, message, args) => {
       command == 'confirm'
     ) {
       const id = message.author.id;
-      const login = await Login.find({ d_id: id });
+      const user = await Users.find({ d_id: id });
 
-      if (login.length == 0) {
+      if (user.length == 0) {
         throw new Error('Not logged in');
       }
 
-      loginToken = login[0].login;
+      loginToken = user[0].login;
     }
 
     let toReturn = '';

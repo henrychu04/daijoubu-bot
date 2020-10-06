@@ -3,7 +3,7 @@ const CronJob = require('cron').CronJob;
 const encryption = require('../scripts/encryption');
 const config = require('../config.json');
 
-const Login = require('../models/logins');
+const Users = require('../models/users');
 
 module.exports = function main(client) {
   try {
@@ -21,17 +21,17 @@ async function confirm(client) {
   try {
     console.log('Checking Goat Orders');
 
-    const logins = await Login.find();
+    const users = await Users.find();
 
-    for (let i = 0; i < logins.length; i++) {
-      await confirmOrders(client, logins[i]);
+    for (let i = 0; i < users.length; i++) {
+      await confirmOrders(client, users[i]);
     }
   } catch (err) {
     console.log(err);
   }
 }
 
-async function confirmOrders(client, login) {
+async function confirmOrders(client, user) {
   let crnt = new Date();
   let day = crnt.getDate();
   let month = crnt.getMonth() + 1;
@@ -46,7 +46,7 @@ async function confirmOrders(client, login) {
     {
       headers: {
         'user-agent': config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(login.login)}`,
+        authorization: `Bearer ${encryption.decrypt(user.login)}`,
       },
     }
   )
@@ -75,7 +75,7 @@ async function confirmOrders(client, login) {
             method: 'PUT',
             headers: {
               'user-agent': config.aliasHeader,
-              authorization: `Bearer ${encryption.decrypt(login.login)}`,
+              authorization: `Bearer ${encryption.decrypt(user.login)}`,
             },
             body: `{"number":"${number}"}`,
           })
@@ -98,7 +98,7 @@ async function confirmOrders(client, login) {
               method: 'PUT',
               headers: {
                 'user-agent': config.aliasHeader,
-                authorization: `Bearer ${encryption.decrypt(login.login)}`,
+                authorization: `Bearer ${encryption.decrypt(user.login)}`,
               },
               body: `{"number":"${number}"}`,
             }
@@ -121,7 +121,7 @@ async function confirmOrders(client, login) {
       }
 
       await client.users.cache
-        .get(login.d_id)
+        .get(user.d_id)
         .send('```alias orders - ' + date + '\n' + returnString + '```')
         .then(console.log('Successfully Confirmed Goat Orders\n'))
         .catch((err) => {
@@ -129,7 +129,7 @@ async function confirmOrders(client, login) {
         });
     } else {
       await client.users.cache
-        .get(login.d_id)
+        .get(user.d_id)
         .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
         .then(console.log('Successfully Confirmed Goat Orders\n'))
         .catch((err) => {
@@ -138,7 +138,7 @@ async function confirmOrders(client, login) {
     }
   } else {
     await client.users.cache
-      .get(login.d_id)
+      .get(user.d_id)
       .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
       .then(console.log('Successfully Confirmed Goat Orders\n'))
       .catch((err) => {

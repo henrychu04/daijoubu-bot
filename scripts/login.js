@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 const encryption = require('./encryption');
 const config = require('../config.json');
 
-const Login = require('../models/logins');
+const Users = require('../models/users');
 
 module.exports = async function login() {
   try {
@@ -17,9 +17,9 @@ module.exports = async function login() {
 };
 
 async function loggingIn() {
-  let logins = await Login.find();
+  let users = await Users.find();
 
-  for (let i = 0; i < logins.length; i++) {
+  for (let i = 0; i < users.length; i++) {
     let goatRes = 0;
 
     while (goatRes != 200) {
@@ -29,8 +29,8 @@ async function loggingIn() {
           'user-agent': config.aliasHeader,
         },
         body: `{"grantType":"password","username":"${
-          logins[i].email
-        }","password":"${encryption.decrypt(logins[i].pw)}"}`,
+          users[i].email
+        }","password":"${encryption.decrypt(users[i].pw)}"}`,
       }).then((res) => {
         goatRes = res.status;
         return res.json();
@@ -38,7 +38,7 @@ async function loggingIn() {
 
       let loginToken = encryption.encrypt(loginRes.auth_token.access_token);
 
-      await Login.updateOne({ _id: logins[i]._id }, { login: loginToken }).catch((err) => {
+      await Users.updateOne({ _id: users[i]._id }, { login: loginToken }).catch((err) => {
         throw new Error(err);
       });
     }
