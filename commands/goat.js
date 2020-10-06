@@ -823,13 +823,11 @@ async function confirm(client, loginToken, args, all) {
     return response.NO_ITEMS;
   }
 
-  let confirmRes = 0;
-
   for (let i = 0; i < orders.length; i++) {
     let exist = false;
 
     if (all && orders[i].status == 'NEEDS_CONFIRMATION') {
-      confirmRes = await confirmation(client, loginToken, orders[i].number);
+      await confirmation(client, loginToken, orders[i].number);
     }
 
     if (!all) {
@@ -841,7 +839,7 @@ async function confirm(client, loginToken, args, all) {
         if (!exist) {
           throw new Error('Order not exist');
         }
-        
+
         if (exist && orders[i].status == 'NEEDS_CONFIRMATION') {
           confirmRes = await confirmation(client, loginToken, orders[i].number);
         }
@@ -849,9 +847,7 @@ async function confirm(client, loginToken, args, all) {
     }
   }
 
-  if (confirmRes == 200) {
-    return response.SUCCESS;
-  }
+  return response.SUCCESS;
 }
 
 async function confirmation(client, loginToken, number) {
@@ -887,8 +883,6 @@ async function confirmation(client, loginToken, number) {
 
   if (confirmation != 200 || shipping != 200) {
     throw new Error('Error confirming');
-  } else if (confirmation == 200 && shipping == 200) {
-    return 200;
   }
 }
 
