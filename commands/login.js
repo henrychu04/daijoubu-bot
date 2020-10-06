@@ -33,6 +33,9 @@ exports.run = async (client, message, args) => {
             email: email,
             pw: encryption.encrypt(pw),
             login: encryption.encrypt(loginRes.auth_token.access_token),
+            settings: {
+              orderRefresh: 'Daily',
+            },
           });
 
           await newLogin
