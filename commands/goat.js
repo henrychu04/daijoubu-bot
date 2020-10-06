@@ -65,21 +65,21 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'update':
-        let all = false;
+        let all1 = false;
 
         if (args.length < 2) {
           throw new Error('Too little parameters');
         } else if (args[1] == 'all') {
-          all = true;
+          all1 = true;
         } else {
           args.shift();
         }
 
-        returnedEnum = await update(client, loginToken, args, all);
+        returnedEnum = await update(client, loginToken, args, all1);
 
         switch (returnedEnum) {
           case response.SUCCESS:
-            if (all) {
+            if (all1) {
               toReturn = '```All Listing(s) Updated Successfully!```';
             } else {
               toReturn = '```Listing(s) Updated Successfully!```';
@@ -156,21 +156,21 @@ exports.run = async (client, message, args) => {
 
         break;
       case 'confirm':
-        let all = false;
+        let all2 = false;
 
         if (args.length < 2) {
           throw new Error('Too little parameters');
         } else if (args[1] == 'all') {
-          all = true;
+          all2 = true;
         } else {
           args.shift();
         }
 
-        returnedEnum = await confirm(client, loginToken, args, all);
+        returnedEnum = await confirm(client, loginToken, args, all2);
 
         switch (returnedEnum) {
           case response.SUCCESS:
-            if (all) {
+            if (all2) {
               toReturn = '```All Order(s) Confirmed Successfully!```';
             } else {
               toReturn = '```Orders(s) Updated Successfully!```';
