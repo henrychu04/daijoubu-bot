@@ -823,10 +823,13 @@ async function confirm(client, loginToken, args, all) {
     return response.NO_ITEMS;
   }
 
+  let orderNum = 0;
+
   for (let i = 0; i < orders.length; i++) {
     let exist = false;
 
     if (all && orders[i].status == 'NEEDS_CONFIRMATION') {
+      orderNum++;
       await confirmation(client, loginToken, orders[i].number);
     }
 
@@ -847,7 +850,11 @@ async function confirm(client, loginToken, args, all) {
     }
   }
 
-  return response.SUCCESS;
+  if (orderNum == 0) {
+    return response.NO_ITEMS;
+  } else {
+    return response.SUCCESS;
+  }
 }
 
 async function confirmation(client, loginToken, number) {
