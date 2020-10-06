@@ -927,6 +927,11 @@ function help() {
       {
         name: '!goat confirm <order num(s)>',
         value: 'Confirms the orders that are passed in. Able to take in multiple order ids at once.',
+      },
+      {
+        name: 'Automated confimation of orders',
+        value:
+          'Everyday at 12:01 AM EST, all orders that need confirmation for the bound account will be confirmed and a shipping label will be generaed.',
       }
     );
 
