@@ -27,7 +27,8 @@ exports.run = async (client, message, args) => {
       command == 'delete' ||
       command == 'edit' ||
       command == 'orders' ||
-      command == 'confirm'
+      command == 'confirm' ||
+      command == 'settings'
     ) {
       const id = message.author.id;
       const user = await Users.find({ d_id: id });
@@ -184,6 +185,14 @@ exports.run = async (client, message, args) => {
           default:
             break;
         }
+        break;
+      case 'settings':
+        if (args.length > 1) {
+          throw new Error('Too many parameters');
+        }
+
+        
+
         break;
       case 'help':
         if (args.length > 1) {

@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 const encryption = require('../scripts/encryption');
 
-const Login = require('../models/logins');
+const Users = require('../models/users');
 
 exports.run = async (client, message, args) => {
   try {
@@ -25,10 +25,10 @@ exports.run = async (client, message, args) => {
           }
         });
 
-        let exist = await Login.find({ d_id: id });
+        let exist = await Users.find({ d_id: id });
 
         if (exist.length == 0) {
-          const newLogin = new Login({
+          const newLogin = new Users({
             d_id: id,
             email: email,
             pw: encryption.encrypt(pw),
