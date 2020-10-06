@@ -177,8 +177,10 @@ exports.run = async (client, message, args) => {
             }
             break;
           case response.NO_ITEMS:
-            toReturn = '```No Open Orders Currently On Account```';
+            toReturn = '```No Open Order(s) Currently On Account```';
             break;
+          case response.NO_CHANGE:
+            toReturn = '```Currently All Open Order(s) Are Confirmed```'
           default:
             break;
         }
@@ -851,7 +853,7 @@ async function confirm(client, loginToken, args, all) {
   }
 
   if (orderNum == 0) {
-    return response.NO_ITEMS;
+    return response.NO_CHANGE;
   } else {
     return response.SUCCESS;
   }
