@@ -44,6 +44,7 @@ exports.run = async (client, message, args) => {
 
     let toReturn = '';
     let returnedEnum = null;
+    let edit = false;
 
     switch (command) {
       case 'check':
@@ -189,8 +190,6 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'settings':
-        let edit = false;
-
         if (args.length > 2) {
           throw new Error('Too many parameters');
         } else if (args[1] == 'edit') {
@@ -199,7 +198,7 @@ exports.run = async (client, message, args) => {
           throw new Error('Incorrect format');
         }
 
-        toReturn = settings(client, user, edit);
+        toReturn = await settings(client, message, user, edit);
 
         break;
       case 'help':
@@ -214,12 +213,14 @@ exports.run = async (client, message, args) => {
         break;
     }
 
-    await message.channel
-      .send(toReturn)
-      .then(console.log(`${message} completed\n`))
-      .catch((err) => {
-        throw new Error(err);
-      });
+    if (!edit) {
+      await message.channel
+        .send(toReturn)
+        .then(console.log(`${message} completed\n`))
+        .catch((err) => {
+          throw new Error(err);
+        });
+    }
   } catch (err) {
     console.log(err);
 
@@ -912,19 +913,48 @@ async function confirmation(client, loginToken, number) {
   }
 }
 
-function settings(client, user, edit) {
-  if (!edit) {
-    const userSettings = new Discord.MessageEmbed()
-      .setColor('#7756fe')
-      .setTitle('GOAT / alias Settings')
-      .addFields({
-        name: 'Order Confirmation Refresh Rate:',
-        value: user.settings.orderRefresh == 'Live' ? 'Live' : 'Daily',
-      });
+async function settings(client, message, user, edit) {
+  const userSettings = new Discord.MessageEmbed()
+    .setColor('#7756fe')
+    .setTitle('GOAT / alias Settings')
+    .addFields({
+      name: 'Order Confirmation Refresh Rate:',
+      value: user.settings.orderRefresh == 'Live' ? 'Live' : 'Daily',
+    });
 
+  if (!edit) {
     return userSettings;
   } else {
+    const filter = (m) => m.content.includes('discord');
+    const collector = message.channel.createMessageCollector(filter, { time: 15000 });
 
+    await message.channel.send(userSettings).catch((err) => {
+      throw new Error(err);
+    });
+
+    await message.channel.send('```' + `Enter 'live' or 'daily' to adjust order confirmation refresh rate` + '```');
+
+    collector.on('collect', async (message) => {
+      console.log(message);
+      if (message.content == 'live' || message.content == 'daily') {
+        let setting = message.content;
+
+        await Users.updateOne({ _id: user._id }, { setting: { orderRefresh: setting } }).catch((err) => {
+          throw new Error(err);
+        });
+
+        await message.channel.send('```Refresh rate edited successfully```');
+      } else {
+        await message.channel.send('```' + `Enter either 'live' or 'daily'` + '```');
+      }
+    });
+
+    collector.on('end', async (collected) => {
+      console.log(collected.size);
+      if (collected.size == 0) {
+        await message.channel.send('```Command timed out```');
+      }
+    });
   }
 }
 
