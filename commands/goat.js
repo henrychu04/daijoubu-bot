@@ -788,7 +788,7 @@ async function getOrders(client, loginToken) {
     purchaseOrders.purchase_orders.forEach((order, i) => {
       returnString += `\t${i}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
         order.listing.price_cents / 100
-      }\n\t\tStatus: ${order.status}\n\t\tOrder number: ${order.number}\n`;
+      }\n\t\tStatus: ${order.status}\n`;
 
       let date = new Date(order.take_action_by);
 
@@ -797,6 +797,8 @@ async function getOrders(client, loginToken) {
       } else if (order.status == 'NEEDS_CONFIRMATION') {
         returnString += `\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
       }
+
+      returnString += `\t\tOrder number: ${order.number}\n`;
     });
 
     return [returnString, response.SUCCESS];
