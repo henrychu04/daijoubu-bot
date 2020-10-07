@@ -622,13 +622,13 @@ async function updateListing(client, loginToken, obj) {
 }
 
 function allListings(listings) {
-  let listingString = '';
+  let listingString = 'Current listings:';
 
   if (listings.listing) {
     listings.listing.forEach((obj, i) => {
-      listingString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
+      listingString += `\n\t${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} $${
         obj.price_cents / 100
-      }\n\tid: ${obj.id}\n`;
+      }\n\t\tid: ${obj.id}\n`;
     });
   } else {
     return ['', response.NO_ITEMS];
@@ -786,8 +786,8 @@ async function getOrders(client, loginToken) {
 
   if (purchaseOrders.purchase_orders) {
     purchaseOrders.purchase_orders.forEach((order, i) => {
-      returnString += `\t${i}. ${order.listing.product.name} $${order.listing.price_cents / 100} - ${
-        order.listing.size_option.name
+      returnString += `\t${i}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+        order.listing.price_cents / 100
       }\n\t\tStatus: ${order.status}\n\t\tOrder number: ${order.number}\n`;
 
       let date = new Date(order.take_action_by);
