@@ -31,6 +31,7 @@ async function confirm(client) {
 
 async function confirmOrders(client, user, refresh) {
   let returnString = 'Orders successfully confirmed:\n';
+  let confirmed = 0;
   let number = 0;
 
   try {
@@ -113,6 +114,8 @@ async function confirmOrders(client, user, refresh) {
           ].listing.size_option.name.toUpperCase()} $${orders[i].listing.price_cents / 100}\n\t\tOrder number: ${
             orders[i].number
           }\n`;
+
+          confirmed++;
         }
 
         await client.users.cache
@@ -148,12 +151,14 @@ async function confirmOrders(client, user, refresh) {
     console.log(err);
 
     if (err.message == 'Error confirming') {
-      await client.users.cache
-        .get(user.d_id)
-        .send('```alias orders - ' + date + '\n' + returnString + '```')
-        .catch((err) => {
-          throw new Error(err);
-        });
+      if (confirmed != 0) {
+        await client.users.cache
+          .get(user.d_id)
+          .send('```alias orders - ' + date + '\n' + returnString + '```')
+          .catch((err) => {
+            throw new Error(err);
+          });
+      }
       await client.users.cache.get(user.d_id).send('```' + `Error confirming order number ${number}` + '```');
     }
   }
