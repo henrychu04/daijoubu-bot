@@ -831,7 +831,17 @@ async function getOrders(client, loginToken) {
       }
     });
 
-    returnString += confirmString + '\n' + needShipString + '\n' + shippedString;
+    if (confirmNum != 0) {
+      returnString += confirmString;
+    }
+
+    if (needShipNum != 0) {
+      returnString += needShipString;
+    }
+
+    if (shippedNum != 0) {
+      returnString += shippedString;
+    }
 
     return [returnString, response.SUCCESS];
   } else {
