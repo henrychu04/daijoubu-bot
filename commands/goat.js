@@ -941,7 +941,7 @@ async function settings(client, message, user, edit) {
 
         await Users.updateOne({ _id: user._id }, { $set: { 'settings.orderRefresh': setting } }, async (err) => {
           if (!err) {
-            await message.channel.send('```Refresh rate edited successfully```');
+            await message.channel.send('```Order confirmation refresh rate edited successfully```');
             collector.stop();
           }
         }).catch((err) => {
