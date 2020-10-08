@@ -808,6 +808,8 @@ async function getOrders(client, loginToken) {
   let shippedNum = 0;
   let receivedString = '\tReceived:\n';
   let receivedNum = 0;
+  let droppedString = '\tDropped off:\n';
+  let droppedNum = 0;
 
   if (purchaseOrders.purchase_orders) {
     purchaseOrders.purchase_orders.forEach((order) => {
@@ -828,13 +830,18 @@ async function getOrders(client, loginToken) {
           order.listing.price_cents / 100
         }\n\t\t\tOrder number: ${order.number}\n`;
         shippedNum++;
+      } else if (order.status == 'DROPPED_OFF') {
+        droppedString += `\t\t${droppedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+          order.listing.price_cents / 100
+        }\n\t\t\tOrder number: ${order.number}\n`;
+        droppedNum++;
       } else if (order.status == 'RECEIVED') {
         receivedString += `\t\t${receivedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
           order.listing.price_cents / 100
         }\n\t\t\tOrder number: ${order.number}\n`;
         receivedNum++;
       } else {
-        console.log(`\nNew order status is ${order.status}\n`);
+        console.log(`\nNew order status is '${order.status}'\n`);
       }
     });
 
@@ -852,6 +859,10 @@ async function getOrders(client, loginToken) {
 
     if (receivedNum != 0) {
       returnString += receivedString + '\n';
+    }
+
+    if (droppedNum != 0) {
+      returnString += droppedString + '\n';
     }
 
     return [returnString, response.SUCCESS];
