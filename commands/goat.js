@@ -829,7 +829,7 @@ async function getOrders(client, loginToken) {
         }\n\t\t\tOrder number: ${order.number}\n`;
         shippedNum++;
       } else if (order.status == 'RECEIVED') {
-        receivedString += `\t\t${shippedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+        receivedString += `\t\t${receivedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
           order.listing.price_cents / 100
         }\n\t\t\tOrder number: ${order.number}\n`;
         receivedNum++;
