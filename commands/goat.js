@@ -811,7 +811,7 @@ async function getOrders(client, loginToken) {
         }\n\t\t\tOrder number: ${order.number}\n`;
         shippedNum++;
       } else {
-        console.log(order.status);
+        console.log(`\nNew order status is ${order.status}\n`);
       }
     });
 
