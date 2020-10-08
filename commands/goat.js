@@ -832,15 +832,15 @@ async function getOrders(client, loginToken) {
     });
 
     if (confirmNum != 0) {
-      returnString += confirmString;
+      returnString += confirmString + '\n';
     }
 
     if (needShipNum != 0) {
-      returnString += needShipString;
+      returnString += needShipString + '\n';
     }
 
     if (shippedNum != 0) {
-      returnString += shippedString;
+      returnString += shippedString + '\n';
     }
 
     return [returnString, response.SUCCESS];
