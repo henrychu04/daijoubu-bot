@@ -808,7 +808,7 @@ async function getOrders(client, loginToken) {
   let shippedNum = 0;
   let receivedString = '\tReceived:\n';
   let receivedNum = 0;
-  let droppedString = '\tDropped off:\n';
+  let droppedString = '\tDropped Off:\n';
   let droppedNum = 0;
 
   if (purchaseOrders.purchase_orders) {
