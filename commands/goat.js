@@ -806,6 +806,8 @@ async function getOrders(client, loginToken) {
   let needShipNum = 0;
   let shippedString = '\tShipped:\n';
   let shippedNum = 0;
+  let receivedString = '\tReceived:\n';
+  let receivedNum = 0;
 
   if (purchaseOrders.purchase_orders) {
     purchaseOrders.purchase_orders.forEach((order) => {
@@ -826,6 +828,11 @@ async function getOrders(client, loginToken) {
           order.listing.price_cents / 100
         }\n\t\t\tOrder number: ${order.number}\n`;
         shippedNum++;
+      } else if (order.status == 'RECEIVED') {
+        receivedString += `\t\t${shippedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+          order.listing.price_cents / 100
+        }\n\t\t\tOrder number: ${order.number}\n`;
+        receivedNum++;
       } else {
         console.log(`\nNew order status is ${order.status}\n`);
       }
@@ -841,6 +848,10 @@ async function getOrders(client, loginToken) {
 
     if (shippedNum != 0) {
       returnString += shippedString + '\n';
+    }
+
+    if (receivedNum != 0) {
+      returnString += receivedString + '\n';
     }
 
     return [returnString, response.SUCCESS];
