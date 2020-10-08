@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 const Discord = require('discord.js');
 const encryption = require('../scripts/encryption');
 
-const Login = require('../models/logins');
+const Users = require('../models/users');
 
 const response = {
   SUCCESS: 'success',
@@ -15,6 +15,8 @@ exports.run = async (client, message, args) => {
     const query = message.content.slice(6);
     const command = args[0];
     let loginToken = '';
+    const id = message.author.id;
+    let user = null;
 
     if (args.length == 0) {
       throw new Error('Empty command');
@@ -27,20 +29,22 @@ exports.run = async (client, message, args) => {
       command == 'delete' ||
       command == 'edit' ||
       command == 'orders' ||
-      command == 'confirm'
+      command == 'confirm' ||
+      command == 'settings'
     ) {
-      const id = message.author.id;
-      const login = await Login.find({ d_id: id });
+      user = await Users.find({ d_id: id });
 
-      if (login.length == 0) {
+      if (user.length == 0) {
         throw new Error('Not logged in');
       }
 
-      loginToken = login[0].login;
+      user = user[0];
+      loginToken = user.login;
     }
 
     let toReturn = '';
     let returnedEnum = null;
+    let edit = false;
 
     switch (command) {
       case 'check':
@@ -185,6 +189,18 @@ exports.run = async (client, message, args) => {
             break;
         }
         break;
+      case 'settings':
+        if (args.length > 2) {
+          throw new Error('Too many parameters');
+        } else if (args[1] == 'edit') {
+          edit = true;
+        } else if (args[1] && args[1] != 'edit') {
+          throw new Error('Incorrect format');
+        }
+
+        toReturn = await settings(client, message, user, edit);
+
+        break;
       case 'help':
         if (args.length > 1) {
           throw new Error('Too many parameters');
@@ -197,12 +213,14 @@ exports.run = async (client, message, args) => {
         break;
     }
 
-    await message.channel
-      .send(toReturn)
-      .then(console.log(`${message} completed\n`))
-      .catch((err) => {
-        throw new Error(err);
-      });
+    if (!edit) {
+      await message.channel
+        .send(toReturn)
+        .then(console.log(`${message} completed\n`))
+        .catch((err) => {
+          throw new Error(err);
+        });
+    }
   } catch (err) {
     console.log(err);
 
@@ -212,9 +230,6 @@ exports.run = async (client, message, args) => {
         break;
       case 'Empty command':
         message.channel.send('```Command is missing parameters```');
-        break;
-      case 'Unauthorized':
-        message.channel.send('```Command not authorized for message author```');
         break;
       case 'Not exist':
         message.channel.send('```Command has one or more non-existing listing ids```');
@@ -915,6 +930,53 @@ async function confirmation(client, loginToken, number) {
 
   if (confirmation != 200 || shipping != 200) {
     throw new Error('Error confirming');
+  }
+}
+
+async function settings(client, message, user, edit) {
+  const userSettings = new Discord.MessageEmbed()
+    .setColor('#7756fe')
+    .setTitle('GOAT / alias Settings')
+    .addFields({
+      name: 'Order Confirmation Refresh Rate:',
+      value: user.settings.orderRefresh == 'live' ? 'Live' : 'Daily',
+    });
+
+  if (!edit) {
+    return userSettings;
+  } else {
+    await message.channel.send(userSettings).catch((err) => {
+      throw new Error(err);
+    });
+
+    await message.channel.send('```' + `Enter 'live' or 'daily' to adjust order confirmation refresh rate` + '```');
+
+    const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
+      time: 10000,
+    });
+
+    collector.on('collect', async (message) => {
+      if (message.content.toLowerCase() == 'live' || message.content.toLowerCase() == 'daily') {
+        let setting = message.content.toLowerCase();
+
+        await Users.updateOne({ _id: user._id }, { $set: { 'settings.orderRefresh': setting } }, async (err) => {
+          if (!err) {
+            await message.channel.send('```Order confirmation refresh rate edited successfully```');
+            collector.stop();
+          }
+        }).catch((err) => {
+          throw new Error(err);
+        });
+      } else {
+        await message.channel.send('```' + `Enter either 'live' or 'daily'` + '```');
+      }
+    });
+
+    collector.on('end', async (collected) => {
+      if (collected.size == 0) {
+        await message.channel.send('```Command timed out```');
+      }
+    });
   }
 }
 
