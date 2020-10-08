@@ -1049,7 +1049,7 @@ function help() {
       {
         name: 'Automated confimation of orders',
         value:
-          'Everyday at 12:01 AM EST, all orders that need confirmation for the bound account will be confirmed and a shipping label will be generaed.',
+          'Everyday at 12:01 AM EST, all orders that need confirmation for the bound account will be confirmed and a shipping label will be generated.',
       }
     );
 
