@@ -213,7 +213,7 @@ exports.run = async (client, message, args) => {
         break;
     }
 
-    if (!edit) {
+    if (toReturn != '') {
       await message.channel
         .send(toReturn)
         .then(console.log(`${message} completed\n`))
@@ -977,6 +977,8 @@ async function settings(client, message, user, edit) {
         await message.channel.send('```Command timed out```');
       }
     });
+
+    return '';
   }
 }
 
