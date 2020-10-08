@@ -963,6 +963,7 @@ async function settings(client, message, user, edit) {
           if (!err) {
             await message.channel.send('```Order confirmation refresh rate edited successfully```');
             collector.stop();
+            console.log('!goat settings edit completed\n');
           }
         }).catch((err) => {
           throw new Error(err);
