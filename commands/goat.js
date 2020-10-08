@@ -784,22 +784,38 @@ async function getOrders(client, loginToken) {
       throw new Error(err);
     });
 
-  if (purchaseOrders.purchase_orders) {
-    purchaseOrders.purchase_orders.forEach((order, i) => {
-      returnString += `\t${i}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
-        order.listing.price_cents / 100
-      }\n\t\tStatus: ${order.status}\n`;
+  let confirmString = '\tNeeds Confirmation:\n';
+  let confirmNum = 0;
+  let needShipString = '\tNeeds Shipping:\n';
+  let needShipNum = 0;
+  let shippedString = '\tShipped:\n';
+  let shippedNum = 0;
 
+  if (purchaseOrders.purchase_orders) {
+    purchaseOrders.purchase_orders.forEach((order) => {
       let date = new Date(order.take_action_by);
 
-      if (order.status == 'NEEDS_SHIPPING') {
-        returnString += `\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`;
-      } else if (order.status == 'NEEDS_CONFIRMATION') {
-        returnString += `\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      if (order.status == 'NEEDS_CONFIRMATION') {
+        confirmString += `\t\t${confirmNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+          order.listing.price_cents / 100
+        }\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n\t\t\tOrder number: ${order.number}\n`;
+        confirmNum++;
+      } else if (order.status == 'NEEDS_SHIPPING') {
+        needShipString += `\t\t${needShipNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+          order.listing.price_cents / 100
+        }\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n\t\t\tOrder number: ${order.number}\n`;
+        needShipNum++;
+      } else if (order.status == 'SHIPPED') {
+        shippedString += `\t\t${shippedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+          order.listing.price_cents / 100
+        }\n\t\t\tOrder number: ${order.number}\n`;
+        shippedNum++;
+      } else {
+        console.log(order.status);
       }
-
-      returnString += `\t\tOrder number: ${order.number}\n`;
     });
+
+    returnString += confirmString + '\n' + needShipString + '\n' + shippedString;
 
     return [returnString, response.SUCCESS];
   } else {
@@ -833,6 +849,7 @@ async function confirm(client, loginToken, args, all) {
   let orderNum = 0;
 
   for (let i = 0; i < orders.length; i++) {
+    console.log(orders[i].number);
     let exist = false;
 
     if (all && orders[i].status == 'NEEDS_CONFIRMATION') {
@@ -844,15 +861,16 @@ async function confirm(client, loginToken, args, all) {
       for (let j = 0; j < args.length; j++) {
         if (orders[i].number == args[j]) {
           exist = true;
-        }
+          orderNum++;
 
-        if (!exist) {
-          throw new Error('Order not exist');
+          if (exist && orders[i].status == 'NEEDS_CONFIRMATION') {
+            confirmRes = await confirmation(client, loginToken, orders[i].number);
+          }
         }
+      }
 
-        if (exist && orders[i].status == 'NEEDS_CONFIRMATION') {
-          confirmRes = await confirmation(client, loginToken, orders[i].number);
-        }
+      if (!exist) {
+        throw new Error('Order not exist');
       }
     }
   }
