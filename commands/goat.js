@@ -194,7 +194,7 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         } else if (args[1] == 'edit') {
           edit = true;
-        } else if (args[1] != 'edit') {
+        } else if (args[1] && args[1] != 'edit') {
           throw new Error('Incorrect format');
         }
 
@@ -919,38 +919,40 @@ async function settings(client, message, user, edit) {
     .setTitle('GOAT / alias Settings')
     .addFields({
       name: 'Order Confirmation Refresh Rate:',
-      value: user.settings.orderRefresh == 'Live' ? 'Live' : 'Daily',
+      value: user.settings.orderRefresh == 'live' ? 'Live' : 'Daily',
     });
 
   if (!edit) {
     return userSettings;
   } else {
-    const filter = (m) => m.content.includes('discord');
-    const collector = message.channel.createMessageCollector(filter, { time: 15000 });
-
     await message.channel.send(userSettings).catch((err) => {
       throw new Error(err);
     });
 
     await message.channel.send('```' + `Enter 'live' or 'daily' to adjust order confirmation refresh rate` + '```');
 
-    collector.on('collect', async (message) => {
-      console.log(message);
-      if (message.content == 'live' || message.content == 'daily') {
-        let setting = message.content;
+    const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
+      time: 10000,
+    });
 
-        await Users.updateOne({ _id: user._id }, { setting: { orderRefresh: setting } }).catch((err) => {
+    collector.on('collect', async (message) => {
+      if (message.content.toLowerCase() == 'live' || message.content.toLowerCase() == 'daily') {
+        let setting = message.content.toLowerCase();
+
+        await Users.updateOne({ _id: user._id }, { $set: { 'settings.orderRefresh': setting } }, async (err) => {
+          if (!err) {
+            await message.channel.send('```Refresh rate edited successfully```');
+            collector.stop();
+          }
+        }).catch((err) => {
           throw new Error(err);
         });
-
-        await message.channel.send('```Refresh rate edited successfully```');
       } else {
         await message.channel.send('```' + `Enter either 'live' or 'daily'` + '```');
       }
     });
 
     collector.on('end', async (collected) => {
-      console.log(collected.size);
       if (collected.size == 0) {
         await message.channel.send('```Command timed out```');
       }
