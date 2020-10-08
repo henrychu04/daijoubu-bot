@@ -79,13 +79,9 @@ async function confirmOrders(client, user, refresh) {
               authorization: `Bearer ${encryption.decrypt(user.login)}`,
             },
             body: `{"number":"${number}"}`,
-          })
-            .then((res) => {
-              return res.status;
-            })
-            .catch((err) => {
-              throw new Error(err);
-            });
+          }).then((res) => {
+            return res.status;
+          });
 
           let shipping = await fetch(
             `https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`,
@@ -97,13 +93,9 @@ async function confirmOrders(client, user, refresh) {
               },
               body: `{"number":"${number}"}`,
             }
-          )
-            .then((res) => {
-              return res.status;
-            })
-            .catch((err) => {
-              throw new Error(err);
-            });
+          ).then((res) => {
+            return res.status;
+          });
 
           if (confirmation != 200 || shipping != 200) {
             throw new Error('Error confirming');
