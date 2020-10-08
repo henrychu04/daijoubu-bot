@@ -853,16 +853,16 @@ async function getOrders(client, loginToken) {
       returnString += needShipString + '\n';
     }
 
+    if (droppedNum != 0) {
+      returnString += droppedString + '\n';
+    }
+
     if (shippedNum != 0) {
       returnString += shippedString + '\n';
     }
 
     if (receivedNum != 0) {
       returnString += receivedString + '\n';
-    }
-
-    if (droppedNum != 0) {
-      returnString += droppedString + '\n';
     }
 
     return [returnString, response.SUCCESS];
