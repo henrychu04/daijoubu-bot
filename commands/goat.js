@@ -638,7 +638,7 @@ async function updateListing(client, loginToken, obj) {
 }
 
 function allListings(listings) {
-  let listingString = 'Current listings:';
+  let listingString = 'Current Listings:';
 
   if (listings.listing) {
     listings.listing.forEach((obj, i) => {
