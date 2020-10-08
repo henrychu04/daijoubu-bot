@@ -44,7 +44,6 @@ exports.run = async (client, message, args) => {
 
     let toReturn = '';
     let returnedEnum = null;
-    let edit = false;
 
     switch (command) {
       case 'check':
@@ -190,6 +189,8 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'settings':
+        let edit = false;
+
         if (args.length > 2) {
           throw new Error('Too many parameters');
         } else if (args[1] == 'edit') {
@@ -813,12 +814,12 @@ async function getOrders(client, loginToken) {
       if (order.status == 'NEEDS_CONFIRMATION') {
         confirmString += `\t\t${confirmNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
           order.listing.price_cents / 100
-        }\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n\t\t\tOrder number: ${order.number}\n`;
+        }\n\t\t\tOrder number: ${order.number}\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
         confirmNum++;
       } else if (order.status == 'NEEDS_SHIPPING') {
         needShipString += `\t\t${needShipNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
           order.listing.price_cents / 100
-        }\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n\t\t\tOrder number: ${order.number}\n`;
+        }\n\t\t\tOrder number: ${order.number}\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`;
         needShipNum++;
       } else if (order.status == 'SHIPPED') {
         shippedString += `\t\t${shippedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
