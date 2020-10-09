@@ -154,7 +154,7 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + toReturn + '```';
         } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account currently has no open orders.```';
+          toReturn = '```Account Currently Has No Open Orders```';
         }
 
         break;
@@ -828,9 +828,7 @@ async function getOrders(client, loginToken) {
       } else if (order.status == 'SHIPPED') {
         shippedString += `\t\t${shippedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
           order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n\t\t\tUPS Tracking Number: ${
-          order.shipping_info.tracking_code
-        }\n`;
+        }\n\t\t\tOrder number: ${order.number}\n\t\t\tUPS Tracking Number: ${order.shipping_info.tracking_code}\n`;
         shippedNum++;
       } else if (order.status == 'DROPPED_OFF') {
         droppedString += `\t\t${droppedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
