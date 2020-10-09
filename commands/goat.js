@@ -61,7 +61,7 @@ exports.run = async (client, message, args) => {
             toReturn = '```All Listing(s) Match Their Lowest Asks```';
             break;
           case response.NO_ITEMS:
-            toReturn = '```No Items Are Listed on Account```';
+            toReturn = '```Account Currently Has No Items Listed```';
             break;
           default:
             break;
@@ -92,7 +92,7 @@ exports.run = async (client, message, args) => {
             toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
             break;
           case response.NO_ITEMS:
-            toReturn = '```No Items Are Listed on Account```';
+            toReturn = '```Account Currently Has No Items Listed```';
             break;
           default:
             break;
@@ -112,7 +112,7 @@ exports.run = async (client, message, args) => {
             toReturn = '```' + toReturn + '```';
             break;
           case response.NO_ITEMS:
-            toReturn = '```No Items Are Listed on Account```';
+            toReturn = '```Account Currently Has No Items Listed```';
             break;
           default:
             break;
