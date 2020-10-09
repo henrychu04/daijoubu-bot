@@ -828,7 +828,9 @@ async function getOrders(client, loginToken) {
       } else if (order.status == 'SHIPPED') {
         shippedString += `\t\t${shippedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
           order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n`;
+        }\n\t\t\tOrder number: ${order.number}\n\t\t\tUPS Tracking Number: ${
+          order.shipping_info.tracking_code
+        }\n`;
         shippedNum++;
       } else if (order.status == 'DROPPED_OFF') {
         droppedString += `\t\t${droppedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
