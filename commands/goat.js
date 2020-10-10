@@ -8,6 +8,7 @@ const response = {
   SUCCESS: 'success',
   NO_ITEMS: 'no_items',
   NO_CHANGE: 'no_change',
+  EXIT: 'exit',
 };
 
 exports.run = async (client, message, args) => {
@@ -30,7 +31,8 @@ exports.run = async (client, message, args) => {
       command == 'edit' ||
       command == 'orders' ||
       command == 'confirm' ||
-      command == 'settings'
+      command == 'settings' ||
+      command == 'list'
     ) {
       user = await Users.find({ d_id: id });
 
@@ -202,6 +204,28 @@ exports.run = async (client, message, args) => {
         toReturn = await settings(client, message, user, edit);
 
         break;
+      case 'list':
+        let params = message.content.slice(11).split(' ');
+
+        let valid = false;
+        let sizingArray = [];
+        let searchParams = '';
+        let listString = '';
+
+        [valid, returnedEnum, sizingArray, searchParams] = await checkListParams(params);
+
+        if (!valid && returnedEnum == response.NO_CHANGE) {
+          throw new Error('Invalid list command');
+        } else if (valid) {
+          [returnedEnum, listString] = await list(client, message, user, loginToken, sizingArray, searchParams);
+        }
+
+        if (returnedEnum == response.SUCCESS) {
+          toReturn = '```' + listString + '```';
+        } else if (returnedEnum == response.EXIT) {
+          toReturn = '';
+        }
+        break;
       case 'help':
         if (args.length > 1) {
           throw new Error('Too many parameters');
@@ -270,8 +294,26 @@ exports.run = async (client, message, args) => {
       case 'Order not exist':
         message.channel.send('```Command has one or more non-existing order numbers```');
         break;
+      case 'Invalid list command':
+        message.channel.send(
+          '```' +
+            `Incorrect format\n\nCorrect format is:\n\n!goat list <search parameters> [<size (num)>,<price (num, 'lowest')>,<amount (num) - optional>] [] ...` +
+            '```'
+        );
+        break;
+      case 'No lowest ask':
+        message.channel.send(
+          '```' +
+            'One or more listing sizes does not have a lowest asking price\nPlease check prices again and adjust accordingly' +
+            '```'
+        );
+        break;
+      case 'Error listing':
+        message.channel.send('```Error listing item(s)```');
+        break;
       default:
         message.channel.send('```Unexpected Error```');
+        break;
     }
   }
 };
@@ -1014,6 +1056,312 @@ async function settings(client, message, user, edit) {
 
     return '';
   }
+}
+
+async function checkListParams(params) {
+  let bracketCount = 0;
+  let sizingArray = [];
+  let query = '';
+
+  for (let i = 0; i < params.length; i++) {
+    if (!params[i].includes('[') && !params[i].includes(']')) {
+      query += params[i] + ' ';
+    } else {
+      bracketCount++;
+      let crnt = params[i];
+
+      if (!crnt.includes('[') && !crnt.includes(']')) {
+        return [false, response.NO_CHANGE, ''];
+      }
+
+      if (!crnt.includes(',')) {
+        return [false, response.NO_CHANGE, ''];
+      }
+
+      crnt = crnt.substring(1, crnt.length - 1);
+      let crntArray = crnt.split(',');
+
+      if (crntArray.length < 1 || crntArray.length > 4) {
+        return [false, response.NO_CHANGE, [], ''];
+      }
+
+      if (isNaN(crntArray[0])) {
+        return [false, response.NO_CHANGE, [], ''];
+      }
+
+      if (isNaN(crntArray[1]) && crntArray[1] != 'lowest') {
+        return [false, response.NO_CHANGE, [], ''];
+      }
+
+      if (crntArray[2] && isNaN(crntArray[2])) {
+        return [false, response.NO_CHANGE, [], ''];
+      }
+
+      sizingArray.push(params[i]);
+    }
+  }
+
+  query = query.substring(0, query.length);
+
+  if (bracketCount == 0) {
+    return [false, response.NO_CHANGE, [], ''];
+  }
+
+  return [true, response.SUCCESS, sizingArray, query];
+}
+
+async function list(client, message, user, loginToken, sizingArray, query) {
+  let searchProduct = await goatSearch(client, query).catch((err) => {
+    throw new Error(err.message);
+  });
+
+  await message.channel.send(searchProduct);
+
+  await message.channel.send(
+    '```' + `Is this the product that you want to list?\nEnter 'y' to confirm, enter 'n' to exit` + '```'
+  );
+
+  let returnedEnum = null;
+  let returnString = '';
+
+  const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 15000,
+  });
+
+  for await (const message of collector) {
+    if (message.content.toLowerCase() == 'y' || message.content.toLowerCase() == 'n') {
+      if (message.content.toLowerCase() == 'n') {
+        collector.stop();
+        await message.channel.send('```' + `Exited` + '```');
+        returnedEnum = response.EXIT;
+      } else {
+        collector.stop();
+        [returnedEnum, returnString] = await doList(client, loginToken, message, searchProduct, sizingArray);
+      }
+    } else {
+      await message.channel.send('```' + `Enter either 'y' or 'n'` + '```');
+    }
+  }
+
+  collector.on('end', async (collected) => {
+    if (collected.size == 0) {
+      await message.channel.send('```Command timed out```');
+    }
+  });
+
+  return [returnedEnum, returnString];
+}
+
+async function doList(client, loginToken, message, searchProduct, sizingArray) {
+  let returnString = 'Successfully listed:\n\t' + searchProduct.title + '\n';
+  let returnedEnum = null;
+  let url = searchProduct.url.split('/');
+  let slug = url[url.length - 1];
+
+  let pageData = await fetch(
+    `https://sell-api.goat.com/api/v1/analytics/products/${slug}/availability?box_condition=1&shoe_condition=1`,
+    {
+      headers: client.config.headers,
+    }
+  ).then((res, err) => {
+    if (res.status == 200) {
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
+  });
+
+  let product = await fetch('https://sell-api.goat.com/api/v1/listings/get-product', {
+    method: 'POST',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+    body: `{"id":"${slug}"}`,
+  }).then((res, err) => {
+    if (res.status == 200) {
+      return res.json();
+    } else {
+      throw new Error(err);
+    }
+  });
+
+  let listing = {
+    listing: {
+      productId: slug,
+      priceCents: 1,
+      productCondition: 1,
+      packagingCondition: 1,
+      sizeOption: {
+        name: '',
+        value: 1,
+      },
+      sizeUnit: 'us',
+      product: product.product,
+    },
+  };
+
+  let i = 0;
+
+  for (i = 0; i < sizingArray.length; i++) {
+    let crnt = sizingArray[i].substring(1, sizingArray[i].length - 1).split(',');
+
+    let size = crnt[0];
+    let price = crnt[1];
+    let amount = crnt[2];
+
+    if (!amount) {
+      amount = 1;
+    }
+
+    listing.listing.sizeOption.name = size;
+    listing.listing.sizeOption.value = parseInt(size);
+
+    if (price == 'lowest') {
+      for (let k = 0; k < pageData.availability.length; k++) {
+        if (pageData.availability[k].size == parseInt(size)) {
+          if (!pageData.availability[k].lowest_price_cents) {
+            throw new Error('No lowest ask');
+          }
+
+          price = pageData.availability[k].lowest_price_cents;
+          listing.listing.priceCents = parseInt(price);
+          break;
+        }
+      }
+    } else {
+      listing.listing.priceCents = parseInt(price) * 100;
+    }
+
+    let lower = false;
+
+    for (variant of pageData.availability) {
+      if (variant.size == size) {
+        if (variant.lowest_price_cents > listing.listing.priceCents) {
+          lower = true;
+          break;
+        }
+      }
+    }
+
+    async function whileRequest(client, loginToken, listing, amount, returnString) {
+      let j = 0;
+
+      while (j < parseInt(amount)) {
+        let id = await listRes(client, loginToken, listing);
+        returnString += `\t\t${j}. size: ${listing.listing.sizeOption.name} - $${
+          listing.listing.priceCents / 100
+        }\n\t\t\tid: ${id}\n`;
+
+        j++;
+      }
+
+      returnString += '\n';
+
+      return returnString;
+    }
+
+    if (lower) {
+      let skip = false;
+
+      await message.channel.send(
+        '```' +
+          `You entered a lower asking price than the current lowest asking price for size ${size}\nEnter 'y to confirm, 'n' to skip` +
+          '```'
+      );
+
+      const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
+        time: 15000,
+      });
+
+      for await (const message of collector) {
+        if (message.content.toLowerCase() == 'y' || message.content.toLowerCase() == 'n') {
+          if (message.content.toLowerCase() == 'n') {
+            collector.stop();
+            await message.channel.send('```' + `Skipped size ${size}` + '```');
+            skip = true;
+          } else {
+            collector.stop();
+            returnString = await whileRequest(client, loginToken, listing, amount, returnString);
+            returnedEnum = response.SUCCESS;
+          }
+        } else {
+          await message.channel.send('```' + `Enter either 'y' or 'n'` + '```');
+        }
+      }
+
+      collector.on('end', async (collected) => {
+        if (collected.size == 0) {
+          await message.channel.send('```Command timed out```');
+        }
+      });
+
+      if (skip) {
+        continue;
+      }
+    } else {
+      returnString = await whileRequest(client, loginToken, listing, amount, returnString);
+      returnedEnum = response.SUCCESS;
+    }
+  }
+
+  if (i == sizingArray.length) {
+    return [returnedEnum, returnString];
+  } else {
+    throw new Error('Error listing');
+  }
+}
+
+async function listRes(client, loginToken, listing) {
+  let id = '';
+  let listStatus = 0;
+  let activateStatus = 0;
+
+  let list = await fetch(`https://sell-api.goat.com/api/v1/listings`, {
+    method: 'POST',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+    body: JSON.stringify(listing),
+  }).then((res, err) => {
+    if (res.status == 200) {
+      listStatus = res.status;
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+      throw new Error(err);
+    }
+  });
+
+  id = list.listing.id;
+
+  let activate = await fetch(`https://sell-api.goat.com/api/v1/listings/${list.listing.id}/activate`, {
+    method: 'PUT',
+    headers: {
+      'user-agent': client.config.aliasHeader.user_agent,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+    body: `{"id":"${list.listing.id}"}`,
+  }).then((res, err) => {
+    if (res.status == 200) {
+      activateStatus = res.status;
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+      throw new Error(err);
+    }
+  });
+
+  if (listStatus != 200 || activateStatus != 200) {
+    throw new Error('Error listing');
+  }
+
+  return id;
 }
 
 function help() {
