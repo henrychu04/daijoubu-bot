@@ -512,6 +512,22 @@ async function goatSearch(client, query) {
     averageLastSold = 'N/A';
   }
 
+  let lowestPriceString = `Average: $${averageLowestPrice}` + '```' + lowestPrice + '```';
+  let highestBidString = `Average: $${averageHighestBid}` + '```' + highestBid + '```';
+  let lastSoldString = `Average: $${averageLastSold}` + '```' + lastSold + '```';
+
+  if (lowestPrice == '') {
+    lowestPriceString = 'N/A';
+  }
+
+  if (highestBid == '') {
+    highestBidString = 'N/A';
+  }
+
+  if (lastSold == '') {
+    lastSoldString = 'N/A';
+  }
+
   const embed = new Discord.MessageEmbed()
     .setColor(16777214)
     .setTitle(name)
@@ -525,13 +541,13 @@ async function goatSearch(client, query) {
       { name: 'Release Date', value: parsedDate, inline: true },
       { name: '\u200b', value: '\u200b', inline: true },
       { name: '\u200b', value: '\u200b', inline: true },
-      { name: 'Lowest Asks', value: `Average: $${averageLowestPrice}` + '```' + lowestPrice + '```', inline: true },
+      { name: 'Lowest Asks', value: lowestPriceString, inline: true },
       {
         name: 'Highest Bids',
-        value: `Average: $${averageHighestBid}` + '```' + highestBid + '```',
+        value: highestBidString,
         inline: true,
       },
-      { name: 'Last Sold', value: `Average: $${averageLastSold}` + '```' + lastSold + '```', inline: true }
+      { name: 'Last Sold', value: lastSoldString, inline: true }
     );
 
   return embed;
