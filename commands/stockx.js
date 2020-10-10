@@ -94,7 +94,12 @@ exports.run = async (client, message, args) => {
     let image = product.media.imageUrl;
     let sales72 = product.market.salesLast72Hours;
     let totalSales = product.market.deadstockSold;
-    let totalDollars = '$' + product.market.totalDollars.toLocaleString();
+    let totalDollars = '';
+    if (product.market.totalDollars) {
+      totalDollars = '$' + product.market.totalDollars.toLocaleString();
+    } else {
+      totalDollars = 'N/A';
+    }
     let averageDeadstockPrice = '$' + product.market.averageDeadstockPrice;
     let lowestPrice = '';
     let highestBid = '';
