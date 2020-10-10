@@ -87,7 +87,7 @@ exports.run = async (client, message, args) => {
             if (all1) {
               toReturn = '```All Listing(s) Updated Successfully!```';
             } else {
-              toReturn = '```Listing(s) Updated Successfully!```';
+              toReturn = '```Specified Listing(s) Updated Successfully!```';
             }
             break;
           case response.NO_CHANGE:
@@ -121,16 +121,25 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'delete':
+        let all4 = false;
         if (args.length < 2) {
           throw new Error('Too little parameters');
+        } else if (args[1] == 'all') {
+          all4 = true;
         } else {
           args.shift();
         }
 
-        returnedEnum = await deleteSearch(client, loginToken, args);
+        returnedEnum = await deleteSearch(client, loginToken, args, all4);
 
         if (returnedEnum == response.SUCCESS) {
-          toReturn = '```Specified Listing(s) Have Been Deleted```';
+          if (all4) {
+            toReturn = '```All Listing(s) Deleted Successfully```';
+          } else {
+            toReturn = '```Specified Listing(s) Deleted Successfully```';
+          }
+        } else if (returnedEnum == response.NO_ITEMS) {
+          toReturn = '```Account Currently Has No Items Listed```';
         }
         break;
       case 'edit':
@@ -711,11 +720,23 @@ function allListings(listings) {
   return [listingString, response.SUCCESS];
 }
 
-async function deleteSearch(client, loginToken, args) {
+async function deleteSearch(client, loginToken, args, all) {
   let deleteRes = 0;
 
-  for (let j = 0; j < args.length; j++) {
-    deleteRes = await deletion(client, loginToken, args[j]);
+  if (all) {
+    let listings = await getListings(client, loginToken);
+
+    if (!listings.listing) {
+      return response.NO_ITEMS;
+    }
+
+    for (let i = 0; i < listings.listing.length; i++) {
+      deleteRes = await deletion(client, loginToken, listings.listing[i].id);
+    }
+  } else {
+    for (let i = 0; i < args.length; i++) {
+      deleteRes = await deletion(client, loginToken, args[i]);
+    }
   }
 
   if (deleteRes == 200) {
