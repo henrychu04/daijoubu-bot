@@ -1343,7 +1343,7 @@ async function listRes(client, loginToken, listing) {
   let activate = await fetch(`https://sell-api.goat.com/api/v1/listings/${list.listing.id}/activate`, {
     method: 'PUT',
     headers: {
-      'user-agent': client.config.aliasHeader.user_agent,
+      'user-agent': client.config.aliasHeader,
       authorization: `Bearer ${encryption.decrypt(loginToken)}`,
     },
     body: `{"id":"${list.listing.id}"}`,
