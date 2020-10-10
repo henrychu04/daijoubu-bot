@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const CronJob = require('cron').CronJob;
-const encryption = require('../scripts/encryption');
+const encryption = require('./encryption');
 
 const Users = require('../models/users');
 
