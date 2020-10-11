@@ -226,7 +226,7 @@ exports.run = async (client, message, args) => {
         }
         break;
       default:
-        toReturn = await goatSearch(client, query);
+        toReturn = await aliasSearch(client, query);
         break;
     }
 
@@ -289,7 +289,7 @@ exports.run = async (client, message, args) => {
       case 'Invalid list command':
         message.channel.send(
           '```' +
-            `Incorrect format\n\nCorrect format is:\n\n!goat list <search parameters> [<size (num)>,<price (num, 'lowest')>,<amount (num) - optional>] [] ...` +
+            `Incorrect format\nCorrect format is:\n\n!alias list <search parameters> [<size (num)>,<price (num, 'lowest')>,<amount (num) - optional>] [] ...` +
             '```'
         );
         break;
@@ -310,7 +310,7 @@ exports.run = async (client, message, args) => {
   }
 };
 
-async function goatSearch(client, query) {
+async function aliasSearch(client, query) {
   let res = await fetch('https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query', {
     method: 'POST',
     headers: client.config.goatHeader,
@@ -1109,7 +1109,7 @@ async function confirmation(client, loginToken, number) {
 async function settings(client, message, user, edit) {
   const userSettings = new Discord.MessageEmbed()
     .setColor('#7756fe')
-    .setTitle('GOAT / alias Settings')
+    .setTitle('alias Settings')
     .addFields({
       name: 'Order Confirmation Refresh Rate:',
       value: user.settings.orderRefresh == 'live' ? 'Live' : 'Daily',
@@ -1136,7 +1136,7 @@ async function settings(client, message, user, edit) {
           if (!err) {
             await message.channel.send('```Order confirmation refresh rate edited successfully```');
             collector.stop();
-            console.log('!goat settings edit completed\n');
+            console.log('!alias settings edit completed\n');
           }
         }).catch((err) => {
           throw new Error(err);
@@ -1209,7 +1209,7 @@ async function checkListParams(params) {
 }
 
 async function list(client, message, loginToken, sizingArray, query) {
-  let searchProduct = await goatSearch(client, query).catch((err) => {
+  let searchProduct = await aliasSearch(client, query).catch((err) => {
     throw new Error(err.message);
   });
 
@@ -1470,36 +1470,17 @@ function help() {
     .setColor('#7756fe')
     .setTitle('alias Help')
     .setDescription(
-      'All the GOAT / alias account commands\n\nAn alias account is required to use the commands. To gain access to an alias account, you must have a GOAT account with a score of 150 or greater. Each command will only work for the bound alias account. It is not possible to control the listings for another alias account.\n\n[Click for more info](https://apps.apple.com/us/app/alias-sell-sneakers-apparel/id1467090341)\n\nIf no alias account is bound to the Discord account, DM \n``!login <email> <password>`` to the daijoubu bot to login.'
+      'All the alias account commands\n\nAn alias account is required to use the commands. To gain access to an alias account, you must have a GOAT account with a seller score of 150 or greater. Each command will only work for the bound alias account. It is not possible to control the listings for another alias account.\n\n[Click here for more info](https://apps.apple.com/us/app/alias-sell-sneakers-apparel/id1467090341)\n\nIf no alias account is bound to the Discord account, DM \n``!login <email> <password>`` to the daijoubu bot to login.'
     )
     .addFields(
-      { name: '!goat listings', value: 'Returns all the current listings for the attached account.' },
-      {
-        name: '!goat check',
-        value: 'Checks if all the listings for the attached account match the current lowest ask.',
-      },
-      {
-        name: '!goat update ( all / <listing id(s)> )',
-        value: 'Updates the listings to the current lowest ask. Able to take in multiple listing ids at once.',
-      },
-      {
-        name: '!goat edit <listing id(s)>',
-        value: 'Edits the ask for the listings that are sent. Able to take in multiple listing ids at once.',
-      },
-      {
-        name: '!goat delete <listing id(s)>',
-        value: 'Deletes the listings for the account. Able to take in multiple listing ids at once.',
-      },
-      { name: '!goat orders', value: 'Returns all the current orders for the attached account.' },
-      {
-        name: '!goat confirm ( all / <order num(s)> )',
-        value: 'Confirms the orders that are passed in. Able to take in multiple order ids at once.',
-      },
-      {
-        name: 'Automated confimation of orders',
-        value:
-          'Everyday at 12:01 AM EST, all orders that need confirmation for the bound account will be confirmed and a shipping label will be generated.',
-      }
+      { name: `!alias list`, value: `Lists an item` },
+      { name: '!alias listings', value: 'Returns all current listings' },
+      { name: '!alias check', value: 'Checks if all listings match their current lowest ask' },
+      { name: '!alias update', value: 'Updates specified listings to their current lowest ask' },
+      { name: '!alias edit', value: 'Edits the asking price for specified listings' },
+      { name: '!alias delete', value: 'Deletes specified listings' },
+      { name: '!alias orders', value: 'Returns all current orders' },
+      { name: '!alias confirm', value: 'Confirms specified orders' }
     );
 
   return helpEmbed;
