@@ -3,6 +3,7 @@ const CronJob = require('cron').CronJob;
 const encryption = require('./encryption');
 
 const Users = require('../models/users');
+const Listings = require('../models/listings');
 
 module.exports = function main(client) {
   try {
@@ -27,24 +28,23 @@ async function refresh(client) {
       await confirmOrders(client, users[i], users[i].settings.orderRefresh);
     }
 
-    let listings = await getListings(client, users[i]);
+    let aliasListings = await getListings(client, users[i]);
 
-    await adding(users[i], listings);
-    await deleting(users[i], listings);
+    await adding(users[i], aliasListings);
+    await deleting(users[i], aliasListings);
   }
 }
 
-async function adding(user, listings) {
-  let userListings = await Users.findById(user._id);
-  userListings = userListings.listings;
-  let listingArray = [];
+async function adding(user, aliasListings) {
+  const userListings = await Listings.find({ d_id: user.d_id });
+  const userListingsArray = userListings[0].listings;
 
-  if (listings.listing) {
-    for (let i = 0; i < listings.listing.length; i++) {
+  if (aliasListings.listing) {
+    for (let i = 0; i < aliasListings.listing.length; i++) {
       let exist = false;
 
-      userListings.forEach((listing) => {
-        if (listing.id == listings.listing[i].id) {
+      userListingsArray.forEach((listing) => {
+        if (listing.id == aliasListings.listing[i].id) {
           exist = true;
         }
       });
@@ -55,45 +55,48 @@ async function adding(user, listings) {
 
       let obj = {
         id: '',
+        name: '',
         size: '',
         price: '',
         slug: '',
       };
 
-      obj.id = listings.listing[i].id;
-      obj.size = listings.listing[i].size_option.name;
-      obj.price = listings.listing[i].price_cents;
-      obj.slug = listings.listing[i].product.id;
+      obj.id = aliasListings.listing[i].id;
+      obj.name = aliasListings.listing[i].product.name;
+      obj.size = aliasListings.listing[i].size_option.name;
+      obj.price = aliasListings.listing[i].price_cents;
+      obj.slug = aliasListings.listing[i].product.id;
 
-      listingArray.push(obj);
+      await Listings.updateOne({ _id: userListings[0]._id }, { $push: { listings: obj } }).catch((err) =>
+        console.log(err)
+      );
     }
   }
-
-  listingArray.forEach(async (listing) => {
-    await Users.updateOne({ _id: user._id }, { $push: { listings: listing } }).catch((err) => console.log(err));
-  });
 }
 
-async function deleting(user, listings) {
-  let userListings = await Users.findById(user._id);
-  userListings = userListings.listings;
+async function deleting(user, aliasListings) {
+  const userListings = await Listings.find({ d_id: user.d_id });
+  const userListingsArray = userListings[0].listings;
 
-  for (let i = 0; i < userListings.length; i++) {
+  for (let i = 0; i < userListingsArray.length; i++) {
     let deleted = true;
 
-    if (listings.listing) {
-      listings.listing.forEach((listing) => {
-        if (userListings[i].id == listing.id) {
+    if (aliasListings.listing) {
+      aliasListings.listing.forEach((listing) => {
+        if (userListingsArray[i].id == listing.id) {
           deleted = false;
         }
       });
     }
 
-    if (deleted) {
-      await Users.updateOne({ _id: user._id }, { $pull: { listings: { id: userListings[i].id } } }).catch((err) =>
-        console.log(err)
-      );
+    if (!deleted) {
+      continue;
     }
+
+    await Listings.updateOne(
+      { _id: userListings[0]._id },
+      { $pull: { listings: { id: userListingsArray[i].id } } }
+    ).catch((err) => console.log(err));
   }
 }
 

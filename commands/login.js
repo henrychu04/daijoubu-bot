@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const encryption = require('../scripts/encryption');
 
 const Users = require('../models/users');
+const Listings = require('../models/listings');
 
 exports.run = async (client, message, args) => {
   try {
@@ -35,14 +36,25 @@ exports.run = async (client, message, args) => {
             login: encryption.encrypt(loginRes.auth_token.access_token),
             settings: {
               orderRefresh: 'daily',
-              adjustListing: 'manual'
+              adjustListing: 'manual',
             },
-            listings: []
+          });
+
+          const newListings = new Listings({
+            d_id: id,
+            listings: [],
           });
 
           await newLogin
             .save()
             .then(console.log('New login successfully added\n'))
+            .catch((err) => {
+              throw new Error(err);
+            });
+
+          await newListings
+            .save()
+            .then(console.log('New listings successfully added\n'))
             .catch((err) => {
               throw new Error(err);
             });
