@@ -226,13 +226,15 @@ exports.run = async (client, message, args) => {
         if (!valid && returnedEnum == response.NO_CHANGE) {
           throw new Error('Invalid list command');
         } else if (valid) {
-          [returnedEnum, listString] = await list(client, message, user, loginToken, sizingArray, searchParams);
+          [returnedEnum, listString] = await list(client, message, loginToken, sizingArray, searchParams);
         }
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + listString + '```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '';
+        } else if (returnedEnum == response.NO_CHANGE) {
+          toReturn = '```No New Item(s) Listed```';
         }
         break;
       case 'help':
@@ -1147,7 +1149,7 @@ async function checkListParams(params) {
   return [true, response.SUCCESS, sizingArray, query];
 }
 
-async function list(client, message, user, loginToken, sizingArray, query) {
+async function list(client, message, loginToken, sizingArray, query) {
   let searchProduct = await goatSearch(client, query).catch((err) => {
     throw new Error(err.message);
   });
@@ -1155,7 +1157,7 @@ async function list(client, message, user, loginToken, sizingArray, query) {
   await message.channel.send(searchProduct);
 
   await message.channel.send(
-    '```' + `Is this the product that you want to list?\nEnter 'y' to confirm, enter 'n' to exit` + '```'
+    '```' + `Is this the product that you want to list?\nEnter 'y' to confirm, enter 'n' to cancel` + '```'
   );
 
   let returnedEnum = null;
@@ -1169,7 +1171,8 @@ async function list(client, message, user, loginToken, sizingArray, query) {
     if (message.content.toLowerCase() == 'y' || message.content.toLowerCase() == 'n') {
       if (message.content.toLowerCase() == 'n') {
         collector.stop();
-        await message.channel.send('```' + `Exited` + '```');
+        await message.channel.send('```' + `Canceled` + '```');
+        console.log('Canceled\n');
         returnedEnum = response.EXIT;
       } else {
         collector.stop();
@@ -1183,6 +1186,7 @@ async function list(client, message, user, loginToken, sizingArray, query) {
   collector.on('end', async (collected) => {
     if (collected.size == 0) {
       await message.channel.send('```Command timed out```');
+      console.log('Timed out\n');
     }
   });
 
@@ -1275,10 +1279,12 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
     }
 
     let lower = false;
+    let lowest = 0;
 
     for (variant of pageData.availability) {
       if (variant.size == size) {
         if (variant.lowest_price_cents > listing.listing.priceCents) {
+          lowest = variant.lowest_price_cents / 100;
           lower = true;
           break;
         }
@@ -1307,7 +1313,7 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
 
       await message.channel.send(
         '```' +
-          `You entered a lower asking price than the current lowest asking price for size ${size}\nEnter 'y to confirm, 'n' to skip` +
+          `Current lowest ask for size ${size}: $${lowest}\nYou entered $${price}, a lower asking price than the current lowest asking price of $${lowest}\nEnter 'y to confirm, 'n' to skip` +
           '```'
       );
 
@@ -1334,6 +1340,7 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
       collector.on('end', async (collected) => {
         if (collected.size == 0) {
           await message.channel.send('```Command timed out```');
+          console.log('Timed out\n');
         }
       });
 
@@ -1347,6 +1354,10 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
   }
 
   if (i == sizingArray.length) {
+    if (returnedEnum == null) {
+      returnedEnum = response.NO_CHANGE;
+    }
+
     return [returnedEnum, returnString];
   } else {
     throw new Error('Error listing');
