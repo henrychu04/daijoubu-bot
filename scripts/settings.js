@@ -57,11 +57,13 @@ async function adding(user, listings) {
         id: '',
         size: '',
         price: '',
+        slug: '',
       };
 
       obj.id = listings.listing[i].id;
       obj.size = listings.listing[i].size_option.name;
       obj.price = listings.listing[i].price_cents;
+      obj.slug = listings.listing[i].product.id;
 
       listingArray.push(obj);
     }
@@ -86,7 +88,7 @@ async function deleting(user, listings) {
         }
       });
     }
-    
+
     if (deleted) {
       await Users.updateOne({ _id: user._id }, { $pull: { listings: { id: userListings[i].id } } }).catch((err) =>
         console.log(err)
