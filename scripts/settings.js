@@ -39,30 +39,32 @@ async function adding(user, listings) {
   userListings = userListings.listings;
   let listingArray = [];
 
-  for (let i = 0; i < listings.listing.length; i++) {
-    let exist = false;
+  if (listings.listing) {
+    for (let i = 0; i < listings.listing.length; i++) {
+      let exist = false;
 
-    userListings.forEach((listing) => {
-      if (listing.id == listings.listing[i].id) {
-        exist = true;
+      userListings.forEach((listing) => {
+        if (listing.id == listings.listing[i].id) {
+          exist = true;
+        }
+      });
+
+      if (exist) {
+        continue;
       }
-    });
 
-    if (exist) {
-      continue;
+      let obj = {
+        id: '',
+        size: '',
+        price: '',
+      };
+
+      obj.id = listings.listing[i].id;
+      obj.size = listings.listing[i].size_option.name;
+      obj.price = listings.listing[i].price_cents;
+
+      listingArray.push(obj);
     }
-
-    let obj = {
-      id: '',
-      size: '',
-      price: '',
-    };
-
-    obj.id = listings.listing[i].id;
-    obj.size = listings.listing[i].size_option.name;
-    obj.price = listings.listing[i].price_cents;
-
-    listingArray.push(obj);
   }
 
   listingArray.forEach(async (listing) => {
@@ -77,12 +79,14 @@ async function deleting(user, listings) {
   for (let i = 0; i < userListings.length; i++) {
     let deleted = true;
 
-    listings.listing.forEach((listing) => {
-      if (userListings[i].id == listing.id) {
-        deleted = false;
-      }
-    });
-
+    if (listings.listing) {
+      listings.listing.forEach((listing) => {
+        if (userListings[i].id == listing.id) {
+          deleted = false;
+        }
+      });
+    }
+    
     if (deleted) {
       await Users.updateOne({ _id: user._id }, { $pull: { listings: { id: userListings[i].id } } }).catch((err) =>
         console.log(err)
