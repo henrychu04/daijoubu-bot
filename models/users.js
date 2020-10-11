@@ -7,7 +7,9 @@ const userScehma = mongoose.Schema({
   login: String,
   settings: {
     orderRefresh: String,
+    adjustListing: String,
   },
+  listings: [Object],
 });
 
 module.exports = mongoose.model('User', userScehma, 'users');

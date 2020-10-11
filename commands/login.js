@@ -35,7 +35,9 @@ exports.run = async (client, message, args) => {
             login: encryption.encrypt(loginRes.auth_token.access_token),
             settings: {
               orderRefresh: 'daily',
+              adjustListing: 'manual'
             },
+            listings: []
           });
 
           await newLogin

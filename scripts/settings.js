@@ -7,7 +7,7 @@ const Users = require('../models/users');
 module.exports = function main(client) {
   try {
     let job = new CronJob('* * * * *', function () {
-      confirm(client);
+      refresh(client);
     });
 
     job.start();
@@ -16,7 +16,7 @@ module.exports = function main(client) {
   }
 };
 
-async function confirm(client) {
+async function refresh(client) {
   const users = await Users.find();
   const date = new Date();
 
@@ -26,7 +26,92 @@ async function confirm(client) {
     } else if (users[i].settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
       await confirmOrders(client, users[i], users[i].settings.orderRefresh);
     }
+
+    let listings = await getListings(client, users[i]);
+
+    await adding(users[i], listings);
+    await deleting(users[i], listings);
   }
+}
+
+async function adding(user, listings) {
+  let userListings = await Users.findById(user._id);
+  userListings = userListings.listings;
+  let listingArray = [];
+
+  for (let i = 0; i < listings.listing.length; i++) {
+    let exist = false;
+
+    userListings.forEach((listing) => {
+      if (listing.id == listings.listing[i].id) {
+        exist = true;
+      }
+    });
+
+    if (exist) {
+      continue;
+    }
+
+    let obj = {
+      id: '',
+      size: '',
+      price: '',
+    };
+
+    obj.id = listings.listing[i].id;
+    obj.size = listings.listing[i].size_option.name;
+    obj.price = listings.listing[i].price_cents;
+
+    listingArray.push(obj);
+  }
+
+  listingArray.forEach(async (listing) => {
+    await Users.updateOne({ _id: user._id }, { $push: { listings: listing } }).catch((err) => console.log(err));
+  });
+}
+
+async function deleting(user, listings) {
+  let userListings = await Users.findById(user._id);
+  userListings = userListings.listings;
+
+  for (let i = 0; i < userListings.length; i++) {
+    let deleted = true;
+
+    listings.listing.forEach((listing) => {
+      if (userListings[i].id == listing.id) {
+        deleted = false;
+      }
+    });
+
+    if (deleted) {
+      await Users.updateOne({ _id: user._id }, { $pull: { listings: { id: userListings[i].id } } }).catch((err) =>
+        console.log(err)
+      );
+    }
+  }
+}
+
+async function getListings(client, user) {
+  let listings = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(user.login)}`,
+    },
+  }).then((res, err) => {
+    if (res.status == 200) {
+      return res.json();
+    } else if (res.status == 401) {
+      throw new Error('Login expired');
+    } else {
+      console.log('Res is', res.status);
+
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
+  });
+
+  return listings;
 }
 
 async function confirmOrders(client, user, refresh) {
