@@ -1,8 +1,10 @@
 const fetch = require('node-fetch');
 const Discord = require('discord.js');
 const encryption = require('../scripts/encryption');
+const refresh = require('../scripts/refresh');
 
 const Users = require('../models/users');
+const Listings = require('../models/listings');
 
 const response = {
   SUCCESS: 'success',
@@ -50,54 +52,42 @@ exports.run = async (client, message, args) => {
     switch (command) {
       case 'check':
         if (args.length < 2) {
-          [toReturn, returnedEnum] = await noCommand(client, loginToken);
+          [toReturn, returnedEnum] = await check(client, loginToken);
         } else {
           throw new Error('Too many parameters');
         }
 
-        switch (returnedEnum) {
-          case response.SUCCESS:
-            toReturn = '```' + toReturn + '```';
-            break;
-          case response.NO_CHANGE:
-            toReturn = '```All Listing(s) Match Their Lowest Asks```';
-            break;
-          case response.NO_ITEMS:
-            toReturn = '```Account Currently Has No Items Listed```';
-            break;
-          default:
-            break;
+        if (returnedEnum == response.SUCCESS) {
+          toReturn = '```' + toReturn + '```';
+        } else if (returnedEnum == response.NO_CHANGE) {
+          toReturn = '```All Listing(s) Match Their Lowest Asks```';
+        } else if (returnedEnum == response.NO_ITEMS) {
+          toReturn = '```Account Currently Has No Items Listed```';
         }
         break;
       case 'update':
-        let all1 = false;
+        let updateAll = false;
 
         if (args.length < 2) {
           throw new Error('Too little parameters');
         } else if (args[1] == 'all') {
-          all1 = true;
+          updateAll = true;
         } else {
           args.shift();
         }
 
-        returnedEnum = await update(client, loginToken, args, all1);
+        returnedEnum = await update(client, loginToken, args, updateAll);
 
-        switch (returnedEnum) {
-          case response.SUCCESS:
-            if (all1) {
-              toReturn = '```All Listing(s) Updated Successfully!```';
-            } else {
-              toReturn = '```Specified Listing(s) Updated Successfully!```';
-            }
-            break;
-          case response.NO_CHANGE:
-            toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
-            break;
-          case response.NO_ITEMS:
-            toReturn = '```Account Currently Has No Items Listed```';
-            break;
-          default:
-            break;
+        if (returnedEnum == response.SUCCESS) {
+          if (updateAll) {
+            toReturn = '```All Listing(s) Updated Successfully!```';
+          } else {
+            toReturn = '```Specified Listing(s) Updated Successfully!```';
+          }
+        } else if (returnedEnum == response.NO_CHANGE) {
+          toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
+        } else if (returnedEnum == response.NO_ITEMS) {
+          toReturn = '```Account Currently Has No Items Listed```';
         }
         break;
       case 'listings':
@@ -105,39 +95,35 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        let listings = await getListings(client, loginToken);
+        [toReturn, returnedEnum] = await allListings(user);
 
-        [toReturn, returnedEnum] = allListings(listings);
-
-        switch (returnedEnum) {
-          case response.SUCCESS:
-            toReturn = '```' + toReturn + '```';
-            break;
-          case response.NO_ITEMS:
-            toReturn = '```Account Currently Has No Items Listed```';
-            break;
-          default:
-            break;
+        if (returnedEnum == response.SUCCESS) {
+          toReturn = '```' + toReturn + '```';
+        } else if (returnedEnum == response.NO_ITEMS) {
+          toReturn = '```Account Currently Has No Items Listed```';
         }
         break;
       case 'delete':
-        let all4 = false;
-        if (args.length < 2) {
-          throw new Error('Too little parameters');
-        } else if (args[1] == 'all') {
-          all4 = true;
-        } else {
-          args.shift();
+        if (args.length > 1) {
+          throw new Error('Too many parameters');
         }
 
-        returnedEnum = await deleteSearch(client, loginToken, args, all4);
+        let deleteAll = false;
+        let deleteMsg = null;
+
+        [returnedEnum, deleteAll, deleteMsg] = await deleteSearch(client, loginToken, message, user);
 
         if (returnedEnum == response.SUCCESS) {
-          if (all4) {
-            toReturn = '```All Listing(s) Deleted Successfully```';
+          if (deleteAll) {
+            await deleteMsg
+              .edit('```All Listing(s) Deleted Successfully```')
+              .then(console.log(`${message} completed\n`));
           } else {
-            toReturn = '```Specified Listing(s) Deleted Successfully```';
+            deleteMsg
+              .edit('```Specified Listing(s) Deleted Successfully```')
+              .then(console.log(`${message} completed\n`));
           }
+          await refresh(client, loginToken, user);
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account Currently Has No Items Listed```';
         }
@@ -167,36 +153,30 @@ exports.run = async (client, message, args) => {
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account Currently Has No Open Orders```';
         }
-
         break;
       case 'confirm':
-        let all2 = false;
+        let confirmAll = false;
 
         if (args.length < 2) {
           throw new Error('Too little parameters');
         } else if (args[1] == 'all') {
-          all2 = true;
+          confirmAll = true;
         } else {
           args.shift();
         }
 
-        returnedEnum = await confirm(client, loginToken, args, all2);
+        returnedEnum = await confirm(client, loginToken, args, confirmAll);
 
-        switch (returnedEnum) {
-          case response.SUCCESS:
-            if (all2) {
-              toReturn = '```All Order(s) Confirmed Successfully!```';
-            } else {
-              toReturn = '```Orders(s) Updated Successfully!```';
-            }
-            break;
-          case response.NO_ITEMS:
-            toReturn = '```No Open Order(s) Currently On Account```';
-            break;
-          case response.NO_CHANGE:
-            toReturn = '```Currently All Open Order(s) Are Confirmed```';
-          default:
-            break;
+        if (returnedEnum == response.SUCCESS) {
+          if (confirmAll) {
+            toReturn = '```All Order(s) Confirmed Successfully!```';
+          } else {
+            toReturn = '```Orders(s) Updated Successfully!```';
+          }
+        } else if (returnedEnum == response.NO_ITEMS) {
+          toReturn = '```No Open Order(s) Currently On Account```';
+        } else if (returnedEnum == response.NO_CHANGE) {
+          toReturn = '```Currently All Open Order(s) Are Confirmed```';
         }
         break;
       case 'settings':
@@ -211,7 +191,6 @@ exports.run = async (client, message, args) => {
         }
 
         toReturn = await settings(client, message, user, edit);
-
         break;
       case 'list':
         let params = message.content.slice(11).split(' ');
@@ -220,17 +199,19 @@ exports.run = async (client, message, args) => {
         let sizingArray = [];
         let searchParams = '';
         let listString = '';
+        let listMsg = null;
 
         [valid, returnedEnum, sizingArray, searchParams] = await checkListParams(params);
 
         if (!valid && returnedEnum == response.NO_CHANGE) {
           throw new Error('Invalid list command');
         } else if (valid) {
-          [returnedEnum, listString] = await list(client, message, loginToken, sizingArray, searchParams);
+          [returnedEnum, listString, listMsg] = await list(client, message, loginToken, sizingArray, searchParams);
         }
 
         if (returnedEnum == response.SUCCESS) {
-          toReturn = '```' + listString + '```';
+          await listMsg.edit('```' + listString + '```').then(console.log(`${message} completed\n`));
+          await refresh(client, loginToken, user);
         } else if (returnedEnum == response.EXIT) {
           toReturn = '';
         } else if (returnedEnum == response.NO_CHANGE) {
@@ -564,7 +545,7 @@ async function goatSearch(client, query) {
   return embed;
 }
 
-async function noCommand(client, loginToken) {
+async function check(client, loginToken) {
   let listings = await getListings(client, loginToken);
 
   if (!listings.listing) {
@@ -579,12 +560,12 @@ async function noCommand(client, loginToken) {
     if (listingObj.length == 0) {
       return ['', response.NO_CHANGE];
     } else {
-      let newLowestAsksString = '';
+      let newLowestAsksString = 'Current listings with a lower ask:';
 
       listingObj.forEach((obj, i) => {
-        newLowestAsksString += `${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
+        newLowestAsksString += `\n\t${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
           obj.price_cents / 100
-        } => ${obj.product.lowest_price_cents / 100}\n\tid: ${obj.id}\n`;
+        } => ${obj.product.lowest_price_cents / 100}\n`;
       });
 
       tempRes = 200;
@@ -594,6 +575,8 @@ async function noCommand(client, loginToken) {
 }
 
 async function update(client, loginToken, ids, all) {
+  const userListings = await Listings.find({ d_id: user.d_id });
+  const userListingsArray = userListings[0].listings;
   let listings = await getListings(client, loginToken);
 
   let listingObj = [];
@@ -706,44 +689,120 @@ async function updateListing(client, loginToken, obj) {
   return updateRes;
 }
 
-function allListings(listings) {
+async function allListings(user) {
+  const userListings = await Listings.find({ d_id: user.d_id });
+  const userListingsArray = userListings[0].listings;
   let listingString = 'Current Listings:';
 
-  if (listings.listing) {
-    listings.listing.forEach((obj, i) => {
-      listingString += `\n\t${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} $${
-        obj.price_cents / 100
-      }\n\t\tid: ${obj.id}\n`;
-    });
-  } else {
+  if (userListingsArray.length == 0) {
     return ['', response.NO_ITEMS];
   }
+
+  userListingsArray.forEach((obj, i) => {
+    listingString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size.toUpperCase()} - $${obj.price / 100}\n`;
+  });
 
   return [listingString, response.SUCCESS];
 }
 
-async function deleteSearch(client, loginToken, args, all) {
+async function deleteSearch(client, loginToken, message, user) {
+  const userListings = await Listings.find({ d_id: user.d_id });
+  const userListingsArray = userListings[0].listings;
+  let all = false;
+  let valid = true;
+  let nums = [];
+
+  let [listings, returnedEnum] = await allListings(user);
+
+  if (returnedEnum == response.SUCCESS) {
+    listings = '```' + listings + '```';
+  } else if (returnedEnum == response.NO_ITEMS) {
+    return [response.NO_ITEMS, all, null];
+  }
+
+  await message.channel.send(listings).catch((err) => {
+    throw new Error(err);
+  });
+
+  await message.channel.send('```' + `Enter 'all' or listing number(s) to delete` + '```');
+
+  const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector) {
+    nums = message.content.split(' ');
+
+    if (checkDeleteParams(nums)) {
+      if (nums[0] == 'all') {
+        all = true;
+        collector.stop();
+      } else {
+        valid = true;
+
+        for (let i = 0; i < nums.length; i++) {
+          if (parseInt(nums[i]) >= userListingsArray.length) {
+            valid = false;
+            message.channel.send('```' + 'One or more entered listing numbers do not exist' + '```');
+            break;
+          }
+        }
+
+        if (valid) {
+          collector.stop();
+        }
+      }
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter 'all' or listing number(s)` + '```');
+    }
+  }
+
+  collector.on('end', async (collected) => {
+    if (collected.size == 0) {
+      await message.channel.send('```Command timed out```');
+      console.log('Timed out\n');
+    }
+  });
+
+  const msg = await message.channel.send('```' + `Deleting...` + '```');
+
   let deleteRes = 0;
 
   if (all) {
-    let listings = await getListings(client, loginToken);
-
-    if (!listings.listing) {
-      return response.NO_ITEMS;
-    }
-
-    for (let i = 0; i < listings.listing.length; i++) {
-      deleteRes = await deletion(client, loginToken, listings.listing[i].id);
+    for (let i = 0; i < userListingsArray.length; i++) {
+      deleteRes = await deletion(client, loginToken, userListingsArray[i].id);
     }
   } else {
-    for (let i = 0; i < args.length; i++) {
-      deleteRes = await deletion(client, loginToken, args[i]);
+    if (valid) {
+      for (let i = 0; i < nums.length; i++) {
+        deleteRes = await deletion(client, loginToken, userListingsArray[parseInt(nums[i])].id);
+      }
     }
   }
 
   if (deleteRes == 200) {
-    return response.SUCCESS;
+    return [response.SUCCESS, all, msg];
   }
+}
+
+function checkDeleteParams(nums) {
+  if (nums.length == 1) {
+    if (nums[0] == 'all') {
+      return true;
+    } else if (!isNaN(nums[0])) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  for (let i = 0; i < nums.length; i++) {
+    if (isNaN(nums[i])) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 async function deletion(client, loginToken, listingId) {
@@ -1066,7 +1125,7 @@ async function settings(client, message, user, edit) {
     await message.channel.send('```' + `Enter 'live' or 'daily' to adjust order confirmation refresh rate` + '```');
 
     const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
-      time: 10000,
+      time: 30000,
     });
 
     collector.on('collect', async (message) => {
@@ -1162,9 +1221,10 @@ async function list(client, message, loginToken, sizingArray, query) {
 
   let returnedEnum = null;
   let returnString = '';
+  let msg = null;
 
   const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
-    time: 15000,
+    time: 30000,
   });
 
   for await (const message of collector) {
@@ -1176,6 +1236,7 @@ async function list(client, message, loginToken, sizingArray, query) {
         returnedEnum = response.EXIT;
       } else {
         collector.stop();
+        msg = await message.channel.send('```Listing...```');
         [returnedEnum, returnString] = await doList(client, loginToken, message, searchProduct, sizingArray);
       }
     } else {
@@ -1190,7 +1251,7 @@ async function list(client, message, loginToken, sizingArray, query) {
     }
   });
 
-  return [returnedEnum, returnString];
+  return [returnedEnum, returnString, msg];
 }
 
 async function doList(client, loginToken, message, searchProduct, sizingArray) {
@@ -1295,11 +1356,8 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
       let j = 0;
 
       while (j < parseInt(amount)) {
-        let id = await listRes(client, loginToken, listing);
-        returnString += `\t\t${j}. size: ${listing.listing.sizeOption.name} - $${
-          listing.listing.priceCents / 100
-        }\n\t\t\tid: ${id}\n`;
-
+        await listRes(client, loginToken, listing);
+        returnString += `\t\t${j}. size: ${listing.listing.sizeOption.name} - $${listing.listing.priceCents / 100}\n`;
         j++;
       }
 
@@ -1318,7 +1376,7 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
       );
 
       const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
-        time: 15000,
+        time: 30000,
       });
 
       for await (const message of collector) {
@@ -1365,7 +1423,6 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
 }
 
 async function listRes(client, loginToken, listing) {
-  let id = '';
   let listStatus = 0;
   let activateStatus = 0;
 
@@ -1385,8 +1442,6 @@ async function listRes(client, loginToken, listing) {
       throw new Error(err);
     }
   });
-
-  id = list.listing.id;
 
   let activate = await fetch(`https://sell-api.goat.com/api/v1/listings/${list.listing.id}/activate`, {
     method: 'PUT',
@@ -1408,8 +1463,6 @@ async function listRes(client, loginToken, listing) {
   if (listStatus != 200 || activateStatus != 200) {
     throw new Error('Error listing');
   }
-
-  return id;
 }
 
 function help() {

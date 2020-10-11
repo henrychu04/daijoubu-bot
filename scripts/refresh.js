@@ -1,39 +1,33 @@
 const fetch = require('node-fetch');
-const CronJob = require('cron').CronJob;
 const encryption = require('./encryption');
 
 const Users = require('../models/users');
 const Listings = require('../models/listings');
 
-module.exports = function main(client) {
-  try {
-    let job = new CronJob('* * * * *', function () {
-      refresh(client);
-    });
+module.exports = async function refresh(client, loginToken, user) {
+  if (!loginToken) {
+    const users = await Users.find();
+    const date = new Date();
 
-    job.start();
-  } catch (err) {
-    console.log(err);
+    for (let i = 0; i < users.length; i++) {
+      if (users[i].settings.orderRefresh == 'live') {
+        await confirmOrders(client, users[i], users[i].settings.orderRefresh);
+      } else if (users[i].settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
+        await confirmOrders(client, users[i], users[i].settings.orderRefresh);
+      }
+
+      let aliasListings = await getListings(client, users[i].login);
+
+      await adding(users[i], aliasListings);
+      await deleting(users[i], aliasListings);
+    }
+  } else {
+    let aliasListings = await getListings(client, loginToken);
+
+    await adding(user, aliasListings);
+    await deleting(user, aliasListings);
   }
 };
-
-async function refresh(client) {
-  const users = await Users.find();
-  const date = new Date();
-
-  for (let i = 0; i < users.length; i++) {
-    if (users[i].settings.orderRefresh == 'live') {
-      await confirmOrders(client, users[i], users[i].settings.orderRefresh);
-    } else if (users[i].settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
-      await confirmOrders(client, users[i], users[i].settings.orderRefresh);
-    }
-
-    let aliasListings = await getListings(client, users[i]);
-
-    await adding(users[i], aliasListings);
-    await deleting(users[i], aliasListings);
-  }
-}
 
 async function adding(user, aliasListings) {
   const userListings = await Listings.find({ d_id: user.d_id });
@@ -100,7 +94,7 @@ async function deleting(user, aliasListings) {
   }
 }
 
-async function getListings(client, user) {
+async function getListings(client, loginToken) {
   let getStatus = 0;
   let listings = [];
 
@@ -108,7 +102,7 @@ async function getListings(client, user) {
     listings = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(user.login)}`,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
       },
     }).then((res, err) => {
       getStatus = res.status;
