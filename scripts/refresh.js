@@ -20,6 +20,8 @@ module.exports = async function refresh(client, loginToken, user) {
 
       await adding(users[i], aliasListings);
       await deleting(users[i], aliasListings);
+
+      await update(users[i], aliasListings);
     }
   } else {
     let aliasListings = await getListings(client, loginToken);
@@ -28,6 +30,25 @@ module.exports = async function refresh(client, loginToken, user) {
     await deleting(user, aliasListings);
   }
 };
+
+async function update(user, aliasListings) {
+  const userListings = await Listings.find({ d_id: user.d_id });
+  const userListingsArray = userListings[0].listings;
+
+  for (let i = 0; i < userListingsArray.length; i++) {
+    if (aliasListings.listing) {
+      for (let j = 0; j < aliasListings.listing.length; j++) {
+        let crntPrice = parseInt(aliasListings.listing[j].price_cents);
+        if (userListingsArray[i].price != crntPrice) {
+          await Listings.updateOne(
+            { 'listings.id': userListingsArray[i].id },
+            { $set: { 'listings.$.price': crntPrice } }
+          ).catch((err) => console.log(err));
+        }
+      }
+    }
+  }
+}
 
 async function adding(user, aliasListings) {
   const userListings = await Listings.find({ d_id: user.d_id });
@@ -58,7 +79,7 @@ async function adding(user, aliasListings) {
       obj.id = aliasListings.listing[i].id;
       obj.name = aliasListings.listing[i].product.name;
       obj.size = aliasListings.listing[i].size_option.name;
-      obj.price = aliasListings.listing[i].price_cents;
+      obj.price = parseInt(aliasListings.listing[i].price_cents);
       obj.slug = aliasListings.listing[i].product.id;
 
       await Listings.updateOne({ _id: userListings[0]._id }, { $push: { listings: obj } }).catch((err) =>
