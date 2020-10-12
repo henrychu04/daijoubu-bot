@@ -20,18 +20,18 @@ module.exports = async function refresh(client, loginToken, user) {
 
       await adding(users[i], aliasListings);
       await deleting(users[i], aliasListings);
-
-      await update(users[i], aliasListings);
+      await syncPrice(users[i], aliasListings);
     }
   } else {
     let aliasListings = await getListings(client, loginToken);
 
     await adding(user, aliasListings);
     await deleting(user, aliasListings);
+    await syncPrice(user, aliasListings);
   }
 };
 
-async function update(user, aliasListings) {
+async function syncPrice(user, aliasListings) {
   const userListings = await Listings.find({ d_id: user.d_id });
   const userListingsArray = userListings[0].listings;
 
@@ -74,13 +74,16 @@ async function adding(user, aliasListings) {
         size: '',
         price: '',
         slug: '',
+        lowest: '',
+        setting: 'manual',
       };
 
       obj.id = aliasListings.listing[i].id;
       obj.name = aliasListings.listing[i].product.name;
-      obj.size = aliasListings.listing[i].size_option.name;
+      obj.size = parseInt(aliasListings.listing[i].size_option.value);
       obj.price = parseInt(aliasListings.listing[i].price_cents);
       obj.slug = aliasListings.listing[i].product.id;
+      obj.lowest = parseInt(aliasListings.listing[i].product.lowest_price_cents);
 
       await Listings.updateOne({ _id: userListings[0]._id }, { $push: { listings: obj } }).catch((err) =>
         console.log(err)
