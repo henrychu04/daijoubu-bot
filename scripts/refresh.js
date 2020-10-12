@@ -80,7 +80,7 @@ async function adding(user, aliasListings) {
 
       obj.id = aliasListings.listing[i].id;
       obj.name = aliasListings.listing[i].product.name;
-      obj.size = parseInt(aliasListings.listing[i].size_option.value);
+      obj.size = parseFloat(aliasListings.listing[i].size_option.value);
       obj.price = parseInt(aliasListings.listing[i].price_cents);
       obj.slug = aliasListings.listing[i].product.id;
       obj.lowest = parseInt(aliasListings.listing[i].product.lowest_price_cents);
