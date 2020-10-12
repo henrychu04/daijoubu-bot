@@ -39,7 +39,7 @@ async function syncPrice(user, aliasListings) {
     if (aliasListings.listing) {
       for (let j = 0; j < aliasListings.listing.length; j++) {
         let crntPrice = parseInt(aliasListings.listing[j].price_cents);
-        if (userListingsArray[i].price != crntPrice) {
+        if (userListingsArray[i].id == aliasListings.listing[j].id && userListingsArray[i].price != crntPrice) {
           await Listings.updateOne(
             { 'listings.id': userListingsArray[i].id },
             { $set: { 'listings.$.price': crntPrice } }
