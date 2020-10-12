@@ -51,8 +51,10 @@ exports.run = async (client, message, args) => {
 
     switch (command) {
       case 'check':
+        let listingObj = [];
+
         if (args.length < 2) {
-          [toReturn, returnedEnum] = await check(client, loginToken);
+          [toReturn, returnedEnum, listingObj] = await check(client, loginToken);
         } else {
           throw new Error('Too many parameters');
         }
@@ -67,27 +69,30 @@ exports.run = async (client, message, args) => {
         break;
       case 'update':
         let updateAll = false;
+        let updateMsg = null;
 
-        if (args.length < 2) {
-          throw new Error('Too little parameters');
-        } else if (args[1] == 'all') {
-          updateAll = true;
-        } else {
-          args.shift();
+        if (args.length > 1) {
+          throw new Error('Too many parameters');
         }
 
-        returnedEnum = await update(client, loginToken, args, updateAll);
+        [returnedEnum, updateAll, updateMsg] = await update(client, loginToken, message);
 
         if (returnedEnum == response.SUCCESS) {
           if (updateAll) {
-            toReturn = '```All Listing(s) Updated Successfully!```';
+            await updateMsg
+              .edit('```All Listing(s) Updated Successfully```')
+              .then(console.log(`${message} completed\n`));
           } else {
-            toReturn = '```Specified Listing(s) Updated Successfully!```';
+            await updateMsg
+              .edit('```Specified Listing(s) Updated Successfully```')
+              .then(console.log(`${message} completed\n`));
           }
+          await refresh(client, loginToken, user);
         } else if (returnedEnum == response.NO_CHANGE) {
           toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account Currently Has No Items Listed```';
+        } else if (returnedEnum == response.EXIT) {
         }
         break;
       case 'listings':
@@ -119,13 +124,14 @@ exports.run = async (client, message, args) => {
               .edit('```All Listing(s) Deleted Successfully```')
               .then(console.log(`${message} completed\n`));
           } else {
-            deleteMsg
+            await deleteMsg
               .edit('```Specified Listing(s) Deleted Successfully```')
               .then(console.log(`${message} completed\n`));
           }
           await refresh(client, loginToken, user);
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account Currently Has No Items Listed```';
+        } else if (returnedEnum == response.EXIT) {
         }
         break;
       case 'edit':
@@ -549,7 +555,7 @@ async function check(client, loginToken) {
   let listings = await getListings(client, loginToken);
 
   if (!listings.listing) {
-    return ['', response.NO_ITEMS];
+    return ['', response.NO_ITEMS, null];
   } else {
     let listingObj = [];
 
@@ -558,7 +564,7 @@ async function check(client, loginToken) {
     }
 
     if (listingObj.length == 0) {
-      return ['', response.NO_CHANGE];
+      return ['', response.NO_CHANGE, null];
     } else {
       let newLowestAsksString = 'Current listings with a lower ask:';
 
@@ -569,48 +575,90 @@ async function check(client, loginToken) {
       });
 
       tempRes = 200;
-      return [newLowestAsksString, response.SUCCESS];
+      return [newLowestAsksString, response.SUCCESS, listingObj];
     }
   }
 }
 
-async function update(client, loginToken, ids, all) {
-  const userListings = await Listings.find({ d_id: user.d_id });
-  const userListingsArray = userListings[0].listings;
-  let listings = await getListings(client, loginToken);
+async function update(client, loginToken, message) {
+  let nums = [];
+  let all = false;
+  let valid = false;
+  let time = false;
 
-  let listingObj = [];
+  let [listingString, listingEnum, listingObj] = await check(client, loginToken);
 
-  if (listings.listing) {
-    for (let i = 0; i < listings.listing.length; i++) {
-      listingObj = await checkListings(listings.listing[i], listingObj);
+  if (listingEnum == response.SUCCESS) {
+    await message.channel.send('```' + listingString + '```');
+  } else if (listingEnum == response.NO_CHANGE) {
+    return [response.NO_CHANGE, all, null];
+  } else if (listingEnum == response.NO_ITEMS) {
+    return [response.NO_ITEMS, all, null];
+  }
+
+  await message.channel.send('```' + `Enter 'all' or listing number(s) to update` + '```');
+
+  const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector) {
+    nums = message.content.split(' ');
+
+    if (checkNumParams(nums)) {
+      if (nums[0] == 'all') {
+        all = true;
+        collector.stop();
+      } else {
+        valid = true;
+
+        for (let i = 0; i < nums.length; i++) {
+          if (parseInt(nums[i]) >= listingObj.length) {
+            valid = false;
+            message.channel.send('```' + 'One or more entered listing numbers do not exist' + '```');
+            break;
+          }
+        }
+
+        if (valid) {
+          collector.stop();
+        }
+      }
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter 'all' or listing number(s)` + '```');
     }
-  } else {
-    return response.NO_ITEMS;
   }
 
-  if (listingObj.length == 0) {
-    return response.NO_CHANGE;
+  collector.on('end', async (collected) => {
+    if (collected.size == 0) {
+      await message.channel.send('```Command timed out```');
+      console.log('Timed out\n');
+      time = true;
+    }
+  });
+
+  if (time) {
+    return [response.EXIT, null, null];
   }
+
+  const msg = await message.channel.send('```' + `Updating...` + '```');
 
   let updateRes = 0;
 
-  for (let i = 0; i < listingObj.length; i++) {
-    if (all && listingObj[i].price_cents > listingObj[i].product.lowest_price_cents) {
-      updateRes = await updateListing(client, loginToken, listingObj[i]);
-    }
-
-    if (!all) {
-      for (let j = 0; j < ids.length; j++) {
-        if (ids[j] == listingObj[i].id) {
-          updateRes = await updateListing(client, loginToken, listingObj[i]);
-        }
+  if (all) {
+    for (let i = 0; i < listingObj.length; i++) {
+      if (listingObj[i].price_cents > listingObj[i].product.lowest_price_cents) {
+        updateRes = await updateListing(client, loginToken, listingObj[i]);
       }
+    }
+  } else {
+    for (let j = 0; j < nums.length; j++) {
+      updateRes = await updateListing(client, loginToken, listingObj[nums[j]]);
     }
   }
 
   if (updateRes == 200) {
-    return response.SUCCESS;
+    return [response.SUCCESS, all, msg];
   }
 }
 
@@ -699,7 +747,7 @@ async function allListings(user) {
   }
 
   userListingsArray.forEach((obj, i) => {
-    listingString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size.toUpperCase()} - $${obj.price / 100}\n`;
+    listingString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} - $${obj.price / 100}\n`;
   });
 
   return [listingString, response.SUCCESS];
@@ -711,6 +759,7 @@ async function deleteSearch(client, loginToken, message, user) {
   let all = false;
   let valid = true;
   let nums = [];
+  let time = false;
 
   let [listings, returnedEnum] = await allListings(user);
 
@@ -733,7 +782,7 @@ async function deleteSearch(client, loginToken, message, user) {
   for await (const message of collector) {
     nums = message.content.split(' ');
 
-    if (checkDeleteParams(nums)) {
+    if (checkNumParams(nums)) {
       if (nums[0] == 'all') {
         all = true;
         collector.stop();
@@ -761,8 +810,13 @@ async function deleteSearch(client, loginToken, message, user) {
     if (collected.size == 0) {
       await message.channel.send('```Command timed out```');
       console.log('Timed out\n');
+      time = true;
     }
   });
+
+  if (time) {
+    return [response.EXIT, null, null];
+  }
 
   const msg = await message.channel.send('```' + `Deleting...` + '```');
 
@@ -785,7 +839,7 @@ async function deleteSearch(client, loginToken, message, user) {
   }
 }
 
-function checkDeleteParams(nums) {
+function checkNumParams(nums) {
   if (nums.length == 1) {
     if (nums[0] == 'all') {
       return true;
