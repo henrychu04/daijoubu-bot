@@ -8,6 +8,7 @@ module.exports = async function refresh(client, loginToken, user) {
   if (!loginToken) {
     const users = await Users.find();
     const date = new Date();
+    let allListings = [];
 
     for (let i = 0; i < users.length; i++) {
       if (users[i].settings.orderRefresh == 'live') {
@@ -21,6 +22,7 @@ module.exports = async function refresh(client, loginToken, user) {
       await adding(users[i], aliasListings);
       await deleting(users[i], aliasListings);
       await syncPrice(users[i], aliasListings);
+      allListings = await updateLowest(client, users[i], allListings);
     }
   } else {
     let aliasListings = await getListings(client, loginToken);
@@ -31,6 +33,76 @@ module.exports = async function refresh(client, loginToken, user) {
   }
 };
 
+async function updateLowest(client, user, allListings) {
+  const userListings = await Listings.find({ d_id: user.d_id });
+  const userListingsArray = userListings[0].listings;
+
+  for (let i = 0; i < userListingsArray.length; i++) {
+    let exist = false;
+
+    for (let j = 0; j < allListings.length; j++) {
+      exist = false;
+
+      if (userListingsArray[i].slug == allListings[j].slug) {
+        exist = true;
+        console.log('exist true');
+
+        allListings[j].data.availability.forEach(async (size) => {
+          if (size.size == userListingsArray.size && size.lowest_price_cents) {
+            let lowest = parseInt(size.lowest_price_cents);
+
+            if (lowest != userListingsArray[i].lowest) {
+              await Listings.updateOne(
+                { 'listings.id': userListingsArray[i].id },
+                { $set: { 'listings.$.lowest': lowest } }
+              ).catch((err) => console.log(err));
+            }
+          }
+        });
+
+        break;
+      }
+    }
+
+    if (!exist) {
+      console.log('exist false');
+      let pageData = await fetch(
+        `https://sell-api.goat.com/api/v1/analytics/products/${userListingsArray[i].slug}/availability?box_condition=1&shoe_condition=1`,
+        {
+          headers: client.config.headers,
+        }
+      ).then((res, err) => {
+        if (res.status == 200) {
+          return res.json();
+        } else {
+          console.log('Res is', res.status);
+
+          if (err) {
+            throw new Error(err.message);
+          }
+        }
+      });
+
+      allListings.push({ slug: userListingsArray[i].slug, data: pageData });
+
+      pageData.availability.forEach(async (size) => {
+        if (size.size == userListingsArray.size && size.lowest_price_cents) {
+          let lowest = parseInt(size.lowest_price_cents);
+
+          if (lowest != userListingsArray[i].lowest) {
+            await Listings.updateOne(
+              { 'listings.id': userListingsArray[i].id },
+              { $set: { 'listings.$.lowest': lowest } }
+            ).catch((err) => console.log(err));
+          }
+        }
+      });
+    }
+  }
+
+  return allListings;
+}
+
 async function syncPrice(user, aliasListings) {
   const userListings = await Listings.find({ d_id: user.d_id });
   const userListingsArray = userListings[0].listings;
@@ -39,6 +111,7 @@ async function syncPrice(user, aliasListings) {
     if (aliasListings.listing) {
       for (let j = 0; j < aliasListings.listing.length; j++) {
         let crntPrice = parseInt(aliasListings.listing[j].price_cents);
+
         if (userListingsArray[i].id == aliasListings.listing[j].id && userListingsArray[i].price != crntPrice) {
           await Listings.updateOne(
             { 'listings.id': userListingsArray[i].id },
