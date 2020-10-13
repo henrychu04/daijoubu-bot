@@ -93,6 +93,7 @@ exports.run = async (client, message, args) => {
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account Currently Has No Items Listed```';
         } else if (returnedEnum == response.EXIT) {
+          toReturn = '';
         }
         break;
       case 'listings':
@@ -132,6 +133,7 @@ exports.run = async (client, message, args) => {
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account Currently Has No Items Listed```';
         } else if (returnedEnum == response.EXIT) {
+          toReturn = '';
         }
         break;
       case 'edit':
@@ -584,7 +586,7 @@ async function update(client, loginToken, message) {
   let nums = [];
   let all = false;
   let valid = false;
-  let time = false;
+  let exit = false;
 
   let [listingString, listingEnum, listingObj] = await check(client, loginToken);
 
@@ -596,13 +598,20 @@ async function update(client, loginToken, message) {
     return [response.NO_ITEMS, all, null];
   }
 
-  await message.channel.send('```' + `Enter 'all' or listing number(s) to update` + '```');
+  await message.channel.send('```' + `Enter 'all' or listing number(s) to update\nEnter 'n' to cancel` + '```');
 
   const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
   });
 
   for await (const message of collector) {
+    if (message.content == 'n') {
+      collector.stop();
+      exit = true;
+      await message.channel.send('```' + `Canceled` + '```');
+      console.log('Canceled\n');
+    }
+
     nums = message.content.split(' ');
 
     if (checkNumParams(nums)) {
@@ -633,11 +642,11 @@ async function update(client, loginToken, message) {
     if (collected.size == 0) {
       await message.channel.send('```Command timed out```');
       console.log('Timed out\n');
-      time = true;
+      exit = true;
     }
   });
 
-  if (time) {
+  if (exit) {
     return [response.EXIT, null, null];
   }
 
@@ -652,8 +661,10 @@ async function update(client, loginToken, message) {
       }
     }
   } else {
-    for (let j = 0; j < nums.length; j++) {
-      updateRes = await updateListing(client, loginToken, listingObj[nums[j]]);
+    if (valid) {
+      for (let j = 0; j < nums.length; j++) {
+        updateRes = await updateListing(client, loginToken, listingObj[nums[j]]);
+      }
     }
   }
 
@@ -759,7 +770,7 @@ async function deleteSearch(client, loginToken, message, user) {
   let all = false;
   let valid = true;
   let nums = [];
-  let time = false;
+  let exit = false;
 
   let [listings, returnedEnum] = await allListings(user);
 
@@ -773,19 +784,26 @@ async function deleteSearch(client, loginToken, message, user) {
     throw new Error(err);
   });
 
-  await message.channel.send('```' + `Enter 'all' or listing number(s) to delete` + '```');
+  await message.channel.send('```' + `Enter 'all' or listing number(s) to delete\nEnter 'n' to cancel` + '```');
 
   const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
   });
 
   for await (const message of collector) {
+    if (message.content == 'n') {
+      collector.stop();
+      exit = true;
+      await message.channel.send('```' + `Canceled` + '```');
+      console.log('Canceled\n');
+    }
+
     nums = message.content.split(' ');
 
     if (checkNumParams(nums)) {
       if (nums[0] == 'all') {
-        all = true;
         collector.stop();
+        all = true;
       } else {
         valid = true;
 
@@ -810,11 +828,11 @@ async function deleteSearch(client, loginToken, message, user) {
     if (collected.size == 0) {
       await message.channel.send('```Command timed out```');
       console.log('Timed out\n');
-      time = true;
+      exit = true;
     }
   });
 
-  if (time) {
+  if (exit) {
     return [response.EXIT, null, null];
   }
 
