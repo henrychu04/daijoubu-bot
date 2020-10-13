@@ -1012,6 +1012,8 @@ async function getOrders(client, loginToken) {
       throw new Error(err);
     });
 
+  let reviewString = '\tIn Review:\n';
+  let reviewNum = 0;
   let confirmString = '\tNeeds Confirmation:\n';
   let confirmNum = 0;
   let needShipString = '\tNeeds Shipping:\n';
@@ -1022,12 +1024,19 @@ async function getOrders(client, loginToken) {
   let receivedNum = 0;
   let droppedString = '\tDropped Off:\n';
   let droppedNum = 0;
+  let newString = '';
+  let i = 0;
 
   if (purchaseOrders.purchase_orders) {
     purchaseOrders.purchase_orders.forEach((order) => {
       let date = new Date(order.take_action_by);
 
-      if (order.status == 'NEEDS_CONFIRMATION') {
+      if (order.status == 'IN_REVIEW') {
+        reviewString += `\t\t${reviewNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+          order.listing.price_cents / 100
+        }\n\t\t\tOrder number: ${order.number}\n`;
+        reviewNum++;
+      } else if (order.status == 'NEEDS_CONFIRMATION') {
         confirmString += `\t\t${confirmNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
           order.listing.price_cents / 100
         }\n\t\t\tOrder number: ${order.number}\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
@@ -1053,9 +1062,21 @@ async function getOrders(client, loginToken) {
         }\n\t\t\tOrder number: ${order.number}\n`;
         receivedNum++;
       } else {
+        newString += `\t${i}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+          order.listing.price_cents / 100
+        }\n\t\tOrder number: ${order.number}\n`;
+        i++;
         console.log(`\nNew order status is '${order.status}'\n`);
       }
     });
+
+    if (i != 0) {
+      returnString += newString + '\n';
+    }
+
+    if (reviewNum != 0) {
+      returnString += reviewString + '\n';
+    }
 
     if (confirmNum != 0) {
       returnString += confirmString + '\n';
