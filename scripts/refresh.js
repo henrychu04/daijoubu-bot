@@ -45,7 +45,6 @@ async function updateLowest(client, user, allListings) {
 
       if (userListingsArray[i].slug == allListings[j].slug) {
         exist = true;
-        console.log('exist true');
 
         allListings[j].data.availability.forEach(async (size) => {
           if (size.size == userListingsArray.size && size.lowest_price_cents) {
@@ -65,7 +64,6 @@ async function updateLowest(client, user, allListings) {
     }
 
     if (!exist) {
-      console.log('exist false');
       let pageData = await fetch(
         `https://sell-api.goat.com/api/v1/analytics/products/${userListingsArray[i].slug}/availability?box_condition=1&shoe_condition=1`,
         {

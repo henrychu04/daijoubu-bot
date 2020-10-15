@@ -1414,11 +1414,11 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
     }
 
     listing.listing.sizeOption.name = size;
-    listing.listing.sizeOption.value = parseInt(size);
+    listing.listing.sizeOption.value = parseFloat(size);
 
     if (price == 'lowest') {
       for (let k = 0; k < pageData.availability.length; k++) {
-        if (pageData.availability[k].size == parseInt(size)) {
+        if (pageData.availability[k].size == parseFloat(size)) {
           if (!pageData.availability[k].lowest_price_cents) {
             throw new Error('No lowest ask');
           }
