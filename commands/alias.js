@@ -571,9 +571,11 @@ async function check(client, loginToken) {
       let newLowestAsksString = 'Current listings with a lower ask:';
 
       listingObj.forEach((obj, i) => {
-        newLowestAsksString += `\n\t${i}. ${obj.product.name} - ${obj.size_option.name.toUpperCase()} ${
-          obj.price_cents / 100
-        } => ${obj.product.lowest_price_cents / 100}\n`;
+        newLowestAsksString += `\n\t${i}. ${
+          obj.product.name
+        } size: ${obj.size_option.name.toUpperCase()}\n\t\tCurrent ask: $${obj.price_cents / 100} => New lowest ask: $${
+          obj.product.lowest_price_cents / 100
+        }\n`;
       });
 
       tempRes = 200;
