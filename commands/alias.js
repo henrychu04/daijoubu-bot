@@ -615,7 +615,7 @@ async function update(client, loginToken, message) {
     nums = message.content.split(' ');
 
     if (checkNumParams(nums)) {
-      if (nums[0] == 'all') {
+      if (nums[0].toLowerCase() == 'all') {
         all = true;
         collector.stop();
       } else {
@@ -801,7 +801,7 @@ async function deleteSearch(client, loginToken, message, user) {
     nums = message.content.split(' ');
 
     if (checkNumParams(nums)) {
-      if (nums[0] == 'all') {
+      if (nums[0].toLowerCase() == 'all') {
         collector.stop();
         all = true;
       } else {
