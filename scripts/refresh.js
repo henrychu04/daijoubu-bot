@@ -3,7 +3,6 @@ const encryption = require('./encryption');
 
 const Users = require('../models/users');
 const Listings = require('../models/listings');
-const Orders = require('../models/orders');
 
 module.exports = async function refresh(client, loginToken, user) {
   if (!loginToken) {
@@ -19,15 +18,11 @@ module.exports = async function refresh(client, loginToken, user) {
       }
 
       let aliasListings = await getListings(client, users[i].login);
-      let aliasOrders = await getOrders(client, users[i].login);
 
       await addListing(users[i], aliasListings);
       await deleteListing(users[i], aliasListings);
       await syncListingPrice(users[i], aliasListings);
       allListings = await updateLowest(client, users[i], allListings);
-
-      await addOrder(users[i], aliasOrders);
-      await deleteOrder(users[i], aliasOrders);
     }
   } else {
     let aliasListings = await getListings(client, loginToken);
@@ -37,16 +32,6 @@ module.exports = async function refresh(client, loginToken, user) {
     await syncListingPrice(user, aliasListings);
   }
 };
-
-async function addOrder(user, aliasOrders) {
-  const userOrders = await Orders.find({ d_id: user.d_id });
-  const userOrdersArray = userOrders[0].orders;
-}
-
-async function deleteOrder(user, aliasOrders) {
-  const userOrders = await Orders.find({ d_id: user.d_id });
-  const userOrdersArray = userOrders[0].orders;
-}
 
 async function updateLowest(client, user, allListings) {
   const userListings = await Listings.find({ d_id: user.d_id });
