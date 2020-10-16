@@ -19,17 +19,17 @@ module.exports = async function refresh(client, loginToken, user) {
 
       let aliasListings = await getListings(client, users[i].login);
 
-      await adding(users[i], aliasListings);
-      await deleting(users[i], aliasListings);
-      await syncPrice(users[i], aliasListings);
+      await addListing(users[i], aliasListings);
+      await deleteListing(users[i], aliasListings);
+      await syncListingPrice(users[i], aliasListings);
       allListings = await updateLowest(client, users[i], allListings);
     }
   } else {
     let aliasListings = await getListings(client, loginToken);
 
-    await adding(user, aliasListings);
-    await deleting(user, aliasListings);
-    await syncPrice(user, aliasListings);
+    await addListing(user, aliasListings);
+    await deleteListing(user, aliasListings);
+    await syncListingPrice(user, aliasListings);
   }
 };
 
@@ -101,7 +101,7 @@ async function updateLowest(client, user, allListings) {
   return allListings;
 }
 
-async function syncPrice(user, aliasListings) {
+async function syncListingPrice(user, aliasListings) {
   const userListings = await Listings.find({ d_id: user.d_id });
   const userListingsArray = userListings[0].listings;
 
@@ -121,7 +121,7 @@ async function syncPrice(user, aliasListings) {
   }
 }
 
-async function adding(user, aliasListings) {
+async function addListing(user, aliasListings) {
   const userListings = await Listings.find({ d_id: user.d_id });
   const userListingsArray = userListings[0].listings;
 
@@ -163,7 +163,7 @@ async function adding(user, aliasListings) {
   }
 }
 
-async function deleting(user, aliasListings) {
+async function deleteListing(user, aliasListings) {
   const userListings = await Listings.find({ d_id: user.d_id });
   const userListingsArray = userListings[0].listings;
 
@@ -191,7 +191,7 @@ async function deleting(user, aliasListings) {
 
 async function getListings(client, loginToken) {
   let getStatus = 0;
-  let listings = [];
+  let listings = {};
 
   while (getStatus != 200) {
     listings = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
@@ -217,6 +217,39 @@ async function getListings(client, loginToken) {
   }
 
   return listings;
+}
+
+async function getOrders(client, loginToken) {
+  let getStatus = 0;
+  let purchaseOrders = {};
+
+  while (getStatus != 200) {
+    purchaseOrders = await fetch(
+      'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
+      {
+        headers: {
+          'user-agent': client.config.aliasHeader,
+          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        },
+      }
+    ).then((res) => {
+      getStatus = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+
+        if (err) {
+          console.log(err);
+        }
+      }
+    });
+  }
+
+  return purchaseOrders;
 }
 
 async function confirmOrders(client, user, refresh) {
