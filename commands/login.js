@@ -3,7 +3,6 @@ const encryption = require('../scripts/encryption');
 
 const Users = require('../models/users');
 const Listings = require('../models/listings');
-const Orders = require('../models/orders');
 
 exports.run = async (client, message, args) => {
   try {
@@ -46,11 +45,6 @@ exports.run = async (client, message, args) => {
             listings: [],
           });
 
-          const newOrders = new Orders({
-            d_id: id,
-            orders: [],
-          });
-
           await newLogin
             .save()
             .then(console.log('New login successfully added\n'))
@@ -61,13 +55,6 @@ exports.run = async (client, message, args) => {
           await newListings
             .save()
             .then(console.log('New listings successfully added\n'))
-            .catch((err) => {
-              throw new Error(err);
-            });
-
-          await newOrders
-            .save()
-            .then(console.log('New orders successfully added\n'))
             .catch((err) => {
               throw new Error(err);
             });
