@@ -859,7 +859,7 @@ async function deleteSearch(client, loginToken, message, user) {
 
 function checkNumParams(nums) {
   if (nums.length == 1) {
-    if (nums[0] == 'all') {
+    if (nums[0].toLowerCase() == 'all') {
       return true;
     } else if (!isNaN(nums[0])) {
       return true;
