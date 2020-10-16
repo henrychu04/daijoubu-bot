@@ -101,7 +101,7 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        [toReturn, returnedEnum] = await allListings(user);
+        [toReturn, returnedEnum, []] = await allListings(user);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + toReturn + '```';
@@ -137,13 +137,11 @@ exports.run = async (client, message, args) => {
         }
         break;
       case 'edit':
-        if (args.length != 3) {
-          throw new Error('Incorrect format');
-        } else {
-          args.shift();
+        if (args.length > 1) {
+          throw new Error('Too many parameters');
         }
 
-        returnedEnum = await editListing(client, loginToken, args);
+        returnedEnum = await editListing(client, loginToken, user, message);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```Item edited successfully```';
@@ -754,14 +752,17 @@ async function allListings(user) {
   let listingString = 'Current Listings:';
 
   if (userListingsArray.length == 0) {
-    return ['', response.NO_ITEMS];
+    return ['', response.NO_ITEMS, null];
   }
 
+  let listingIds = [];
+
   userListingsArray.forEach((obj, i) => {
+    listingIds.push(obj.id);
     listingString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} - $${obj.price / 100}\n`;
   });
 
-  return [listingString, response.SUCCESS];
+  return [listingString, response.SUCCESS, listingIds];
 }
 
 async function deleteSearch(client, loginToken, message, user) {
@@ -772,7 +773,7 @@ async function deleteSearch(client, loginToken, message, user) {
   let nums = [];
   let exit = false;
 
-  let [listings, returnedEnum] = await allListings(user);
+  let [listings, returnedEnum, []] = await allListings(user);
 
   if (returnedEnum == response.SUCCESS) {
     listings = '```' + listings + '```';
@@ -936,59 +937,196 @@ async function deletion(client, loginToken, listingId) {
   }
 }
 
-async function editListing(client, loginToken, args) {
-  let id = args[0];
-  let price = args[1];
+async function editListing(client, loginToken, user, message) {
+  let [listingString, listingEnum, listingIds] = await allListings(user);
 
-  let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-  }).then((res, err) => {
-    if (res.status == 200) {
-      return res.json();
-    } else if (res.status == 401) {
-      throw new Error('Login expired');
-    } else if (res.status == 404) {
-      throw new Error('Not exist');
-    } else {
-      console.log('Res is', res.status);
-
-      if (err) {
-        throw new Error(err.message);
-      }
-    }
-  });
-
-  getJSON.listing.price_cents = (parseInt(price) * 100).toString();
-
-  let editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
-    method: 'PUT',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: `${JSON.stringify(getJSON)}`,
-  }).then((res) => {
-    if (res.status == 200) {
-      return res.status;
-    } else if (res.status == 401) {
-      throw new Error('Login expired');
-    } else if (res.status == 404) {
-      throw new Error('Not exist');
-    } else {
-      console.log('Res is', res.status);
-
-      if (err) {
-        throw new Error(err.message);
-      }
-    }
-  });
-
-  if (editRes != 200) {
-    throw new Error('Error editing');
+  if (listingEnum == response.SUCCESS) {
+    await message.channel.send('```' + listingString + '```');
+  } else {
+    return response.NO_ITEMS;
   }
+
+  let input = 0;
+  let valid = true;
+  let exit = false;
+
+  await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
+
+  const collector1 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector1) {
+    if (message.content == 'n') {
+      collector1.stop();
+      exit = true;
+      await message.channel.send('```' + `Canceled` + '```');
+      console.log('Canceled\n');
+    }
+
+    input = message.content;
+
+    if (!isNaN(input)) {
+      if (parseInt(input) >= listingIds.length) {
+        message.channel.send('```' + 'Entered listing number does not exist' + '```');
+      } else {
+        collector1.stop();
+        valid = true;
+      }
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter 'all' or listing number` + '```');
+    }
+  }
+
+  collector1.on('end', async (collected) => {
+    if (collected.size == 0) {
+      await message.channel.send('```Command timed out```');
+      console.log('Timed out\n');
+      exit = true;
+    }
+  });
+
+  if (exit) {
+    return response.EXIT;
+  }
+
+  if (valid) {
+    await message.channel.send('```' + `Enter new price\nEnter 'n' to cancel` + '```');
+
+    let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input]}`, {
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+    }).then((res, err) => {
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else {
+        console.log('Res is', res.status);
+
+        if (err) {
+          throw new Error(err.message);
+        }
+      }
+    });
+
+    let lowest = getJSON.listing.product.lowest_price_cents;
+
+    const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+      time: 30000,
+    });
+
+    for await (const message of collector2) {
+      if (message.content == 'n') {
+        collector2.stop();
+        exit = true;
+        await message.channel.send('```' + `Canceled` + '```');
+        console.log('Canceled\n');
+      }
+
+      let price = message.content;
+
+      if (!isNaN(price)) {
+        if (parseInt(price) < lowest / 100) {
+          async function confirmEdit(lowest, price, message) {
+            let confirm = false;
+
+            await message.channel.send(
+              '```' +
+                `Current lowest ask: $${lowest}\nYou entered $${price}, a lower asking price than the current lowest asking price of $${lowest}\nEnter a new price, 'y' to confirm, or 'n' to cancel` +
+                '```'
+            );
+
+            const collector3 = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
+              time: 10000,
+            });
+
+            for await (const m of collector3) {
+              console.log(m.content);
+              if (m.content == 'y') {
+                collector3.stop();
+                confirm = true;
+              } else if (m.content == 'n') {
+                collector3.stop();
+                confirm = false;
+              } else if (!isNaN(m.content)) {
+                collector3.stop();
+                price = m.content;
+                confirm = true;
+              } else {
+                m.channel.send('Incorrect format\nEnter a valid input');
+              }
+            }
+
+            collector3.on('end', async (collected) => {
+              await message.channel.send('```Command timed out```');
+              console.log('Timed out\n');
+              confirm = false;
+            });
+
+            if (!confirm) {
+              return false;
+            } else {
+              return true;
+            }
+          }
+
+          let confirm = await confirmEdit(lowest, price, message);
+
+          console.log(price);
+        }
+      } else {
+        await message.channel.send('```Incorrect format\nEnter a valid number```');
+      }
+    }
+
+    collector2.on('end', async (collected) => {
+      if (collected.size == 0) {
+        await message.channel.send('```Command timed out```');
+        console.log('Timed out\n');
+        exit = true;
+      }
+    });
+
+    if (exit) {
+      return response.EXIT;
+    }
+  }
+
+  // const msg = await message.channel.send('```' + `Editing...` + '```');
+
+  // getJSON.listing.price_cents = (parseInt(price) * 100).toString();
+
+  // let editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input].id}`, {
+  //   method: 'PUT',
+  //   headers: {
+  //     'user-agent': client.config.aliasHeader,
+  //     authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+  //   },
+  //   body: `${JSON.stringify(getJSON)}`,
+  // }).then((res) => {
+  //   if (res.status == 200) {
+  //     return res.status;
+  //   } else if (res.status == 401) {
+  //     throw new Error('Login expired');
+  //   } else if (res.status == 404) {
+  //     throw new Error('Not exist');
+  //   } else {
+  //     console.log('Res is', res.status);
+
+  //     if (err) {
+  //       throw new Error(err.message);
+  //     }
+  //   }
+  // });
+
+  // if (editRes != 200) {
+  //   throw new Error('Error editing');
+  // }
 
   return response.SUCCESS;
 }
