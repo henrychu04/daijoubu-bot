@@ -2,7 +2,7 @@ const Discord = require('discord.js');
 const Enmap = require('enmap');
 const fs = require('fs');
 const loginGoat = require('./scripts/login');
-const cronjob = require('./scripts/cronjob');
+const monitor = require('./scripts/monitor');
 const mongoose = require('mongoose');
 require('dotenv').config();
 const uri = process.env.URI;
@@ -38,4 +38,4 @@ client.on('ready', () => {
   client.user.setActivity('!help for more info');
 });
 
-client.login(process.env.BOT_TOKEN).then(loginGoat()).then(console.log('Ready!')).then(cronjob(client));
+client.login(process.env.BOT_TOKEN).then(loginGoat()).then(console.log('Ready!')).then(monitor(client));
