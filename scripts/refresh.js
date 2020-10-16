@@ -219,39 +219,6 @@ async function getListings(client, loginToken) {
   return listings;
 }
 
-async function getOrders(client, loginToken) {
-  let getStatus = 0;
-  let purchaseOrders = {};
-
-  while (getStatus != 200) {
-    purchaseOrders = await fetch(
-      'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
-      {
-        headers: {
-          'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-        },
-      }
-    ).then((res) => {
-      getStatus = res.status;
-
-      if (res.status == 200) {
-        return res.json();
-      } else if (res.status == 401) {
-        throw new Error('Login expired');
-      } else {
-        console.log('Res is', res.status);
-
-        if (err) {
-          console.log(err);
-        }
-      }
-    });
-  }
-
-  return purchaseOrders;
-}
-
 async function confirmOrders(client, user, refresh) {
   let returnString = 'Orders successfully confirmed:\n';
   let confirmed = 0;
