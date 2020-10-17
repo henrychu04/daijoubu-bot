@@ -1130,9 +1130,6 @@ async function confirm(client, loginToken, args, all) {
   let orderNum = 0;
 
   for (let i = 0; i < orders.length; i++) {
-    console.log(orders[i].number);
-    let exist = false;
-
     if (all && orders[i].status == 'NEEDS_CONFIRMATION') {
       orderNum++;
       await confirmation(client, loginToken, orders[i].number);
@@ -1140,24 +1137,18 @@ async function confirm(client, loginToken, args, all) {
 
     if (!all) {
       for (let j = 0; j < args.length; j++) {
-        if (orders[i].number == args[j]) {
-          exist = true;
+        if (orders[i].number == args[j] && orders[i].status == 'NEEDS_CONFIRMATION') {
           orderNum++;
-
-          if (exist && orders[i].status == 'NEEDS_CONFIRMATION') {
-            confirmRes = await confirmation(client, loginToken, orders[i].number);
-          }
+          confirmRes = await confirmation(client, loginToken, orders[i].number);
         }
-      }
-
-      if (!exist) {
-        throw new Error('Order not exist');
       }
     }
   }
 
   if (orderNum == 0) {
     return response.NO_CHANGE;
+  } else if (!all && orderNum != args.length) {
+    throw new Error('Order not exist');
   } else {
     return response.SUCCESS;
   }
