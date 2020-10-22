@@ -52,10 +52,10 @@ exports.run = async (client, message, args) => {
 
     switch (command) {
       case 'check':
-        let listingObj = [];
+        let checkListingObj = [];
 
         if (args.length < 2) {
-          [toReturn, returnedEnum, listingObj] = await check(client, loginToken);
+          [toReturn, returnedEnum, checkListingObj] = await check(client, loginToken);
         } else {
           throw new Error('Too many parameters');
         }
@@ -104,7 +104,9 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        [toReturn, returnedEnum, []] = await allListings(user);
+        let listingsListingObj = [];
+
+        [toReturn, returnedEnum, listingsListingObj] = await allListings(user);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + toReturn + '```';
