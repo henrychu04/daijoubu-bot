@@ -1835,7 +1835,7 @@ async function me(client, loginToken) {
       { name: '\u200b', value: '\u200b', inline: true },
       { name: 'Current Listings Value', value: '$' + listingValues.active.cents / 100, inline: true },
       { name: 'Total Sales Value', value: '$' + purchaseOrders.total_sales_cents / 100, inline: true },
-      { name: '\u200b', value: '\u200b', inline: true },
+      { name: '\u200b', value: '\u200b', inline: true }
     );
 
   return meEmbed;
