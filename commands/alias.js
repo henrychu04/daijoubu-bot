@@ -11,6 +11,7 @@ const response = {
   NO_ITEMS: 'no_items',
   NO_CHANGE: 'no_change',
   EXIT: 'exit',
+  TIMEDOUT: 'timedout',
 };
 
 exports.run = async (client, message, args) => {
@@ -93,7 +94,9 @@ exports.run = async (client, message, args) => {
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account Currently Has No Items Listed```';
         } else if (returnedEnum == response.EXIT) {
-          toReturn = '';
+          toReturn = '```Canceled```';
+        } else if (returnedEnum == response.TIMEDOUT) {
+          toReturn = '```Command timed out```';
         }
         break;
       case 'listings':
@@ -133,18 +136,27 @@ exports.run = async (client, message, args) => {
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account Currently Has No Items Listed```';
         } else if (returnedEnum == response.EXIT) {
-          toReturn = '';
+          toReturn = '```Canceled```';
+        } else if (returnedEnum == response.TIMEDOUT) {
+          toReturn = '```Command timed out```';
         }
         break;
       case 'edit':
+        let editMsg = null;
+
         if (args.length > 1) {
           throw new Error('Too many parameters');
         }
 
-        returnedEnum = await editListing(client, loginToken, user, message);
+        [returnedEnum, editMsg] = await editListing(client, loginToken, user, message);
 
         if (returnedEnum == response.SUCCESS) {
-          toReturn = '```Item edited successfully```';
+          await editMsg.edit('```Listing Edited Successfully```').then(console.log(`${message} completed\n`));
+          await refresh(client, loginToken, user);
+        } else if (returnedEnum == response.EXIT) {
+          toReturn = '```Canceled```';
+        } else if (returnedEnum == response.TIMEDOUT) {
+          toReturn = '```Command timed out```';
         }
         break;
       case 'orders':
@@ -196,7 +208,15 @@ exports.run = async (client, message, args) => {
           throw new Error('Incorrect format');
         }
 
-        toReturn = await settings(client, message, user, edit);
+        [toReturn, returnedEnum] = await settings(client, message, user, edit);
+
+        if (returnedEnum == response.SUCCESS) {
+          toReturn = toReturn;
+        } else if (returnedEnum == response.EXIT) {
+          toReturn = '```Canceled```';
+        } else if (returnedEnum == response.TIMEDOUT) {
+          toReturn = '```Command timed out```';
+        }
         break;
       case 'list':
         let params = message.content.slice(11).split(' ');
@@ -219,9 +239,11 @@ exports.run = async (client, message, args) => {
           await listMsg.edit('```' + listString + '```').then(console.log(`${message} completed\n`));
           await refresh(client, loginToken, user);
         } else if (returnedEnum == response.EXIT) {
-          toReturn = '';
+          toReturn = '```Canceled```';
         } else if (returnedEnum == response.NO_CHANGE) {
           toReturn = '```No New Item(s) Listed```';
+        } else if (returnedEnum == response.TIMEDOUT) {
+          toReturn = '```Command timed out```';
         }
         break;
       case 'help':
@@ -585,6 +607,7 @@ async function update(client, loginToken, message) {
   let all = false;
   let valid = false;
   let exit = false;
+  let timedOut = false;
 
   let [listingString, listingEnum, listingObj] = await check(client, loginToken);
 
@@ -603,16 +626,13 @@ async function update(client, loginToken, message) {
   });
 
   for await (const message of collector) {
-    if (message.content == 'n') {
-      collector.stop();
-      exit = true;
-      await message.channel.send('```' + `Canceled` + '```');
-      console.log('Canceled\n');
-    }
-
     nums = message.content.split(' ');
 
-    if (checkNumParams(nums)) {
+    if (message.content.toLowerCase() == 'n') {
+      collector.stop();
+      exit = true;
+      console.log('Canceled\n');
+    } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         all = true;
         collector.stop();
@@ -637,15 +657,14 @@ async function update(client, loginToken, message) {
   }
 
   collector.on('end', async (collected) => {
-    if (collected.size == 0) {
-      await message.channel.send('```Command timed out```');
-      console.log('Timed out\n');
-      exit = true;
-    }
+    console.log('Timed out\n');
+    timedOut = true;
   });
 
   if (exit) {
     return [response.EXIT, null, null];
+  } else if (timedOut) {
+    return [response.TIMEDOUT, null, null];
   }
 
   const msg = await message.channel.send('```' + `Updating...` + '```');
@@ -772,6 +791,7 @@ async function deleteSearch(client, loginToken, message, user) {
   let valid = true;
   let nums = [];
   let exit = false;
+  let timedOut = false;
 
   let [listings, returnedEnum, []] = await allListings(user);
 
@@ -792,16 +812,13 @@ async function deleteSearch(client, loginToken, message, user) {
   });
 
   for await (const message of collector) {
-    if (message.content == 'n') {
-      collector.stop();
-      exit = true;
-      await message.channel.send('```' + `Canceled` + '```');
-      console.log('Canceled\n');
-    }
-
     nums = message.content.split(' ');
 
-    if (checkNumParams(nums)) {
+    if (message.content.toLowerCase() == 'n') {
+      collector.stop();
+      exit = true;
+      console.log('Canceled\n');
+    } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         collector.stop();
         all = true;
@@ -826,15 +843,14 @@ async function deleteSearch(client, loginToken, message, user) {
   }
 
   collector.on('end', async (collected) => {
-    if (collected.size == 0) {
-      await message.channel.send('```Command timed out```');
-      console.log('Timed out\n');
-      exit = true;
-    }
+    console.log('Timed out\n');
+    timedOut = true;
   });
 
   if (exit) {
     return [response.EXIT, null, null];
+  } else if (timedOut) {
+    return [response.TIMEDOUT, null, null];
   }
 
   const msg = await message.channel.send('```' + `Deleting...` + '```');
@@ -946,9 +962,8 @@ async function editListing(client, loginToken, user, message) {
     return response.NO_ITEMS;
   }
 
-  let input = 0;
-  let valid = true;
   let exit = false;
+  let timedOut = false;
 
   await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
 
@@ -957,21 +972,17 @@ async function editListing(client, loginToken, user, message) {
   });
 
   for await (const message of collector1) {
-    if (message.content == 'n') {
+    let input = message.content.toLowerCase();
+
+    if (input == 'n') {
       collector1.stop();
       exit = true;
-      await message.channel.send('```' + `Canceled` + '```');
-      console.log('Canceled\n');
-    }
-
-    input = message.content;
-
-    if (!isNaN(input)) {
+      console.log('Canceled');
+    } else if (!isNaN(input)) {
       if (parseInt(input) >= listingIds.length) {
         message.channel.send('```' + 'Entered listing number does not exist' + '```');
       } else {
         collector1.stop();
-        valid = true;
       }
     } else {
       message.channel.send('```' + `Invalid format\nEnter 'all' or listing number` + '```');
@@ -979,156 +990,161 @@ async function editListing(client, loginToken, user, message) {
   }
 
   collector1.on('end', async (collected) => {
-    if (collected.size == 0) {
-      await message.channel.send('```Command timed out```');
-      console.log('Timed out\n');
-      exit = true;
-    }
+    console.log('Timed out\n');
+    timedOut = true;
   });
 
   if (exit) {
-    return response.EXIT;
+    return [response.EXIT, null];
+  } else if (timedOut) {
+    return [response.TIMEDOUT, null];
   }
 
-  if (valid) {
-    await message.channel.send('```' + `Enter new price\nEnter 'n' to cancel` + '```');
+  await message.channel.send('```' + `Enter new price\nEnter 'n' to cancel` + '```');
 
-    let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input]}`, {
-      headers: {
-        'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-      },
-    }).then((res, err) => {
-      if (res.status == 200) {
-        return res.json();
-      } else if (res.status == 401) {
-        throw new Error('Login expired');
-      } else if (res.status == 404) {
-        throw new Error('Not exist');
-      } else {
-        console.log('Res is', res.status);
+  let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input]}`, {
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+  }).then((res, err) => {
+    if (res.status == 200) {
+      return res.json();
+    } else if (res.status == 401) {
+      throw new Error('Login expired');
+    } else if (res.status == 404) {
+      throw new Error('Not exist');
+    } else {
+      console.log('Res is', res.status);
 
-        if (err) {
-          throw new Error(err.message);
-        }
-      }
-    });
-
-    let lowest = getJSON.listing.product.lowest_price_cents;
-
-    const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
-      time: 30000,
-    });
-
-    for await (const message of collector2) {
-      if (message.content == 'n') {
-        collector2.stop();
-        exit = true;
-        await message.channel.send('```' + `Canceled` + '```');
-        console.log('Canceled\n');
-      }
-
-      let price = message.content;
-
-      if (!isNaN(price)) {
-        if (parseInt(price) < lowest / 100) {
-          async function confirmEdit(lowest, price, message) {
-            let confirm = false;
-
-            await message.channel.send(
-              '```' +
-                `Current lowest ask: $${lowest}\nYou entered $${price}, a lower asking price than the current lowest asking price of $${lowest}\nEnter a new price, 'y' to confirm, or 'n' to cancel` +
-                '```'
-            );
-
-            const collector3 = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
-              time: 10000,
-            });
-
-            for await (const m of collector3) {
-              console.log(m.content);
-              if (m.content == 'y') {
-                collector3.stop();
-                confirm = true;
-              } else if (m.content == 'n') {
-                collector3.stop();
-                confirm = false;
-              } else if (!isNaN(m.content)) {
-                collector3.stop();
-                price = m.content;
-                confirm = true;
-              } else {
-                m.channel.send('Incorrect format\nEnter a valid input');
-              }
-            }
-
-            collector3.on('end', async (collected) => {
-              await message.channel.send('```Command timed out```');
-              console.log('Timed out\n');
-              confirm = false;
-            });
-
-            if (!confirm) {
-              return false;
-            } else {
-              return true;
-            }
-          }
-
-          let confirm = await confirmEdit(lowest, price, message);
-
-          console.log(price);
-        }
-      } else {
-        await message.channel.send('```Incorrect format\nEnter a valid number```');
+      if (err) {
+        throw new Error(err.message);
       }
     }
+  });
 
-    collector2.on('end', async (collected) => {
-      if (collected.size == 0) {
-        await message.channel.send('```Command timed out```');
-        console.log('Timed out\n');
-        exit = true;
+  let lowest = getJSON.listing.product.lowest_price_cents / 100;
+  let price = 0;
+
+  const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector2) {
+    price = message.content;
+
+    if (message.content.toLowerCase() == 'n') {
+      collector2.stop();
+      exit = true;
+      console.log('Canceled');
+    } else if (!isNaN(price)) {
+      collector2.stop();
+
+      let confirm = false;
+
+      while (!confirm && parseInt(price) < lowest) {
+        [confirm, price] = await confirmEdit(lowest, price, message);
+
+        if (price == -1) {
+          exit = true;
+        } else if (price == -2) {
+          timedOut = true;
+        }
       }
-    });
-
-    if (exit) {
-      return response.EXIT;
+    } else {
+      await message.channel.send('```Incorrect format\nEnter a valid number```');
     }
   }
 
-  // const msg = await message.channel.send('```' + `Editing...` + '```');
+  collector2.on('end', async (collected) => {
+    console.log('Timed out');
+    timedOut = true;
+  });
 
-  // getJSON.listing.price_cents = (parseInt(price) * 100).toString();
+  if (exit) {
+    return [response.EXIT, null];
+  } else if (timedOut) {
+    return [response.TIMEDOUT, null];
+  }
 
-  // let editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input].id}`, {
-  //   method: 'PUT',
-  //   headers: {
-  //     'user-agent': client.config.aliasHeader,
-  //     authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-  //   },
-  //   body: `${JSON.stringify(getJSON)}`,
-  // }).then((res) => {
-  //   if (res.status == 200) {
-  //     return res.status;
-  //   } else if (res.status == 401) {
-  //     throw new Error('Login expired');
-  //   } else if (res.status == 404) {
-  //     throw new Error('Not exist');
-  //   } else {
-  //     console.log('Res is', res.status);
+  const msg = await message.channel.send('```Editing...```');
 
-  //     if (err) {
-  //       throw new Error(err.message);
-  //     }
-  //   }
-  // });
+  getJSON.listing.price_cents = (parseInt(price) * 100).toString();
 
-  // if (editRes != 200) {
-  //   throw new Error('Error editing');
-  // }
+  let editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input].id}`, {
+    method: 'PUT',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+    body: `${JSON.stringify(getJSON)}`,
+  }).then((res) => {
+    if (res.status == 200) {
+      return res.status;
+    } else if (res.status == 401) {
+      throw new Error('Login expired');
+    } else if (res.status == 404) {
+      throw new Error('Not exist');
+    } else {
+      console.log('Res is', res.status);
 
-  return response.SUCCESS;
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
+  });
+
+  if (editRes != 200) {
+    throw new Error('Error editing');
+  }
+
+  return [response.SUCCESS, msg];
+}
+
+async function confirmEdit(lowest, price, message) {
+  let confirm = false;
+
+  await message.channel.send(
+    '```' +
+      `Current lowest ask: $${lowest}\nYou entered $${price}, a lower asking price than the current lowest asking price of $${lowest}\nEnter a new price, 'y' to confirm, or 'n' to cancel` +
+      '```'
+  );
+
+  const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
+    time: 10000,
+  });
+
+  for await (const message of collector) {
+    let input = message.content.toLowerCase();
+
+    if (input == 'y') {
+      collector.stop();
+      confirm = true;
+    } else if (input == 'n') {
+      collector.stop();
+      price = -1;
+      confirm = true;
+      console.log('Canceled\n');
+    } else if (!isNaN(input)) {
+      collector.stop();
+      price = input;
+      confirm = false;
+    } else {
+      message.channel.send('Incorrect format\nEnter a valid input');
+    }
+  }
+
+  collector.on('end', async (collected) => {
+    console.log('Timed out\n');
+    confirm = true;
+    price = -2;
+  });
+
+  if (confirm) {
+    return [confirm, price];
+  } else {
+    return [confirm, price];
+  }
 }
 
 async function getOrders(client, loginToken) {
@@ -1347,23 +1363,29 @@ async function settings(client, message, user, edit) {
     });
 
   if (!edit) {
-    return userSettings;
+    return [userSettings, response.SUCCESS];
   } else {
+    let exit = false;
+    let timedOut = false;
+
     await message.channel.send(userSettings).catch((err) => {
       throw new Error(err);
     });
 
-    await message.channel.send('```' + `Enter 'live' or 'daily' to adjust order confirmation refresh rate` + '```');
+    await message.channel.send(
+      '```' + `Enter 'live' or 'daily' to adjust order confirmation refresh rate\nEnter 'n' to cancel` + '```'
+    );
 
     const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
       time: 30000,
     });
 
     collector.on('collect', async (message) => {
-      if (message.content.toLowerCase() == 'live' || message.content.toLowerCase() == 'daily') {
-        let setting = message.content.toLowerCase();
+      let input = message.content.toLowerCase();
 
-        await Users.updateOne({ _id: user._id }, { $set: { 'settings.orderRefresh': setting } }, async (err) => {
+      if (input == 'live' || input == 'daily') {
+        collector.stop();
+        await Users.updateOne({ _id: user._id }, { $set: { 'settings.orderRefresh': input } }, async (err) => {
           if (!err) {
             await message.channel.send('```Order confirmation refresh rate edited successfully```');
             collector.stop();
@@ -1372,18 +1394,26 @@ async function settings(client, message, user, edit) {
         }).catch((err) => {
           throw new Error(err);
         });
+      } else if (message.content.toLowerCase() == 'n') {
+        collector.stop();
+        exit = true;
       } else {
         await message.channel.send('```' + `Enter either 'live' or 'daily'` + '```');
       }
     });
 
     collector.on('end', async (collected) => {
-      if (collected.size == 0) {
-        await message.channel.send('```Command timed out```');
-      }
+      timedOut = true;
+      console.log('Timed out\n');
     });
 
-    return '';
+    if (exit) {
+      return ['', response.EXIT];
+    } else if (timedOut) {
+      return ['', response.TIMEDOUT];
+    } else {
+      return ['', response.SUCCESS];
+    }
   }
 }
 
@@ -1450,21 +1480,23 @@ async function list(client, message, loginToken, sizingArray, query) {
     '```' + `Is this the product that you want to list?\nEnter 'y' to confirm, enter 'n' to cancel` + '```'
   );
 
-  let returnedEnum = null;
   let returnString = '';
   let msg = null;
+  let exit = false;
+  let timedOut = false;
 
   const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
   });
 
   for await (const message of collector) {
-    if (message.content.toLowerCase() == 'y' || message.content.toLowerCase() == 'n') {
-      if (message.content.toLowerCase() == 'n') {
+    let input = message.content.toLowerCase();
+
+    if (input == 'y' || input == 'n') {
+      if (input == 'n') {
         collector.stop();
-        await message.channel.send('```' + `Canceled` + '```');
         console.log('Canceled\n');
-        returnedEnum = response.EXIT;
+        exit = true;
       } else {
         collector.stop();
         msg = await message.channel.send('```Listing...```');
@@ -1476,13 +1508,17 @@ async function list(client, message, loginToken, sizingArray, query) {
   }
 
   collector.on('end', async (collected) => {
-    if (collected.size == 0) {
-      await message.channel.send('```Command timed out```');
-      console.log('Timed out\n');
-    }
+    console.log('Timed out\n');
+    timedOut = true;
   });
 
-  return [returnedEnum, returnString, msg];
+  if (exit) {
+    return [response.EXIT, returnString, msg];
+  } else if (timedOut) {
+    return [response.TIMEDOUT, returnString, msg];
+  } else {
+    return [response.SUCCESS, returnString, msg];
+  }
 }
 
 async function doList(client, loginToken, message, searchProduct, sizingArray) {
@@ -1611,8 +1647,10 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
       });
 
       for await (const message of collector) {
-        if (message.content.toLowerCase() == 'y' || message.content.toLowerCase() == 'n') {
-          if (message.content.toLowerCase() == 'n') {
+        let input = message.content.toLowerCase();
+
+        if (input == 'y' || input == 'n') {
+          if (input == 'n') {
             collector.stop();
             await message.channel.send('```' + `Skipped size ${size}` + '```');
             skip = true;
@@ -1627,10 +1665,8 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
       }
 
       collector.on('end', async (collected) => {
-        if (collected.size == 0) {
-          await message.channel.send('```Command timed out```');
-          console.log('Timed out\n');
-        }
+        console.log('Timed out\n');
+        returnedEnum = response.TIMEDOUT;
       });
 
       if (skip) {
