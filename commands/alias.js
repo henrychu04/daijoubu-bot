@@ -985,7 +985,7 @@ async function editListing(client, loginToken, user, message) {
         collector1.stop();
       }
     } else {
-      message.channel.send('```' + `Invalid format\nEnter 'all' or listing number` + '```');
+      message.channel.send('```' + `Invalid format\nEnter a valid number` + '```');
     }
   }
 
