@@ -35,7 +35,8 @@ exports.run = async (client, message, args) => {
       command == 'orders' ||
       command == 'confirm' ||
       command == 'settings' ||
-      command == 'list'
+      command == 'list' ||
+      command == 'me'
     ) {
       user = await Users.find({ d_id: id });
 
@@ -247,6 +248,9 @@ exports.run = async (client, message, args) => {
         } else if (returnedEnum == response.TIMEDOUT) {
           toReturn = '```Command timed out```';
         }
+        break;
+      case 'me':
+        toReturn = await me(client, loginToken);
         break;
       case 'help':
         if (args.length > 1) {
@@ -1726,6 +1730,115 @@ async function listRes(client, loginToken, listing) {
   if (listStatus != 200 || activateStatus != 200) {
     throw new Error('Error listing');
   }
+}
+
+async function me(client, loginToken) {
+  let me = await fetch('https://sell-api.goat.com/api/v1/unstable/users/me', {
+    method: 'POST',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+    body: '{}',
+  }).then((res, err) => {
+    if (res.status == 200) {
+      listStatus = res.status;
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+      throw new Error(err);
+    }
+  });
+
+  let purchaseOrdersCount = await fetch('https://sell-api.goat.com/api/v1/purchase-orders-count', {
+    method: 'GET',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+  }).then((res, err) => {
+    if (res.status == 200) {
+      listStatus = res.status;
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+      throw new Error(err);
+    }
+  });
+
+  let listingValues = await fetch('https://sell-api.goat.com/api/v1/listings-values', {
+    method: 'GET',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+  }).then((res, err) => {
+    if (res.status == 200) {
+      listStatus = res.status;
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+      throw new Error(err);
+    }
+  });
+
+  let purchaseOrders = await fetch('https://sell-api.goat.com/api/v1/total-sales/purchase-orders', {
+    method: 'GET',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+  }).then((res, err) => {
+    if (res.status == 200) {
+      listStatus = res.status;
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+      throw new Error(err);
+    }
+  });
+
+  let earnings = await fetch('https://sell-api.goat.com/api/v1/users/earnings', {
+    method: 'GET',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+    },
+  }).then((res, err) => {
+    if (res.status == 200) {
+      listStatus = res.status;
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+      throw new Error(err);
+    }
+  });
+
+  console.log('earnings is', earnings);
+
+  const meEmbed = new Discord.MessageEmbed()
+    .setColor('#7756fe')
+    .setTitle(`${me.user.name} alias Account Information`)
+    .addFields(
+      { name: 'Username', value: me.user.username, inline: true },
+      { name: `Email`, value: me.user.email, inline: true },
+      { name: 'Seller Score', value: me.user.seller_score, inline: true },
+      {
+        name: 'Total Number of Completed Orders',
+        value: purchaseOrdersCount.canceled_or_completed_count,
+        inline: true,
+      },
+      { name: 'Completed', value: purchaseOrdersCount.completed, inline: true },
+      { name: 'Canceled', value: purchaseOrdersCount.canceled, inline: true },
+      { name: 'Current Open Orders', value: purchaseOrdersCount.open_count, inline: true },
+      { name: 'Orders to Ship Out', value: purchaseOrdersCount.need_to_ship_count, inline: true },
+      { name: '\u200b', value: '\u200b', inline: true },
+      { name: 'Current Listings Value', value: '$' + listingValues.active.cents / 100, inline: true },
+      { name: 'Total Sales Value', value: '$' + purchaseOrders.total_sales_cents / 100, inline: true },
+      { name: '\u200b', value: '\u200b', inline: true },
+    );
+
+  return meEmbed;
 }
 
 function help() {
