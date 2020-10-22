@@ -1000,7 +1000,7 @@ async function editListing(client, loginToken, user, message) {
     return [response.TIMEDOUT, null];
   }
 
-  await message.channel.send('```' + `Enter new price\nEnter 'n' to cancel` + '```');
+  await message.channel.send('```' + `Enter new price or 'lowest'\nEnter 'n' to cancel` + '```');
 
   let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input]}`, {
     headers: {
@@ -1033,7 +1033,10 @@ async function editListing(client, loginToken, user, message) {
   for await (const message of collector2) {
     price = message.content;
 
-    if (message.content.toLowerCase() == 'n') {
+    if (message.content.toLowerCase() == 'lowest') {
+      collector2.stop();
+      price = lowest;
+    } else if (message.content.toLowerCase() == 'n') {
       collector2.stop();
       exit = true;
       console.log('Canceled');
@@ -1052,7 +1055,7 @@ async function editListing(client, loginToken, user, message) {
         }
       }
     } else {
-      await message.channel.send('```Incorrect format\nEnter a valid number```');
+      await message.channel.send('```Incorrect format\nEnter lowest or a valid number```');
     }
   }
 
