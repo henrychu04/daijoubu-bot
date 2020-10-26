@@ -28,9 +28,7 @@ async function loggingIn() {
         headers: {
           'user-agent': config.aliasHeader,
         },
-        body: `{"grantType":"password","username":"${
-          users[i].email
-        }","password":"${encryption.decrypt(users[i].pw)}"}`,
+        body: `{"grantType":"password","username":"${users[i].email}","password":"${encryption.decrypt(users[i].pw)}"}`,
       }).then((res) => {
         goatRes = res.status;
         return res.json();

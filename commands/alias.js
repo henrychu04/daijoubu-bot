@@ -1833,7 +1833,11 @@ async function me(client, loginToken) {
       { name: 'Current Open Orders', value: purchaseOrdersCount.open_count, inline: true },
       { name: 'Orders to Ship Out', value: purchaseOrdersCount.need_to_ship_count, inline: true },
       { name: '\u200b', value: '\u200b', inline: true },
-      { name: 'Current Listings Value', value: '$' + listingValues.active.cents / 100, inline: true },
+      {
+        name: 'Current Listings Value',
+        value: listingValues.active.cents ? '$' + listingValues.active.cents / 100 : '$0',
+        inline: true,
+      },
       { name: 'Total Sales Value', value: '$' + purchaseOrders.total_sales_cents / 100, inline: true },
       { name: '\u200b', value: '\u200b', inline: true }
     );
