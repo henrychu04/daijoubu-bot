@@ -1546,7 +1546,7 @@ async function editDefaultListingRate(client, message, user) {
   for await (const message of collector) {
     let input = message.content.toLowerCase();
 
-    if (input.toLowerCase() == 'live' || input.toLowerCase() == 'manual') {
+    if (input == 'live' || input == 'manual') {
       await Users.updateOne({ _id: user._id }, { $set: { 'settings.adjustListing': input } }, async (err) => {
         if (!err) {
           await message.channel.send('```Listing update refresh rate edited successfully```');
@@ -1556,7 +1556,7 @@ async function editDefaultListingRate(client, message, user) {
       }).catch((err) => {
         throw new Error(err);
       });
-    } else if (message.content.toLowerCase() == 'n') {
+    } else if (input == 'n') {
       collector.stop();
       exit = true;
     } else {
@@ -1659,14 +1659,14 @@ async function editSpecifiedListingRate(client, message, user) {
     return response.TIMEDOUT;
   }
 
-  await Listings.updateOne({ 'listings.id': listingIds[num] }, { $set: { 'listings.$.setting': input } })
-    .then(() => {
+  await Listings.updateOne({ 'listings.id': listingIds[num] }, { $set: { 'listings.$.setting': input } }, (err) => {
+    if (!err) {
       message.channel.send('```' + 'Listing Update Rate Updated Successfully' + '```');
       console.log('Listing refresh rate successfully updated\n');
-    })
-    .catch((err) => {
-      throw new Error(err);
-    });
+    }
+  }).catch((err) => {
+    throw new Error(err);
+  });
 
   return response.SUCCESS;
 }
