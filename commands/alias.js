@@ -1647,8 +1647,6 @@ async function editSpecifiedListingRate(client, message, user) {
   } else if (timedOut) {
     return [response.TIMEDOUT, null];
   }
-
-
 }
 
 async function checkListParams(params) {
@@ -2073,6 +2071,13 @@ async function me(client, loginToken) {
         inline: true,
       },
       { name: 'Total Sales Value', value: '$' + purchaseOrders.total_sales_cents / 100, inline: true },
+      { name: '\u200b', value: '\u200b', inline: true },
+      {
+        name: 'Current Available Earnings:',
+        value: earnings.amount_cents ? '$' + earnings.amount_cents / 100 : '$0',
+        inline: true,
+      },
+      { name: '\u200b', value: '\u200b', inline: true },
       { name: '\u200b', value: '\u200b', inline: true }
     );
 
