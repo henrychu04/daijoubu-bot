@@ -192,32 +192,32 @@ async function updateListing(client, user, id, lowest) {
 
   obj.price_cents = lowest.toString();
 
-  let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
-    method: 'PUT',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(user.login)}`,
-    },
-    body: `{"listing":${JSON.stringify(obj)}}`,
-  })
-    .then((res, err) => {
-      if (res.status == 200) {
-        return res.status;
-      } else if (res.status == 401) {
-        throw new Error('Login expired');
-      } else if (res.status == 404) {
-        throw new Error('Not exist');
-      } else {
-        console.log('Res is', res.status);
+  // let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
+  //   method: 'PUT',
+  //   headers: {
+  //     'user-agent': client.config.aliasHeader,
+  //     authorization: `Bearer ${encryption.decrypt(user.login)}`,
+  //   },
+  //   body: `{"listing":${JSON.stringify(obj)}}`,
+  // })
+  //   .then((res, err) => {
+  //     if (res.status == 200) {
+  //       return res.status;
+  //     } else if (res.status == 401) {
+  //       throw new Error('Login expired');
+  //     } else if (res.status == 404) {
+  //       throw new Error('Not exist');
+  //     } else {
+  //       console.log('Res is', res.status);
 
-        if (err) {
-          throw new Error(err.message);
-        }
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+  //       if (err) {
+  //         throw new Error(err.message);
+  //       }
+  //     }
+  //   })
+  //   .catch((err) => {
+  //     console.log(err);
+  //   });
 }
 
 async function syncListingPrice(user, aliasListings) {

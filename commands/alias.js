@@ -787,7 +787,9 @@ async function allListings(user) {
 
   userListingsArray.forEach((obj, i) => {
     listingIds.push(obj.id);
-    listingString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} - $${obj.price / 100}\n`;
+    listingString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} - $${obj.price / 100}\n\t\tUpdate Rate: ${
+      obj.setting == 'manual' ? 'Manual' : 'Live'
+    }\n`;
   });
 
   return [listingString, response.SUCCESS, listingIds];
@@ -1443,7 +1445,7 @@ async function settings(client, message, user, edit) {
 
     await message.channel.send(
       '```' +
-        `0. Order Confirmation Refresh Rate\n1. Default Listing Update Rate\n2. Specified Listing Update Rate\nEnter '0', '1', or '2' to edit\nEnter 'n' to cancel` +
+        `0. Order Confirmation Refresh Rate\n1. Default Listing Update Rate\n2. Specified Listing Update Rate\n\nEnter '0', '1', or '2' to edit\nEnter 'n' to cancel` +
         '```'
     );
 
@@ -1451,7 +1453,7 @@ async function settings(client, message, user, edit) {
       time: 30000,
     });
 
-    collector.on('collect', async (message) => {
+    for await (const message of collector) {
       let input = message.content.toLowerCase();
 
       if (input == 0) {
@@ -1463,14 +1465,14 @@ async function settings(client, message, user, edit) {
       } else if (input == 2) {
         collector.stop();
         returnedEnum = await editSpecifiedListingRate(client, message, user);
-      } else if (message.content.toLowerCase() == 'n') {
+      } else if (input == 'n') {
         collector.stop();
         exit = true;
         returnedEnum = response.EXIT;
       } else {
         await message.channel.send('```' + `Enter either '0' or '1'` + '```');
       }
-    });
+    }
 
     collector.on('end', async (collected) => {
       timedOut = true;
@@ -1483,6 +1485,9 @@ async function settings(client, message, user, edit) {
 }
 
 async function editOrderRate(client, message, user) {
+  let exit = false;
+  let timedOut = false;
+
   await message.channel.send(
     '```' + `Editing Order Confirmation Refresh Rate\n\tEnter 'live' or 'daily'\n\tEnter 'n' to cancel` + '```'
   );
@@ -1491,10 +1496,10 @@ async function editOrderRate(client, message, user) {
     time: 30000,
   });
 
-  collector.on('collect', async (message) => {
+  for await (const message of collector) {
     let input = message.content.toLowerCase();
 
-    if (input.toLowerCase() == 'live' || input.toLowerCase() == 'daily') {
+    if (input == 'live' || input == 'daily') {
       await Users.updateOne({ _id: user._id }, { $set: { 'settings.orderRefresh': input } }, async (err) => {
         if (!err) {
           await message.channel.send('```Order confirmation refresh rate edited successfully```');
@@ -1504,13 +1509,13 @@ async function editOrderRate(client, message, user) {
       }).catch((err) => {
         throw new Error(err);
       });
-    } else if (message.content.toLowerCase() == 'n') {
+    } else if (input == 'n') {
       collector.stop();
       exit = true;
     } else {
       await message.channel.send('```' + `Enter either 'live' or 'daily'` + '```');
     }
-  });
+  }
 
   collector.on('end', async (collected) => {
     timedOut = true;
@@ -1527,6 +1532,9 @@ async function editOrderRate(client, message, user) {
 }
 
 async function editDefaultListingRate(client, message, user) {
+  let exit = false;
+  let timedOut = false;
+
   await message.channel.send(
     '```' + `Editing Default Listing Update Rate\n\tEnter 'live' or 'manual'\n\tEnter 'n' to cancel` + '```'
   );
@@ -1535,7 +1543,7 @@ async function editDefaultListingRate(client, message, user) {
     time: 30000,
   });
 
-  collector.on('collect', async (message) => {
+  for await (const message of collector) {
     let input = message.content.toLowerCase();
 
     if (input.toLowerCase() == 'live' || input.toLowerCase() == 'manual') {
@@ -1554,7 +1562,7 @@ async function editDefaultListingRate(client, message, user) {
     } else {
       await message.channel.send('```' + `Enter either 'live' or 'manual'` + '```');
     }
-  });
+  }
 
   collector.on('end', async (collected) => {
     timedOut = true;
@@ -1579,6 +1587,10 @@ async function editSpecifiedListingRate(client, message, user) {
     return response.NO_ITEMS;
   }
 
+  let exit = false;
+  let timedOut = false;
+  let num = '';
+
   await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
 
   const collector1 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
@@ -1586,14 +1598,14 @@ async function editSpecifiedListingRate(client, message, user) {
   });
 
   for await (const message of collector1) {
-    let input = message.content.toLowerCase();
+    num = message.content.toLowerCase();
 
-    if (input == 'n') {
+    if (num == 'n') {
       collector1.stop();
       exit = true;
       console.log('Canceled');
-    } else if (!isNaN(input)) {
-      if (parseInt(input) >= listingIds.length) {
+    } else if (!isNaN(num)) {
+      if (parseInt(num) >= listingIds.length) {
         message.channel.send('```' + 'Entered listing number does not exist' + '```');
       } else {
         collector1.stop();
@@ -1609,15 +1621,14 @@ async function editSpecifiedListingRate(client, message, user) {
   });
 
   if (exit) {
-    return [response.EXIT, null];
+    return response.EXIT;
   } else if (timedOut) {
-    return [response.TIMEDOUT, null];
+    return response.TIMEDOUT;
   }
 
-  let input = '';
-
   await message.channel.send('```' + `Enter 'live' or 'manual'\nEnter 'n' to cancel` + '```');
-  let userListings = await Listings.find();
+
+  let input = '';
 
   const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
@@ -1627,13 +1638,13 @@ async function editSpecifiedListingRate(client, message, user) {
     input = message.content.toLowerCase();
 
     if (input == 'n') {
-      collector1.stop();
+      collector2.stop();
       exit = true;
       console.log('Canceled');
     } else if (input == 'live' || input == 'manual') {
-      collector.stop();
+      collector2.stop();
     } else {
-      message.channel.send('```' + `Invalid format\nEnter a valid number` + '```');
+      message.channel.send('```' + `Invalid format\nEnter 'live' or 'manual` + '```');
     }
   }
 
@@ -1643,12 +1654,21 @@ async function editSpecifiedListingRate(client, message, user) {
   });
 
   if (exit) {
-    return [response.EXIT, null];
+    return response.EXIT;
   } else if (timedOut) {
-    return [response.TIMEDOUT, null];
+    return response.TIMEDOUT;
   }
 
+  await Listings.updateOne({ 'listings.id': listingIds[num] }, { $set: { 'listings.$.setting': input } })
+    .then(() => {
+      message.channel.send('```' + 'Listing Update Rate Updated Successfully' + '```');
+      console.log('Listing refresh rate successfully updated\n');
+    })
+    .catch((err) => {
+      throw new Error(err);
+    });
 
+  return response.SUCCESS;
 }
 
 async function checkListParams(params) {
