@@ -973,6 +973,7 @@ async function editListing(client, loginToken, user, message) {
 
   let exit = false;
   let timedOut = false;
+  let input = '';
 
   await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
 
@@ -981,7 +982,7 @@ async function editListing(client, loginToken, user, message) {
   });
 
   for await (const message of collector1) {
-    let input = message.content.toLowerCase();
+    input = message.content.toLowerCase();
 
     if (input == 'n') {
       collector1.stop();
