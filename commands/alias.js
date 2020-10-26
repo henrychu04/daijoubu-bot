@@ -156,8 +156,6 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           await editMsg.edit('```Listing Edited Successfully```').then(console.log(`${message} completed\n`));
           await refresh(client, loginToken, user);
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account Currently Has No Items Listed```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
@@ -222,6 +220,8 @@ exports.run = async (client, message, args) => {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
           toReturn = '```Command timed out```';
+        } else if (returnedEnum == response.NO_ITEMS) {
+          toReturn = '```Account Currently Has No Items Listed```';
         }
         break;
       case 'list':
@@ -968,12 +968,11 @@ async function editListing(client, loginToken, user, message) {
   if (listingEnum == response.SUCCESS) {
     await message.channel.send('```' + listingString + '```');
   } else {
-    return [response.NO_ITEMS, null];
+    return response.NO_ITEMS;
   }
 
   let exit = false;
   let timedOut = false;
-  let input = '';
 
   await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
 
@@ -982,7 +981,7 @@ async function editListing(client, loginToken, user, message) {
   });
 
   for await (const message of collector1) {
-    input = message.content.toLowerCase();
+    let input = message.content.toLowerCase();
 
     if (input == 'n') {
       collector1.stop();
@@ -1422,23 +1421,30 @@ async function settings(client, message, user, edit) {
   const userSettings = new Discord.MessageEmbed()
     .setColor('#7756fe')
     .setTitle('alias Settings')
-    .addFields({
-      name: 'Order Confirmation Refresh Rate:',
-      value: user.settings.orderRefresh == 'live' ? 'Live' : 'Daily',
-    });
+    .addFields(
+      {
+        name: 'Order Confirmation Refresh Rate:',
+        value: user.settings.orderRefresh == 'live' ? 'Live' : 'Daily',
+      },
+      {
+        name: 'Default Listing Update Rate:',
+        value: user.settings.adjustListing == 'live' ? 'Live' : 'Manual',
+      }
+    );
 
   if (!edit) {
     return [userSettings, response.SUCCESS];
   } else {
-    let exit = false;
-    let timedOut = false;
+    let returnedEnum = null;
 
     await message.channel.send(userSettings).catch((err) => {
       throw new Error(err);
     });
 
     await message.channel.send(
-      '```' + `Enter 'live' or 'daily' to adjust order confirmation refresh rate\nEnter 'n' to cancel` + '```'
+      '```' +
+        `0. Order Confirmation Refresh Rate\n1. Default Listing Update Rate\n2. Specified Listing Update Rate\nEnter '0', '1', or '2' to edit\nEnter 'n' to cancel` +
+        '```'
     );
 
     const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
@@ -1448,38 +1454,201 @@ async function settings(client, message, user, edit) {
     collector.on('collect', async (message) => {
       let input = message.content.toLowerCase();
 
-      if (input == 'live' || input == 'daily') {
+      if (input == 0) {
         collector.stop();
-        await Users.updateOne({ _id: user._id }, { $set: { 'settings.orderRefresh': input } }, async (err) => {
-          if (!err) {
-            await message.channel.send('```Order confirmation refresh rate edited successfully```');
-            collector.stop();
-            console.log('!alias settings edit completed\n');
-          }
-        }).catch((err) => {
-          throw new Error(err);
-        });
+        returnedEnum = await editOrderRate(client, message, user);
+      } else if (input == 1) {
+        collector.stop();
+        returnedEnum = await editDefaultListingRate(client, message, user);
+      } else if (input == 2) {
+        collector.stop();
+        returnedEnum = await editSpecifiedListingRate(client, message, user);
       } else if (message.content.toLowerCase() == 'n') {
         collector.stop();
         exit = true;
+        returnedEnum = response.EXIT;
       } else {
-        await message.channel.send('```' + `Enter either 'live' or 'daily'` + '```');
+        await message.channel.send('```' + `Enter either '0' or '1'` + '```');
       }
     });
 
     collector.on('end', async (collected) => {
       timedOut = true;
       console.log('Timed out\n');
+      returnedEnum = response.TIMEDOUT;
     });
 
-    if (exit) {
-      return ['', response.EXIT];
-    } else if (timedOut) {
-      return ['', response.TIMEDOUT];
+    return ['', returnedEnum];
+  }
+}
+
+async function editOrderRate(client, message, user) {
+  await message.channel.send(
+    '```' + `Editing Order Confirmation Refresh Rate\n\tEnter 'live' or 'daily'\n\tEnter 'n' to cancel` + '```'
+  );
+
+  const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
+    time: 30000,
+  });
+
+  collector.on('collect', async (message) => {
+    let input = message.content.toLowerCase();
+
+    if (input.toLowerCase() == 'live' || input.toLowerCase() == 'daily') {
+      await Users.updateOne({ _id: user._id }, { $set: { 'settings.orderRefresh': input } }, async (err) => {
+        if (!err) {
+          await message.channel.send('```Order confirmation refresh rate edited successfully```');
+          collector.stop();
+          console.log('!alias settings edit completed\n');
+        }
+      }).catch((err) => {
+        throw new Error(err);
+      });
+    } else if (message.content.toLowerCase() == 'n') {
+      collector.stop();
+      exit = true;
     } else {
-      return ['', response.SUCCESS];
+      await message.channel.send('```' + `Enter either 'live' or 'daily'` + '```');
+    }
+  });
+
+  collector.on('end', async (collected) => {
+    timedOut = true;
+    console.log('Timed out\n');
+  });
+
+  if (exit) {
+    return response.EXIT;
+  } else if (timedOut) {
+    return response.TIMEDOUT;
+  } else {
+    return response.SUCCESS;
+  }
+}
+
+async function editDefaultListingRate(client, message, user) {
+  await message.channel.send(
+    '```' + `Editing Default Listing Update Rate\n\tEnter 'live' or 'manual'\n\tEnter 'n' to cancel` + '```'
+  );
+
+  const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
+    time: 30000,
+  });
+
+  collector.on('collect', async (message) => {
+    let input = message.content.toLowerCase();
+
+    if (input.toLowerCase() == 'live' || input.toLowerCase() == 'manual') {
+      await Users.updateOne({ _id: user._id }, { $set: { 'settings.adjustListing': input } }, async (err) => {
+        if (!err) {
+          await message.channel.send('```Listing update refresh rate edited successfully```');
+          collector.stop();
+          console.log('!alias settings edit completed\n');
+        }
+      }).catch((err) => {
+        throw new Error(err);
+      });
+    } else if (message.content.toLowerCase() == 'n') {
+      collector.stop();
+      exit = true;
+    } else {
+      await message.channel.send('```' + `Enter either 'live' or 'manual'` + '```');
+    }
+  });
+
+  collector.on('end', async (collected) => {
+    timedOut = true;
+    console.log('Timed out\n');
+  });
+
+  if (exit) {
+    return response.EXIT;
+  } else if (timedOut) {
+    return response.TIMEDOUT;
+  } else {
+    return response.SUCCESS;
+  }
+}
+
+async function editSpecifiedListingRate(client, message, user) {
+  let [listingString, listingEnum, listingIds] = await allListings(user);
+
+  if (listingEnum == response.SUCCESS) {
+    await message.channel.send('```' + listingString + '```');
+  } else {
+    return response.NO_ITEMS;
+  }
+
+  await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
+
+  const collector1 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector1) {
+    let input = message.content.toLowerCase();
+
+    if (input == 'n') {
+      collector1.stop();
+      exit = true;
+      console.log('Canceled');
+    } else if (!isNaN(input)) {
+      if (parseInt(input) >= listingIds.length) {
+        message.channel.send('```' + 'Entered listing number does not exist' + '```');
+      } else {
+        collector1.stop();
+      }
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter a valid number` + '```');
     }
   }
+
+  collector1.on('end', async (collected) => {
+    console.log('Timed out\n');
+    timedOut = true;
+  });
+
+  if (exit) {
+    return [response.EXIT, null];
+  } else if (timedOut) {
+    return [response.TIMEDOUT, null];
+  }
+
+  let input = '';
+
+  await message.channel.send('```' + `Enter 'live' or 'manual'\nEnter 'n' to cancel` + '```');
+  let userListings = await Listings.find();
+
+  const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector2) {
+    input = message.content.toLowerCase();
+
+    if (input == 'n') {
+      collector1.stop();
+      exit = true;
+      console.log('Canceled');
+    } else if (input == 'live' || input == 'manual') {
+      collector.stop();
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter a valid number` + '```');
+    }
+  }
+
+  collector2.on('end', async (collected) => {
+    console.log('Timed out\n');
+    timedOut = true;
+  });
+
+  if (exit) {
+    return [response.EXIT, null];
+  } else if (timedOut) {
+    return [response.TIMEDOUT, null];
+  }
+
+
 }
 
 async function checkListParams(params) {
@@ -1582,7 +1751,7 @@ async function list(client, message, loginToken, sizingArray, query) {
   } else if (timedOut) {
     return [response.TIMEDOUT, returnString, msg];
   } else {
-    return [returnedEnum, returnString, msg];
+    return [response.SUCCESS, returnString, msg];
   }
 }
 
