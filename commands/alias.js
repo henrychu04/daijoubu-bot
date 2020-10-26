@@ -1608,7 +1608,36 @@ async function editSpecifiedListingRate(client, message, user) {
     timedOut = true;
   });
 
-  await message.channel.send('```' + `` + '```');
+  if (exit) {
+    return [response.EXIT, null];
+  } else if (timedOut) {
+    return [response.TIMEDOUT, null];
+  }
+
+  await message.channel.send('```' + `Enter 'live' or 'manual'\nEnter 'n' to cancel` + '```');
+
+  const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector2) {
+    let input = message.content.toLowerCase();
+
+    if (input == 'n') {
+      collector1.stop();
+      exit = true;
+      console.log('Canceled');
+    } else if (input.toLowerCase() == 'live' || input.toLowerCase() == 'manual') {
+      collector.stop();
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter a valid number` + '```');
+    }
+  }
+
+  collector2.on('end', async (collected) => {
+    console.log('Timed out\n');
+    timedOut = true;
+  });
 
   if (exit) {
     return [response.EXIT, null];
