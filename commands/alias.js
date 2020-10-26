@@ -968,7 +968,7 @@ async function editListing(client, loginToken, user, message) {
   if (listingEnum == response.SUCCESS) {
     await message.channel.send('```' + listingString + '```');
   } else {
-    return response.NO_ITEMS;
+    return [response.NO_ITEMS, null];
   }
 
   let exit = false;
