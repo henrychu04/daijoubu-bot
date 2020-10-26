@@ -177,27 +177,28 @@ exports.run = async (client, message, args) => {
         break;
       case 'confirm':
         let confirmAll = false;
+        let confirmMsg = null;
 
-        if (args.length < 2) {
-          throw new Error('Too little parameters');
-        } else if (args[1] == 'all') {
-          confirmAll = true;
-        } else {
-          args.shift();
-        }
-
-        returnedEnum = await confirm(client, loginToken, args, confirmAll);
+        [returnedEnum, confirmAll, confirmMsg] = await confirm(client, loginToken, message);
 
         if (returnedEnum == response.SUCCESS) {
           if (confirmAll) {
-            toReturn = '```All Order(s) Confirmed Successfully!```';
+            await confirmMsg
+              .edit('```All Orders(s) Confirmed Successfully```')
+              .then(console.log(`${message} completed\n`));
           } else {
-            toReturn = '```Orders(s) Updated Successfully!```';
+            await confirmMsg
+              .edit('```Specified Orders(s) Confirmed Successfully```')
+              .then(console.log(`${message} completed\n`));
           }
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```No Open Order(s) Currently On Account```';
         } else if (returnedEnum == response.NO_CHANGE) {
           toReturn = '```Currently All Open Order(s) Are Confirmed```';
+        } else if (returnedEnum == response.EXIT) {
+          toReturn = '```Canceled```';
+        } else if (returnedEnum == response.TIMEDOUT) {
+          toReturn = '```Command timed out```';
         }
         break;
       case 'settings':
@@ -648,7 +649,7 @@ async function update(client, loginToken, message) {
         for (let i = 0; i < nums.length; i++) {
           if (parseInt(nums[i]) >= listingObj.length) {
             valid = false;
-            message.channel.send('```' + 'One or more entered listing numbers do not exist' + '```');
+            message.channel.send('```' + 'One or more entered listing number(s) do not exist' + '```');
             break;
           }
         }
@@ -685,8 +686,8 @@ async function update(client, loginToken, message) {
     }
   } else {
     if (valid) {
-      for (let j = 0; j < nums.length; j++) {
-        updateRes = await updateListing(client, loginToken, listingObj[nums[j]]);
+      for (let i = 0; i < nums.length; i++) {
+        updateRes = await updateListing(client, loginToken, listingObj[nums[i]]);
       }
     }
   }
@@ -1261,13 +1262,19 @@ async function getOrders(client, loginToken) {
       returnString += receivedString + '\n';
     }
 
-    return [returnString, response.SUCCESS];
+    return [returnString, response.SUCCESS, purchaseOrders];
   } else {
-    return ['', response.NO_ITEMS];
+    return ['', response.NO_ITEMS, {}];
   }
 }
 
-async function confirm(client, loginToken, args, all) {
+async function confirm(client, loginToken, message) {
+  let exit = false;
+  let all = false;
+  let valid = false;
+  let nums = [];
+  let orders = [];
+
   let purchaseOrders = await fetch(
     'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
     {
@@ -1284,37 +1291,92 @@ async function confirm(client, loginToken, args, all) {
       throw new Error(err);
     });
 
-  let orders = purchaseOrders.purchase_orders;
+  let confirmString = '\tNeeds Confirmation:\n';
+  let confirmNum = 0;
 
-  if (!orders) {
-    return response.NO_ITEMS;
+  if (purchaseOrders.purchase_orders) {
+    purchaseOrders.purchase_orders.forEach((order) => {
+      let date = new Date(order.take_action_by);
+
+      if (order.status == 'NEEDS_CONFIRMATION') {
+        confirmString += `\t\t${confirmNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+          order.listing.price_cents / 100
+        }\n\t\t\tOrder number: ${order.number}\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+
+        orders.push(order.number);
+      }
+    });
   }
 
-  let orderNum = 0;
+  if (orders.length == 0) {
+    return [response.NO_ITEMS, null, null];
+  }
 
-  for (let i = 0; i < orders.length; i++) {
-    if (all && orders[i].status == 'NEEDS_CONFIRMATION') {
-      orderNum++;
+  await message.channel.send('```' + confirmString + '```');
+
+  await message.channel.send('```' + `Enter 'all' or order number(s) to confirm\nEnter 'n' to cancel` + '```');
+
+  const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector) {
+    nums = message.content.split(' ');
+
+    if (message.content.toLowerCase() == 'n') {
+      collector.stop();
+      exit = true;
+      console.log('Canceled\n');
+    } else if (checkNumParams(nums)) {
+      if (nums[0].toLowerCase() == 'all') {
+        all = true;
+        collector.stop();
+      } else {
+        valid = true;
+
+        for (let i = 0; i < nums.length; i++) {
+          if (parseInt(nums[i]) >= orders.length) {
+            valid = false;
+            message.channel.send('```' + 'One or more entered order number(s) do not exist' + '```');
+            break;
+          }
+        }
+
+        if (valid) {
+          collector.stop();
+        }
+      }
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter 'all' or listing number(s)` + '```');
+    }
+  }
+
+  collector.on('end', async (collected) => {
+    console.log('Timed out\n');
+    timedOut = true;
+  });
+
+  if (exit) {
+    return [response.EXIT, null, null];
+  } else if (timedOut) {
+    return [response.TIMEDOUT, null, null];
+  }
+
+  let msg = await message.channel.send('```Confirming ... ```');
+
+  if (all) {
+    for (let i = 0; i < orders.length; i++) {
       await confirmation(client, loginToken, orders[i].number);
     }
-
-    if (!all) {
-      for (let j = 0; j < args.length; j++) {
-        if (orders[i].number == args[j] && orders[i].status == 'NEEDS_CONFIRMATION') {
-          orderNum++;
-          confirmRes = await confirmation(client, loginToken, orders[i].number);
-        }
+  } else {
+    if (valid) {
+      for (let i = 0; i < nums.length; i++) {
+        await confirmation(client, loginToken, orders[nums[i]].number);
       }
     }
   }
 
-  if (orderNum == 0) {
-    return response.NO_CHANGE;
-  } else if (!all && orderNum != args.length) {
-    throw new Error('Order not exist');
-  } else {
-    return response.SUCCESS;
-  }
+  return [response.SUCCESS, all, msg];
 }
 
 async function confirmation(client, loginToken, number) {
