@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const Enmap = require('enmap');
 const fs = require('fs');
-const loginGoat = require('./scripts/login');
+const login = require('./scripts/login');
 const monitor = require('./scripts/monitor');
 const mongoose = require('mongoose');
 require('dotenv').config();
@@ -38,4 +38,13 @@ client.on('ready', () => {
   client.user.setActivity('!help for more info');
 });
 
-client.login(process.env.BOT_TOKEN).then(loginGoat()).then(console.log('Ready!')).then(monitor(client));
+client
+  .login(process.env.BOT_TOKEN)
+  .then(async () => {
+    await login.loggingIn().then(() => {
+      console.log('All Initial alias Logins Successfully Updated');
+      console.log('Ready!');
+      login.maintainLogin();
+    });
+  })
+  .then(monitor(client));
