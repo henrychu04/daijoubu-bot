@@ -1582,7 +1582,7 @@ async function list(client, message, loginToken, sizingArray, query) {
   } else if (timedOut) {
     return [response.TIMEDOUT, returnString, msg];
   } else {
-    return [response.SUCCESS, returnString, msg];
+    return [returnedEnum, returnString, msg];
   }
 }
 
