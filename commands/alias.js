@@ -156,6 +156,8 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           await editMsg.edit('```Listing Edited Successfully```').then(console.log(`${message} completed\n`));
           await refresh(client, loginToken, user);
+        } else if (returnedEnum == response.NO_ITEMS) {
+          toReturn = '```Account Currently Has No Items Listed```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
