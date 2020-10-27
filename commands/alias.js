@@ -2046,8 +2046,6 @@ async function me(client, loginToken) {
     }
   });
 
-  console.log('earnings is', earnings);
-
   const meEmbed = new Discord.MessageEmbed()
     .setColor('#7756fe')
     .setTitle(`${me.user.name} alias Account Information`)
@@ -2057,24 +2055,46 @@ async function me(client, loginToken) {
       { name: 'Seller Score', value: me.user.seller_score, inline: true },
       {
         name: 'Total Number of Completed Orders',
-        value: purchaseOrdersCount.canceled_or_completed_count,
+        value: purchaseOrdersCount.canceled_or_completed_count
+          ? purchaseOrdersCount.canceled_or_completed_count.toLocaleString('en')
+          : 0,
         inline: true,
       },
-      { name: 'Completed', value: purchaseOrdersCount.completed, inline: true },
-      { name: 'Canceled', value: purchaseOrdersCount.canceled, inline: true },
-      { name: 'Current Open Orders', value: purchaseOrdersCount.open_count, inline: true },
-      { name: 'Orders to Ship Out', value: purchaseOrdersCount.need_to_ship_count, inline: true },
+      {
+        name: 'Completed',
+        value: purchaseOrdersCount.completed ? purchaseOrdersCount.completed.toLocaleString('en') : 0,
+        inline: true,
+      },
+      {
+        name: 'Canceled',
+        value: purchaseOrdersCount.canceled ? purchaseOrdersCount.canceled.toLocaleString('en') : 0,
+        inline: true,
+      },
+      {
+        name: 'Current Open Orders',
+        value: purchaseOrdersCount.open_count ? purchaseOrdersCount.open_count.toLocaleString('en') : 0,
+        inline: true,
+      },
+      {
+        name: 'Orders to Ship Out',
+        value: purchaseOrdersCount.need_to_ship_count ? purchaseOrdersCount.need_to_ship_count.toLocaleString('en') : 0,
+        inline: true,
+      },
       { name: '\u200b', value: '\u200b', inline: true },
       {
         name: 'Current Listings Value',
-        value: listingValues.active.cents ? '$' + listingValues.active.cents / 100 : '$0',
+        value: listingValues.active.cents ? '$' + (listingValues.active.cents / 100).toLocaleString('en') : '$0',
         inline: true,
       },
-      { name: 'Total Sales Value', value: '$' + purchaseOrders.total_sales_cents / 100, inline: true },
+      {
+        name: 'Total Sales Value',
+        value: '$' + (purchaseOrders.total_sales_cents / 100).toLocaleString('en'),
+        inline: true,
+      },
       { name: '\u200b', value: '\u200b', inline: true },
       {
-        name: 'Current Available Earnings:',
-        value: earnings.amount_cents ? '$' + earnings.amount_cents / 100 : '$0',
+        name: 'Current Available Earnings',
+        value: earnings.amount_cents ? '$' + (earnings.amount_cents / 100).toLocaleString('en') : '$0',
         inline: true,
       },
       { name: '\u200b', value: '\u200b', inline: true },
