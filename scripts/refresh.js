@@ -5,37 +5,46 @@ const Users = require('../models/users');
 const Listings = require('../models/listings');
 
 module.exports = async function refresh(client, loginToken, user) {
-  if (!loginToken) {
-    const users = await Users.find();
-    const date = new Date();
-    let allListings = [];
+  try {
+    if (!loginToken) {
+      const users = await Users.find();
+      const date = new Date();
+      let allListings = [];
 
-    for (let i = 0; i < users.length; i++) {
-      if (users[i].settings.orderRefresh == 'live') {
-        await confirmOrders(client, users[i], users[i].settings.orderRefresh);
-      } else if (users[i].settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
-        await confirmOrders(client, users[i], users[i].settings.orderRefresh);
+      for (let i = 0; i < users.length; i++) {
+        if (users[i].settings.orderRefresh == 'live') {
+          await confirmOrders(client, users[i], users[i].settings.orderRefresh);
+        } else if (users[i].settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
+          await confirmOrders(client, users[i], users[i].settings.orderRefresh);
+        }
+
+        let aliasListings = await getListings(client, users[i].login);
+
+        await addListing(users[i], aliasListings);
+        await deleteListing(users[i], aliasListings);
+        await syncListingPrice(users[i], aliasListings);
+        allListings = await updateLowest(client, users[i], allListings);
       }
+    } else {
+      let aliasListings = await getListings(client, loginToken);
 
-      let aliasListings = await getListings(client, users[i].login);
-
-      await addListing(users[i], aliasListings);
-      await deleteListing(users[i], aliasListings);
-      await syncListingPrice(users[i], aliasListings);
-      allListings = await updateLowest(client, users[i], allListings);
+      await addListing(user, aliasListings);
+      await deleteListing(user, aliasListings);
+      await syncListingPrice(user, aliasListings);
     }
-  } else {
-    let aliasListings = await getListings(client, loginToken);
-
-    await addListing(user, aliasListings);
-    await deleteListing(user, aliasListings);
-    await syncListingPrice(user, aliasListings);
+  } catch (err) {
+    console.log(err);
   }
 };
 
 async function updateLowest(client, user, allListings) {
   const userListings = await Listings.find({ d_id: user.d_id });
   const userListingsArray = userListings[0].listings;
+
+  let liveString = 'Listings Updated:\n';
+  let live = 0;
+  let manualString = 'Listings With a New Lowest Ask:\n';
+  let manual = 0;
 
   for (let i = 0; i < userListingsArray.length; i++) {
     let exist = false;
@@ -46,18 +55,39 @@ async function updateLowest(client, user, allListings) {
       if (userListingsArray[i].slug == allListings[j].slug) {
         exist = true;
 
-        allListings[j].data.availability.forEach(async (size) => {
-          if (size.size == userListingsArray.size && size.lowest_price_cents) {
+        for (let k = 0; k < allListings[j].data.availability.length; k++) {
+          let size = allListings[j].data.availability[k];
+
+          if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
             let lowest = parseInt(size.lowest_price_cents);
 
             if (lowest != userListingsArray[i].lowest) {
+              if (userListingsArray[i].setting == 'live') {
+                await updateListing(client, user, userListingsArray[i].id, lowest);
+
+                liveString += `\t${live}. ${userListingsArray[i].name}\n\t\tsize: ${userListingsArray[i].size} $${
+                  userListingsArray[i].price / 100
+                } => $${lowest / 100}`;
+                live++;
+
+                await Listings.updateOne(
+                  { 'listings.id': userListingsArray[i].id },
+                  { $set: { 'listings.$.price': lowest } }
+                ).catch((err) => console.log(err));
+              } else if (userListingsArray[i].setting == 'manual') {
+                manualString += `\t${live}. ${userListingsArray[i].name}\n\t\tsize: ${userListingsArray[i].size} $${
+                  userListingsArray[i].price / 100
+                } => $${lowest / 100}`;
+                manual++;
+              }
+
               await Listings.updateOne(
                 { 'listings.id': userListingsArray[i].id },
                 { $set: { 'listings.$.lowest': lowest } }
               ).catch((err) => console.log(err));
             }
           }
-        });
+        }
 
         break;
       }
@@ -83,22 +113,113 @@ async function updateLowest(client, user, allListings) {
 
       allListings.push({ slug: userListingsArray[i].slug, data: pageData });
 
-      pageData.availability.forEach(async (size) => {
-        if (size.size == userListingsArray.size && size.lowest_price_cents) {
+      for (let j = 0; j < pageData.availability.length; j++) {
+        let size = pageData.availability[j];
+
+        if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
           let lowest = parseInt(size.lowest_price_cents);
 
           if (lowest != userListingsArray[i].lowest) {
+            if (userListingsArray[i].setting == 'live') {
+              await updateListing(client, user, userListingsArray[i].id, lowest);
+
+              liveString += `\t${live}. ${userListingsArray[i].name}\n\t\tsize: ${userListingsArray[i].size} $${
+                userListingsArray[i].price / 100
+              } => $${lowest / 100}\n`;
+              live++;
+
+              await Listings.updateOne(
+                { 'listings.id': userListingsArray[i].id },
+                { $set: { 'listings.$.price': lowest } }
+              ).catch((err) => console.log(err));
+            } else if (userListingsArray[i].setting == 'manual') {
+              manualString += `\t${live}. ${userListingsArray[i].name}\n\t\tsize: ${userListingsArray[i].size} $${
+                userListingsArray[i].price / 100
+              } => $${lowest / 100}`;
+              manual++;
+            }
+
             await Listings.updateOne(
               { 'listings.id': userListingsArray[i].id },
               { $set: { 'listings.$.lowest': lowest } }
             ).catch((err) => console.log(err));
           }
         }
-      });
+      }
+    }
+  }
+
+  if (live > 0) {
+    let success = false;
+
+    while (!success) {
+      await client.users.cache
+        .get(user.d_id)
+        .send('```' + liveString + '```')
+        .then(() => {
+          success = true;
+          console.log('Successfully Updated Live alias Listings\n');
+        });
+    }
+  }
+
+  if (manual > 0) {
+    let success = false;
+
+    while (!success) {
+      await client.users.cache
+        .get(user.d_id)
+        .send('```' + manualString + '```')
+        .then(() => {
+          success = true;
+          console.log('Successfully Updated Manual alias Listings\n');
+        });
     }
   }
 
   return allListings;
+}
+
+async function updateListing(client, user, id, lowest) {
+  let listings = await getListings(client, user.login);
+  let obj = {};
+
+  for (let i = 0; i < listings.listing.length; i++) {
+    if (listings.listing[i].id == id) {
+      obj = listings.listing[i];
+    }
+  }
+
+  obj.price_cents = lowest.toString();
+
+  console.log('\n=== ===\nEdited\n');
+
+  // let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
+  //   method: 'PUT',
+  //   headers: {
+  //     'user-agent': client.config.aliasHeader,
+  //     authorization: `Bearer ${encryption.decrypt(user.login)}`,
+  //   },
+  //   body: `{"listing":${JSON.stringify(obj)}}`,
+  // })
+  //   .then((res, err) => {
+  //     if (res.status == 200) {
+  //       return res.status;
+  //     } else if (res.status == 401) {
+  //       throw new Error('Login expired');
+  //     } else if (res.status == 404) {
+  //       throw new Error('Not exist');
+  //     } else {
+  //       console.log('Res is', res.status);
+
+  //       if (err) {
+  //         throw new Error(err.message);
+  //       }
+  //     }
+  //   })
+  //   .catch((err) => {
+  //     console.log(err);
+  //   });
 }
 
 async function syncListingPrice(user, aliasListings) {
@@ -146,7 +267,7 @@ async function addListing(user, aliasListings) {
         price: '',
         slug: '',
         lowest: '',
-        setting: 'manual',
+        setting: user.settings.adjustListing,
       };
 
       obj.id = aliasListings.listing[i].id;
@@ -303,7 +424,7 @@ async function confirmOrders(client, user, refresh) {
         await client.users.cache
           .get(user.d_id)
           .send('```alias orders - ' + date + '\n' + returnString + '```')
-          .then(console.log('Successfully Confirmed Goat Orders\n'))
+          .then(console.log('Successfully Confirmed alias Orders\n'))
           .catch((err) => {
             throw new Error(err);
           });
@@ -312,7 +433,7 @@ async function confirmOrders(client, user, refresh) {
           await client.users.cache
             .get(user.d_id)
             .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
-            .then(console.log('Successfully Confirmed Goat Orders\n'))
+            .then(console.log('Successfully Confirmed alias Orders\n'))
             .catch((err) => {
               throw new Error(err);
             });
@@ -323,7 +444,7 @@ async function confirmOrders(client, user, refresh) {
         await client.users.cache
           .get(user.d_id)
           .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
-          .then(console.log('Successfully Confirmed Goat Orders\n'))
+          .then(console.log('Successfully Confirmed alias Orders\n'))
           .catch((err) => {
             throw new Error(err);
           });
