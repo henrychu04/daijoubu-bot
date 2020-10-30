@@ -192,6 +192,8 @@ async function updateListing(client, user, id, lowest) {
 
   obj.price_cents = lowest.toString();
 
+  console.log('\n=== ===\nEdited\n');
+
   // let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
   //   method: 'PUT',
   //   headers: {
