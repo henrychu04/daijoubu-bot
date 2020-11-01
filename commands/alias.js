@@ -56,7 +56,7 @@ exports.run = async (client, message, args) => {
         let checkListingObj = [];
 
         if (args.length < 2) {
-          [toReturn, returnedEnum, checkListingObj] = await check(client, loginToken);
+          [toReturn, returnedEnum, checkListingObj] = await check(client, loginToken, user);
         } else {
           throw new Error('Too many parameters');
         }
@@ -77,7 +77,7 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        [returnedEnum, updateAll, updateMsg] = await update(client, loginToken, message);
+        [returnedEnum, updateAll, updateMsg] = await update(client, loginToken, message, user);
 
         if (returnedEnum == response.SUCCESS) {
           if (updateAll) {
@@ -582,43 +582,48 @@ async function aliasSearch(client, query) {
   return embed;
 }
 
-async function check(client, loginToken) {
+async function check(client, loginToken, user) {
   let listings = await getListings(client, loginToken);
+  const userListings = await Listings.find({ d_id: user.d_id });
+  const userListingsArray = userListings[0].listings;
 
-  if (!listings.listing) {
+  let listingObj = [];
+
+  for (let i = 0; i < listings.listing.length; i++) {
+    listingObj = await checkListings(listings.listing[i], listingObj);
+  }
+
+  if (userListingsArray.length == 0) {
     return ['', response.NO_ITEMS, null];
+  }
+
+  let newLowestAsksString = 'Current listings with a lower ask:';
+  let i = 0;
+
+  userListingsArray.forEach((obj) => {
+    if (obj.price > obj.lowest) {
+      newLowestAsksString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} $${obj.price / 100} => $${
+        obj.lowest / 100
+      }\n`;
+      i++;
+    }
+  });
+
+  if (i > 0) {
+    return [newLowestAsksString, response.SUCCESS, listingObj];
   } else {
-    let listingObj = [];
-
-    for (let i = 0; i < listings.listing.length; i++) {
-      listingObj = await checkListings(listings.listing[i], listingObj);
-    }
-
-    if (listingObj.length == 0) {
-      return ['', response.NO_CHANGE, null];
-    } else {
-      let newLowestAsksString = 'Current listings with a lower ask:';
-
-      listingObj.forEach((obj, i) => {
-        newLowestAsksString += `\n\t${i}. ${obj.product.name}\n\t\tsize: ${obj.size_option.name.toUpperCase()} $${
-          obj.price_cents / 100
-        } => $${obj.product.lowest_price_cents / 100}\n`;
-      });
-
-      tempRes = 200;
-      return [newLowestAsksString, response.SUCCESS, listingObj];
-    }
+    return ['', response.NO_CHANGE, null];
   }
 }
 
-async function update(client, loginToken, message) {
+async function update(client, loginToken, message, user) {
   let nums = [];
   let all = false;
   let valid = false;
   let exit = false;
   let timedOut = false;
 
-  let [listingString, listingEnum, listingObj] = await check(client, loginToken);
+  let [listingString, listingEnum, listingObj] = await check(client, loginToken, user);
 
   if (listingEnum == response.SUCCESS) {
     await message.channel.send('```' + listingString + '```');
