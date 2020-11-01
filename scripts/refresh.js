@@ -73,26 +73,28 @@ async function updateLowest(client, user, allListings, webhook) {
             if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
               let lowest = parseInt(size.lowest_price_cents);
 
+              if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
+                await updateListing(client, user, userListingsArray[i].id, lowest);
+
+                liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+                  userListingsArray[i].price / 100
+                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
+                live++;
+
+                await Listings.updateOne(
+                  { 'listings.id': userListingsArray[i].id },
+                  { $set: { 'listings.$.price': lowest } }
+                ).catch((err) => console.log(err));
+              }
+
+              if (userListingsArray[i].setting == 'manual' && lowest != userListingsArray[i].lowest) {
+                manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+                  userListingsArray[i].price / 100
+                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
+                manual++;
+              }
+
               if (lowest != userListingsArray[i].lowest) {
-                if (userListingsArray[i].setting == 'live') {
-                  await updateListing(client, user, userListingsArray[i].id, lowest);
-
-                  liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
-                    userListingsArray[i].price / 100
-                  }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
-                  live++;
-
-                  await Listings.updateOne(
-                    { 'listings.id': userListingsArray[i].id },
-                    { $set: { 'listings.$.price': lowest } }
-                  ).catch((err) => console.log(err));
-                } else if (userListingsArray[i].setting == 'manual') {
-                  manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
-                    userListingsArray[i].price / 100
-                  }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
-                  manual++;
-                }
-
                 await Listings.updateOne(
                   { 'listings.id': userListingsArray[i].id },
                   { $set: { 'listings.$.lowest': lowest } }
@@ -100,7 +102,6 @@ async function updateLowest(client, user, allListings, webhook) {
               }
             }
           }
-
           break;
         }
       }
