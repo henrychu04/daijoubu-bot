@@ -165,8 +165,8 @@ async function updateLowest(client, user, allListings, webhook) {
     if (live > 0) {
       let success = false;
 
-      while (!success) {
-        if (webhook != null) {
+      if (webhook != null) {
+        while (!success) {
           await webhook
             .send('```' + liveString + '```', {
               username: 'Listing Updates',
@@ -185,14 +185,6 @@ async function updateLowest(client, user, allListings, webhook) {
                 throw new Error(err);
               }
             });
-        } else {
-          await client.users.cache
-            .get(user.d_id)
-            .send('```' + liveString + '```')
-            .then(() => {
-              success = true;
-              console.log('Successfully Updated Live alias Listings\n');
-            });
         }
       }
     }
@@ -200,8 +192,8 @@ async function updateLowest(client, user, allListings, webhook) {
     if (manual > 0) {
       let success = false;
 
-      while (!success) {
-        if (webhook != null) {
+      if (webhook != null) {
+        while (!success) {
           await webhook
             .send('```' + manualString + '```', {
               username: 'Listing Updates',
@@ -219,14 +211,6 @@ async function updateLowest(client, user, allListings, webhook) {
               } else {
                 throw new Error(err);
               }
-            });
-        } else {
-          await client.users.cache
-            .get(user.d_id)
-            .send('```' + manualString + '```')
-            .then(() => {
-              success = true;
-              console.log('Successfully Updated Manual alias Listings\n');
             });
         }
       }
@@ -474,9 +458,38 @@ async function confirmOrders(client, user, refresh, webhook) {
       if (orders.length == 0) {
         if (refresh == 'daily') {
           if (webhook != null) {
+            let success = false;
+
+            while (!success) {
+              await webhook
+                .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
+                .then(() => {
+                  success = true;
+                  console.log('Successfully Confirmed alias Orders\n');
+                })
+                .catch((err) => {
+                  if (err.message == 'Unknown Webhook') {
+                    throw new Error('Unknown webhook');
+                  } else if (err.message == 'Invalid Webhook Token') {
+                    throw new Error('Invalid webhook token');
+                  } else {
+                    throw new Error(err);
+                  }
+                });
+            }
+          }
+        }
+      } else {
+        if (webhook != null) {
+          let success = false;
+
+          while (!success) {
             await webhook
-              .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
-              .then(console.log('Successfully Confirmed alias Orders\n'))
+              .send('```alias orders - ' + date + '\n' + returnString + '```')
+              .then(() => {
+                success = true;
+                console.log('Successfully Confirmed alias Orders\n');
+              })
               .catch((err) => {
                 if (err.message == 'Unknown Webhook') {
                   throw new Error('Unknown webhook');
@@ -486,63 +499,31 @@ async function confirmOrders(client, user, refresh, webhook) {
                   throw new Error(err);
                 }
               });
-          } else {
-            await client.users.cache
-              .get(user.d_id)
-              .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
-              .then(console.log('Successfully Confirmed alias Orders\n'))
-              .catch((err) => {
-                throw new Error(err);
-              });
           }
-        }
-      } else {
-        if (webhook != null) {
-          await webhook
-            .send('```alias orders - ' + date + '\n' + returnString + '```')
-            .then(console.log('Successfully Confirmed alias Orders\n'))
-            .catch((err) => {
-              if (err.message == 'Unknown Webhook') {
-                throw new Error('Unknown webhook');
-              } else if (err.message == 'Invalid Webhook Token') {
-                throw new Error('Invalid webhook token');
-              } else {
-                throw new Error(err);
-              }
-            });
-        } else {
-          await client.users.cache
-            .get(user.d_id)
-            .send('```alias orders - ' + date + '\n' + returnString + '```')
-            .then(console.log('Successfully Confirmed alias Orders\n'))
-            .catch((err) => {
-              throw new Error(err);
-            });
         }
       }
     } else {
       if (refresh == 'daily') {
         if (webhook != null) {
-          await webhook
-            .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
-            .then(console.log('Successfully Confirmed alias Orders\n'))
-            .catch((err) => {
-              if (err.message == 'Unknown Webhook') {
-                throw new Error('Unknown webhook');
-              } else if (err.message == 'Invalid Webhook Token') {
-                throw new Error('Invalid webhook token');
-              } else {
-                throw new Error(err);
-              }
-            });
-        } else {
-          await client.users.cache
-            .get(user.d_id)
-            .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
-            .then(console.log('Successfully Confirmed alias Orders\n'))
-            .catch((err) => {
-              throw new Error(err);
-            });
+          let success = false;
+
+          while (!success) {
+            await webhook
+              .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
+              .then(() => {
+                success = true;
+                console.log('Successfully Confirmed alias Orders\n');
+              })
+              .catch((err) => {
+                if (err.message == 'Unknown Webhook') {
+                  throw new Error('Unknown webhook');
+                } else if (err.message == 'Invalid Webhook Token') {
+                  throw new Error('Invalid webhook token');
+                } else {
+                  throw new Error(err);
+                }
+              });
+          }
         }
       }
     }
@@ -552,24 +533,25 @@ async function confirmOrders(client, user, refresh, webhook) {
     if (err.message == 'Error confirming') {
       if (confirmed != 0) {
         if (webhook != null) {
-          await webhook.send('```alias orders - ' + date + '\n' + returnString + '```').catch((err) => {
-            if (err.message == 'Unknown Webhook') {
-              throw new Error('Unknown webhook');
-            } else if (err.message == 'Invalid Webhook Token') {
-              throw new Error('Invalid webhook token');
-            } else {
-              throw new Error(err);
-            }
-          });
-          await webhook.send('```' + `Error confirming order number ${number}` + '```');
-        } else {
-          await client.users.cache
-            .get(user.d_id)
-            .send('```alias orders - ' + date + '\n' + returnString + '```')
-            .catch((err) => {
-              throw new Error(err);
-            });
-          await client.users.cache.get(user.d_id).send('```' + `Error confirming order number ${number}` + '```');
+          let success = false;
+
+          while (!success) {
+            await webhook
+              .send('```alias orders - ' + date + '\n' + returnString + '```')
+              .then(() => {
+                sucess = true;
+              })
+              .catch((err) => {
+                if (err.message == 'Unknown Webhook') {
+                  throw new Error('Unknown webhook');
+                } else if (err.message == 'Invalid Webhook Token') {
+                  throw new Error('Invalid webhook token');
+                } else {
+                  throw new Error(err);
+                }
+              });
+            await webhook.send('```' + `Error confirming order number ${number}` + '```');
+          }
         }
       }
     }
