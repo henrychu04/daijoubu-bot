@@ -59,7 +59,9 @@ exports.run = async (client, message, args) => {
               throw new Error(err);
             });
 
-          message.channel.send('```New Login Successfully Added```');
+          await message.channel.send('```New Login Successfully Added```');
+
+          await message.channel.send('```Webhook setup recommended\nEnter !webhook <webhook> to setup webhook````');
         } else {
           if (encryption.decrypt(exist[0].pw) == pw) {
             throw new Error('Same pw');

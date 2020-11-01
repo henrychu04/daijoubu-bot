@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const Discord = require('discord.js');
 const encryption = require('./encryption');
 
 const Users = require('../models/users');
@@ -12,18 +13,28 @@ module.exports = async function refresh(client, loginToken, user) {
       let allListings = [];
 
       for (let i = 0; i < users.length; i++) {
-        if (users[i].settings.orderRefresh == 'live') {
-          await confirmOrders(client, users[i], users[i].settings.orderRefresh);
-        } else if (users[i].settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
-          await confirmOrders(client, users[i], users[i].settings.orderRefresh);
+        let user = users[i];
+        let webhook = null;
+
+        if (user.webhook.length != 0) {
+          let split = user.webhook.split('/');
+          let id = split[5];
+          let token = split[6];
+          webhook = new Discord.WebhookClient(id, token);
         }
 
-        let aliasListings = await getListings(client, users[i].login);
+        if (user.settings.orderRefresh == 'live') {
+          await confirmOrders(client, user, user.settings.orderRefresh, webhook);
+        } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
+          await confirmOrders(client, user, user.settings.orderRefresh, webhook);
+        }
 
-        await addListing(users[i], aliasListings);
-        await deleteListing(users[i], aliasListings);
-        await syncListingPrice(users[i], aliasListings);
-        allListings = await updateLowest(client, users[i], allListings);
+        let aliasListings = await getListings(client, user.login);
+
+        await addListing(user, aliasListings);
+        await deleteListing(user, aliasListings);
+        await syncListingPrice(user, aliasListings);
+        allListings = await updateLowest(client, user, allListings, webhook);
       }
     } else {
       let aliasListings = await getListings(client, loginToken);
@@ -37,26 +48,85 @@ module.exports = async function refresh(client, loginToken, user) {
   }
 };
 
-async function updateLowest(client, user, allListings) {
-  const userListings = await Listings.find({ d_id: user.d_id });
-  const userListingsArray = userListings[0].listings;
+async function updateLowest(client, user, allListings, webhook) {
+  try {
+    const userListings = await Listings.find({ d_id: user.d_id });
+    const userListingsArray = userListings[0].listings;
 
-  let liveString = 'Listings Updated:\n';
-  let live = 0;
-  let manualString = 'Listings With a New Lowest Ask:\n';
-  let manual = 0;
+    let liveString = 'Listings Updated:\n';
+    let live = 0;
+    let manualString = 'Listings With a New Lowest Ask:\n';
+    let manual = 0;
 
-  for (let i = 0; i < userListingsArray.length; i++) {
-    let exist = false;
+    for (let i = 0; i < userListingsArray.length; i++) {
+      let exist = false;
 
-    for (let j = 0; j < allListings.length; j++) {
-      exist = false;
+      for (let j = 0; j < allListings.length; j++) {
+        exist = false;
 
-      if (userListingsArray[i].slug == allListings[j].slug) {
-        exist = true;
+        if (userListingsArray[i].slug == allListings[j].slug) {
+          exist = true;
 
-        for (let k = 0; k < allListings[j].data.availability.length; k++) {
-          let size = allListings[j].data.availability[k];
+          for (let k = 0; k < allListings[j].data.availability.length; k++) {
+            let size = allListings[j].data.availability[k];
+
+            if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
+              let lowest = parseInt(size.lowest_price_cents);
+
+              if (lowest != userListingsArray[i].lowest) {
+                if (userListingsArray[i].setting == 'live') {
+                  await updateListing(client, user, userListingsArray[i].id, lowest);
+
+                  liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+                    userListingsArray[i].price / 100
+                  }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
+                  live++;
+
+                  await Listings.updateOne(
+                    { 'listings.id': userListingsArray[i].id },
+                    { $set: { 'listings.$.price': lowest } }
+                  ).catch((err) => console.log(err));
+                } else if (userListingsArray[i].setting == 'manual') {
+                  manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+                    userListingsArray[i].price / 100
+                  }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
+                  manual++;
+                }
+
+                await Listings.updateOne(
+                  { 'listings.id': userListingsArray[i].id },
+                  { $set: { 'listings.$.lowest': lowest } }
+                ).catch((err) => console.log(err));
+              }
+            }
+          }
+
+          break;
+        }
+      }
+
+      if (!exist) {
+        let pageData = await fetch(
+          `https://sell-api.goat.com/api/v1/analytics/products/${userListingsArray[i].slug}/availability?box_condition=1&shoe_condition=1`,
+          {
+            headers: client.config.headers,
+          }
+        ).then((res, err) => {
+          if (res.status == 200) {
+            return res.json();
+          } else {
+            console.log('Res is', res.status);
+
+            if (err) {
+              throw new Error(err.message);
+            }
+          }
+        });
+
+        allListings.push({ slug: userListingsArray[i].slug, data: pageData });
+
+        for (let j = 0; j < pageData.availability.length; j++) {
+          let size = pageData.availability[j];
 
           if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
             let lowest = parseInt(size.lowest_price_cents);
@@ -65,9 +135,9 @@ async function updateLowest(client, user, allListings) {
               if (userListingsArray[i].setting == 'live') {
                 await updateListing(client, user, userListingsArray[i].id, lowest);
 
-                liveString += `\t${live}. ${userListingsArray[i].name}\n\t\tsize: ${userListingsArray[i].size} $${
+                liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
                   userListingsArray[i].price / 100
-                } => $${lowest / 100}`;
+                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
                 live++;
 
                 await Listings.updateOne(
@@ -75,9 +145,9 @@ async function updateLowest(client, user, allListings) {
                   { $set: { 'listings.$.price': lowest } }
                 ).catch((err) => console.log(err));
               } else if (userListingsArray[i].setting == 'manual') {
-                manualString += `\t${live}. ${userListingsArray[i].name}\n\t\tsize: ${userListingsArray[i].size} $${
+                manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
                   userListingsArray[i].price / 100
-                } => $${lowest / 100}`;
+                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
                 manual++;
               }
 
@@ -88,96 +158,83 @@ async function updateLowest(client, user, allListings) {
             }
           }
         }
-
-        break;
       }
     }
 
-    if (!exist) {
-      let pageData = await fetch(
-        `https://sell-api.goat.com/api/v1/analytics/products/${userListingsArray[i].slug}/availability?box_condition=1&shoe_condition=1`,
-        {
-          headers: client.config.headers,
-        }
-      ).then((res, err) => {
-        if (res.status == 200) {
-          return res.json();
+    if (live > 0) {
+      let success = false;
+
+      while (!success) {
+        if (webhook != null) {
+          await webhook
+            .send('```' + liveString + '```', {
+              username: 'Listing Updates',
+              avatarURL: client.config.aliasPicture,
+            })
+            .then(() => {
+              success = true;
+              console.log('Successfully Updated Live alias Listings\n');
+            })
+            .catch((err) => {
+              if (err.message == 'Unknown Webhook') {
+                throw new Error('Unknown webhook');
+              } else if (err.message == 'Invalid Webhook Token') {
+                throw new Error('Invalid webhook token');
+              } else {
+                throw new Error(err);
+              }
+            });
         } else {
-          console.log('Res is', res.status);
-
-          if (err) {
-            throw new Error(err.message);
-          }
-        }
-      });
-
-      allListings.push({ slug: userListingsArray[i].slug, data: pageData });
-
-      for (let j = 0; j < pageData.availability.length; j++) {
-        let size = pageData.availability[j];
-
-        if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
-          let lowest = parseInt(size.lowest_price_cents);
-
-          if (lowest != userListingsArray[i].lowest) {
-            if (userListingsArray[i].setting == 'live') {
-              await updateListing(client, user, userListingsArray[i].id, lowest);
-
-              liveString += `\t${live}. ${userListingsArray[i].name}\n\t\tsize: ${userListingsArray[i].size} $${
-                userListingsArray[i].price / 100
-              } => $${lowest / 100}\n`;
-              live++;
-
-              await Listings.updateOne(
-                { 'listings.id': userListingsArray[i].id },
-                { $set: { 'listings.$.price': lowest } }
-              ).catch((err) => console.log(err));
-            } else if (userListingsArray[i].setting == 'manual') {
-              manualString += `\t${live}. ${userListingsArray[i].name}\n\t\tsize: ${userListingsArray[i].size} $${
-                userListingsArray[i].price / 100
-              } => $${lowest / 100}`;
-              manual++;
-            }
-
-            await Listings.updateOne(
-              { 'listings.id': userListingsArray[i].id },
-              { $set: { 'listings.$.lowest': lowest } }
-            ).catch((err) => console.log(err));
-          }
+          await client.users.cache
+            .get(user.d_id)
+            .send('```' + liveString + '```')
+            .then(() => {
+              success = true;
+              console.log('Successfully Updated Live alias Listings\n');
+            });
         }
       }
     }
-  }
 
-  if (live > 0) {
-    let success = false;
+    if (manual > 0) {
+      let success = false;
 
-    while (!success) {
-      await client.users.cache
-        .get(user.d_id)
-        .send('```' + liveString + '```')
-        .then(() => {
-          success = true;
-          console.log('Successfully Updated Live alias Listings\n');
-        });
+      while (!success) {
+        if (webhook != null) {
+          await webhook
+            .send('```' + manualString + '```', {
+              username: 'Listing Updates',
+              avatarURL: client.config.aliasPicture,
+            })
+            .then(() => {
+              success = true;
+              console.log('Successfully Updated Manual alias Listings\n');
+            })
+            .catch((err) => {
+              if (err.message == 'Unknown Webhook') {
+                throw new Error('Unknown webhook');
+              } else if (err.message == 'Invalid Webhook Token') {
+                throw new Error('Invalid webhook token');
+              } else {
+                throw new Error(err);
+              }
+            });
+        } else {
+          await client.users.cache
+            .get(user.d_id)
+            .send('```' + manualString + '```')
+            .then(() => {
+              success = true;
+              console.log('Successfully Updated Manual alias Listings\n');
+            });
+        }
+      }
     }
+
+    return allListings;
+  } catch (err) {
+    console.log(err);
   }
-
-  if (manual > 0) {
-    let success = false;
-
-    while (!success) {
-      await client.users.cache
-        .get(user.d_id)
-        .send('```' + manualString + '```')
-        .then(() => {
-          success = true;
-          console.log('Successfully Updated Manual alias Listings\n');
-        });
-    }
-  }
-
-  return allListings;
 }
 
 async function updateListing(client, user, id, lowest) {
@@ -192,34 +249,35 @@ async function updateListing(client, user, id, lowest) {
 
   obj.price_cents = lowest.toString();
 
-  console.log('\n=== ===\nEdited\n');
+  let updateRes = 0;
 
-  // let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
-  //   method: 'PUT',
-  //   headers: {
-  //     'user-agent': client.config.aliasHeader,
-  //     authorization: `Bearer ${encryption.decrypt(user.login)}`,
-  //   },
-  //   body: `{"listing":${JSON.stringify(obj)}}`,
-  // })
-  //   .then((res, err) => {
-  //     if (res.status == 200) {
-  //       return res.status;
-  //     } else if (res.status == 401) {
-  //       throw new Error('Login expired');
-  //     } else if (res.status == 404) {
-  //       throw new Error('Not exist');
-  //     } else {
-  //       console.log('Res is', res.status);
-
-  //       if (err) {
-  //         throw new Error(err.message);
-  //       }
-  //     }
-  //   })
-  //   .catch((err) => {
-  //     console.log(err);
-  //   });
+  while (updateRes != 200) {
+    updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
+      method: 'PUT',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(user.login)}`,
+      },
+      body: `{"listing":${JSON.stringify(obj)}}`,
+    })
+      .then((res, err) => {
+        if (res.status == 200) {
+          return res.status;
+        } else if (res.status == 401) {
+          throw new Error('Login expired');
+        } else if (res.status == 404) {
+          throw new Error('Not exist');
+        } else {
+          console.log('Res is', res.status);
+          if (err) {
+            throw new Error(err.message);
+          }
+        }
+      })
+      .catch((err) => {
+        throw new Error(err);
+      });
+  }
 }
 
 async function syncListingPrice(user, aliasListings) {
@@ -261,21 +319,14 @@ async function addListing(user, aliasListings) {
       }
 
       let obj = {
-        id: '',
-        name: '',
-        size: '',
-        price: '',
-        slug: '',
-        lowest: '',
+        id: aliasListings.listing[i].id,
+        name: aliasListings.listing[i].product.name,
+        size: parseFloat(aliasListings.listing[i].size_option.value),
+        price: parseInt(aliasListings.listing[i].price_cents),
+        slug: aliasListings.listing[i].product.id,
+        lowest: parseInt(aliasListings.listing[i].product.lowest_price_cents),
         setting: user.settings.adjustListing,
       };
-
-      obj.id = aliasListings.listing[i].id;
-      obj.name = aliasListings.listing[i].product.name;
-      obj.size = parseFloat(aliasListings.listing[i].size_option.value);
-      obj.price = parseInt(aliasListings.listing[i].price_cents);
-      obj.slug = aliasListings.listing[i].product.id;
-      obj.lowest = parseInt(aliasListings.listing[i].product.lowest_price_cents);
 
       await Listings.updateOne({ _id: userListings[0]._id }, { $push: { listings: obj } }).catch((err) =>
         console.log(err)
@@ -340,8 +391,7 @@ async function getListings(client, loginToken) {
   return listings;
 }
 
-async function confirmOrders(client, user, refresh) {
-  let returnString = 'Orders successfully confirmed:\n';
+async function confirmOrders(client, user, refresh, webhook) {
   let confirmed = 0;
   let number = 0;
 
@@ -379,57 +429,112 @@ async function confirmOrders(client, user, refresh) {
         }
       });
 
-      if (orders.length != 0) {
-        for (let i = 0; i < orders.length; i++) {
-          number = orders[i].number;
+      for (let i = 0; i < orders.length; i++) {
+        number = orders[i].number;
 
-          let confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
+        let confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
+          method: 'PUT',
+          headers: {
+            'user-agent': client.config.aliasHeader,
+            authorization: `Bearer ${encryption.decrypt(user.login)}`,
+          },
+          body: `{"number":"${number}"}`,
+        }).then((res) => {
+          return res.status;
+        });
+
+        let shipping = await fetch(
+          `https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`,
+          {
             method: 'PUT',
             headers: {
               'user-agent': client.config.aliasHeader,
               authorization: `Bearer ${encryption.decrypt(user.login)}`,
             },
             body: `{"number":"${number}"}`,
-          }).then((res) => {
-            return res.status;
-          });
-
-          let shipping = await fetch(
-            `https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`,
-            {
-              method: 'PUT',
-              headers: {
-                'user-agent': client.config.aliasHeader,
-                authorization: `Bearer ${encryption.decrypt(user.login)}`,
-              },
-              body: `{"number":"${number}"}`,
-            }
-          ).then((res) => {
-            return res.status;
-          });
-
-          if (confirmation != 200 || shipping != 200) {
-            throw new Error('Error confirming');
           }
+        ).then((res) => {
+          return res.status;
+        });
 
-          returnString += `\t${i}. ${orders[i].listing.product.name} - ${orders[
-            i
-          ].listing.size_option.name.toUpperCase()} $${orders[i].listing.price_cents / 100}\n\t\tOrder number: ${
-            orders[i].number
-          }\n`;
-
-          confirmed++;
+        if (confirmation != 200 || shipping != 200) {
+          throw new Error('Error confirming');
         }
 
-        await client.users.cache
-          .get(user.d_id)
-          .send('```alias orders - ' + date + '\n' + returnString + '```')
-          .then(console.log('Successfully Confirmed alias Orders\n'))
-          .catch((err) => {
-            throw new Error(err);
-          });
-      } else {
+        returnString += `\t${i}. ${orders[i].listing.product.name} - ${orders[
+          i
+        ].listing.size_option.name.toUpperCase()} $${orders[i].listing.price_cents / 100}\n\t\tOrder number: ${
+          orders[i].number
+        }\n`;
+
+        confirmed++;
+      }
+
+      if (orders.length == 0) {
         if (refresh == 'daily') {
+          if (webhook != null) {
+            await webhook
+              .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
+              .then(console.log('Successfully Confirmed alias Orders\n'))
+              .catch((err) => {
+                if (err.message == 'Unknown Webhook') {
+                  throw new Error('Unknown webhook');
+                } else if (err.message == 'Invalid Webhook Token') {
+                  throw new Error('Invalid webhook token');
+                } else {
+                  throw new Error(err);
+                }
+              });
+          } else {
+            await client.users.cache
+              .get(user.d_id)
+              .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
+              .then(console.log('Successfully Confirmed alias Orders\n'))
+              .catch((err) => {
+                throw new Error(err);
+              });
+          }
+        }
+      } else {
+        if (webhook != null) {
+          await webhook
+            .send('```alias orders - ' + date + '\n' + returnString + '```')
+            .then(console.log('Successfully Confirmed alias Orders\n'))
+            .catch((err) => {
+              if (err.message == 'Unknown Webhook') {
+                throw new Error('Unknown webhook');
+              } else if (err.message == 'Invalid Webhook Token') {
+                throw new Error('Invalid webhook token');
+              } else {
+                throw new Error(err);
+              }
+            });
+        } else {
+          await client.users.cache
+            .get(user.d_id)
+            .send('```alias orders - ' + date + '\n' + returnString + '```')
+            .then(console.log('Successfully Confirmed alias Orders\n'))
+            .catch((err) => {
+              throw new Error(err);
+            });
+        }
+      }
+    } else {
+      if (refresh == 'daily') {
+        if (webhook != null) {
+          await webhook
+            .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
+            .then(console.log('Successfully Confirmed alias Orders\n'))
+            .catch((err) => {
+              if (err.message == 'Unknown Webhook') {
+                throw new Error('Unknown webhook');
+              } else if (err.message == 'Invalid Webhook Token') {
+                throw new Error('Invalid webhook token');
+              } else {
+                throw new Error(err);
+              }
+            });
+        } else {
           await client.users.cache
             .get(user.d_id)
             .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
@@ -439,30 +544,33 @@ async function confirmOrders(client, user, refresh) {
             });
         }
       }
-    } else {
-      if (refresh == 'daily') {
-        await client.users.cache
-          .get(user.d_id)
-          .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
-          .then(console.log('Successfully Confirmed alias Orders\n'))
-          .catch((err) => {
-            throw new Error(err);
-          });
-      }
     }
   } catch (err) {
     console.log(err);
 
     if (err.message == 'Error confirming') {
       if (confirmed != 0) {
-        await client.users.cache
-          .get(user.d_id)
-          .send('```alias orders - ' + date + '\n' + returnString + '```')
-          .catch((err) => {
-            throw new Error(err);
+        if (webhook != null) {
+          await webhook.send('```alias orders - ' + date + '\n' + returnString + '```').catch((err) => {
+            if (err.message == 'Unknown Webhook') {
+              throw new Error('Unknown webhook');
+            } else if (err.message == 'Invalid Webhook Token') {
+              throw new Error('Invalid webhook token');
+            } else {
+              throw new Error(err);
+            }
           });
+          await webhook.send('```' + `Error confirming order number ${number}` + '```');
+        } else {
+          await client.users.cache
+            .get(user.d_id)
+            .send('```alias orders - ' + date + '\n' + returnString + '```')
+            .catch((err) => {
+              throw new Error(err);
+            });
+          await client.users.cache.get(user.d_id).send('```' + `Error confirming order number ${number}` + '```');
+        }
       }
-      await client.users.cache.get(user.d_id).send('```' + `Error confirming order number ${number}` + '```');
     }
   }
 }

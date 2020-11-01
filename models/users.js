@@ -5,6 +5,7 @@ const userScehma = mongoose.Schema({
   email: String,
   pw: String,
   login: String,
+  webhook: String,
   settings: {
     orderRefresh: String,
     adjustListing: String,
