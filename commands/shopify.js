@@ -51,7 +51,7 @@ exports.run = async (client, message, args) => {
     let sizes = [];
 
     for (let i = 0; i < data['product']['options'].length; i++) {
-      if (data['product']['options'][i]['name'] === 'Size') {
+      if (data['product']['options'][i]['name'] == 'Size' || data['product']['options'][i]['name'] == 'Title') {
         sizes = data['product']['options'][i]['values'];
         break;
       }
@@ -60,12 +60,15 @@ exports.run = async (client, message, args) => {
     let vars = '';
 
     for (let i = 0; i < sizes.length; i++) {
+      console.log(sizes[i]);
       vars += `${sizes[i]} - ${data['product']['variants'][i]['id']}`;
 
       if (i != sizes.length - 1) {
         vars += '\n';
       }
     }
+
+    console.log(vars);
 
     let image = '';
 
