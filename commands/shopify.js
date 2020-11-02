@@ -35,8 +35,12 @@ exports.run = async (client, message, args) => {
     let domain = url.parse(link).host;
 
     let data = await timeoutPromise(1000, fetch(`${link}.json`, { headers: client.config.headers }))
-      .then((response) => {
-        return response.json();
+      .then((res) => {
+        if (res.status == 403) {
+          throw new Error('Banned');
+        }
+
+        return res.json();
       })
       .catch((err) => {
         if (err.message.includes('invalid json response body')) {
@@ -60,15 +64,12 @@ exports.run = async (client, message, args) => {
     let vars = '';
 
     for (let i = 0; i < sizes.length; i++) {
-      console.log(sizes[i]);
       vars += `${sizes[i]} - ${data['product']['variants'][i]['id']}`;
 
       if (i != sizes.length - 1) {
         vars += '\n';
       }
     }
-
-    console.log(vars);
 
     let image = '';
 
@@ -105,6 +106,8 @@ exports.run = async (client, message, args) => {
       message.channel.send('```Site has proxy protection enabled```');
     } else if (err.message == 'Unable to send embed') {
       message.channel.send('```Unexpected Error```');
+    } else if (err.message == 'Banned') {
+      message.channel.send('```Error 403 - Banned```');
     } else {
       message.channel.send('```Unexpected Error```');
     }
