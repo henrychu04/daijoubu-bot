@@ -632,7 +632,7 @@ async function update(client, loginToken, message, user) {
   let all = false;
   let valid = false;
   let exit = false;
-  let timedOut = false;
+  let stopped = false;
 
   let [listingString, listingEnum, listingObj] = await check(client, loginToken, user);
 
@@ -655,12 +655,14 @@ async function update(client, loginToken, message, user) {
 
     if (message.content.toLowerCase() == 'n') {
       collector.stop();
+      stopped = true;
       exit = true;
       console.log('Canceled\n');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         all = true;
         collector.stop();
+        stopped = true;
       } else {
         valid = true;
 
@@ -674,6 +676,7 @@ async function update(client, loginToken, message, user) {
 
         if (valid) {
           collector.stop();
+          stopped = true;
         }
       }
     } else {
@@ -681,14 +684,9 @@ async function update(client, loginToken, message, user) {
     }
   }
 
-  collector.on('end', async (collected) => {
-    console.log('Timed out\n');
-    timedOut = true;
-  });
-
   if (exit) {
     return [response.EXIT, null, null];
-  } else if (timedOut) {
+  } else if (!stopped) {
     return [response.TIMEDOUT, null, null];
   }
 
@@ -870,19 +868,23 @@ async function deleteSearch(client, loginToken, message, user) {
   let valid = true;
   let nums = [];
   let exit = false;
-  let timedOut = false;
+  let stopped = false;
 
   let [listings, returnedEnum, []] = await allListings(user);
 
   if (returnedEnum == response.SUCCESS) {
-    listings = '```' + listings + '```';
+    for (let i = 0; i < listings.length; i++) {
+      if (i == 0) {
+        let initialString = 'Current Listings:';
+        initialString += listings[i];
+        await message.channel.send('```' + initialString + '```');
+      } else {
+        await message.channel.send('```' + listings[i] + '```');
+      }
+    }
   } else if (returnedEnum == response.NO_ITEMS) {
     return [response.NO_ITEMS, all, null];
   }
-
-  await message.channel.send(listings).catch((err) => {
-    throw new Error(err);
-  });
 
   await message.channel.send('```' + `Enter 'all' or listing number(s) to delete\nEnter 'n' to cancel` + '```');
 
@@ -895,11 +897,13 @@ async function deleteSearch(client, loginToken, message, user) {
 
     if (message.content.toLowerCase() == 'n') {
       collector.stop();
+      stopped = true;
       exit = true;
       console.log('Canceled\n');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         collector.stop();
+        stopped = true;
         all = true;
       } else {
         valid = true;
@@ -914,6 +918,7 @@ async function deleteSearch(client, loginToken, message, user) {
 
         if (valid) {
           collector.stop();
+          stopped = true;
         }
       }
     } else {
@@ -923,12 +928,11 @@ async function deleteSearch(client, loginToken, message, user) {
 
   collector.on('end', async (collected) => {
     console.log('Timed out\n');
-    timedOut = true;
   });
 
   if (exit) {
     return [response.EXIT, null, null];
-  } else if (timedOut) {
+  } else if (!stopped) {
     return [response.TIMEDOUT, null, null];
   }
 
@@ -1042,7 +1046,7 @@ async function editListing(client, loginToken, user, message) {
   }
 
   let exit = false;
-  let timedOut = false;
+  let stopped = false;
 
   await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
 
@@ -1055,6 +1059,7 @@ async function editListing(client, loginToken, user, message) {
 
     if (input == 'n') {
       collector1.stop();
+      stopped = true;
       exit = true;
       console.log('Canceled');
     } else if (!isNaN(input)) {
@@ -1062,20 +1067,16 @@ async function editListing(client, loginToken, user, message) {
         message.channel.send('```' + 'Entered listing number does not exist' + '```');
       } else {
         collector1.stop();
+        stopped = true;
       }
     } else {
       message.channel.send('```' + `Invalid format\nEnter a valid number` + '```');
     }
   }
 
-  collector1.on('end', async (collected) => {
-    console.log('Timed out\n');
-    timedOut = true;
-  });
-
   if (exit) {
     return [response.EXIT, null];
-  } else if (timedOut) {
+  } else if (!stopped) {
     return [response.TIMEDOUT, null];
   }
 
@@ -1104,6 +1105,7 @@ async function editListing(client, loginToken, user, message) {
 
   let lowest = getJSON.listing.product.lowest_price_cents / 100;
   let price = 0;
+  stopped = false;
 
   const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
@@ -1114,13 +1116,16 @@ async function editListing(client, loginToken, user, message) {
 
     if (message.content.toLowerCase() == 'lowest') {
       collector2.stop();
+      stopped = true;
       price = lowest;
     } else if (message.content.toLowerCase() == 'n') {
       collector2.stop();
+      stopped = true;
       exit = true;
       console.log('Canceled');
     } else if (!isNaN(price)) {
       collector2.stop();
+      stopped = true;
 
       let confirm = false;
 
@@ -1130,7 +1135,7 @@ async function editListing(client, loginToken, user, message) {
         if (price == -1) {
           exit = true;
         } else if (price == -2) {
-          timedOut = true;
+          stopped = true;
         }
       }
     } else {
@@ -1138,14 +1143,9 @@ async function editListing(client, loginToken, user, message) {
     }
   }
 
-  collector2.on('end', async (collected) => {
-    console.log('Timed out');
-    timedOut = true;
-  });
-
   if (exit) {
     return [response.EXIT, null];
-  } else if (timedOut) {
+  } else if (!stopped) {
     return [response.TIMEDOUT, null];
   }
 
@@ -1430,8 +1430,9 @@ async function confirm(client, loginToken, message) {
   }
 
   await message.channel.send('```' + confirmString + '```');
-
   await message.channel.send('```' + `Enter 'all' or order number(s) to confirm\nEnter 'n' to cancel` + '```');
+
+  let stopped = false;
 
   const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
@@ -1442,12 +1443,14 @@ async function confirm(client, loginToken, message) {
 
     if (message.content.toLowerCase() == 'n') {
       collector.stop();
+      stopped = true;
       exit = true;
       console.log('Canceled\n');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         all = true;
         collector.stop();
+        stopped = true;
       } else {
         valid = true;
 
@@ -1461,6 +1464,7 @@ async function confirm(client, loginToken, message) {
 
         if (valid) {
           collector.stop();
+          stopped = true;
         }
       }
     } else {
@@ -1468,14 +1472,9 @@ async function confirm(client, loginToken, message) {
     }
   }
 
-  collector.on('end', async (collected) => {
-    console.log('Timed out\n');
-    timedOut = true;
-  });
-
   if (exit) {
     return [response.EXIT, null, null];
-  } else if (timedOut) {
+  } else if (!stopped) {
     return [response.TIMEDOUT, null, null];
   }
 
@@ -1551,6 +1550,7 @@ async function settings(client, message, user, edit) {
     return [userSettings, response.SUCCESS];
   } else {
     let returnedEnum = null;
+    let stopped = false;
 
     await message.channel.send(userSettings).catch((err) => {
       throw new Error(err);
@@ -1571,15 +1571,19 @@ async function settings(client, message, user, edit) {
 
       if (input == 0) {
         collector.stop();
+        stopped = true;
         returnedEnum = await editOrderRate(client, message, user);
       } else if (input == 1) {
         collector.stop();
+        stopped = true;
         returnedEnum = await editDefaultListingRate(client, message, user);
       } else if (input == 2) {
         collector.stop();
+        stopped = true;
         returnedEnum = await editSpecifiedListingRate(client, message, user);
       } else if (input == 'n') {
         collector.stop();
+        stopped = true;
         exit = true;
         returnedEnum = response.EXIT;
       } else {
@@ -1587,19 +1591,17 @@ async function settings(client, message, user, edit) {
       }
     }
 
-    collector.on('end', async (collected) => {
-      timedOut = true;
-      console.log('Timed out\n');
-      returnedEnum = response.TIMEDOUT;
-    });
-
-    return ['', returnedEnum];
+    if (!stopped) {
+      return ['', response.TIMEDOUT];
+    } else {
+      return ['', returnedEnum];
+    }
   }
 }
 
 async function editOrderRate(client, message, user) {
   let exit = false;
-  let timedOut = false;
+  let stopped = false;
 
   await message.channel.send(
     '```' + `Editing Order Confirmation Refresh Rate\n\tEnter 'live' or 'daily'\n\tEnter 'n' to cancel` + '```'
@@ -1617,6 +1619,7 @@ async function editOrderRate(client, message, user) {
         if (!err) {
           await message.channel.send('```Order confirmation refresh rate edited successfully```');
           collector.stop();
+          stopped = true;
           console.log('!alias settings edit completed\n');
         }
       }).catch((err) => {
@@ -1624,20 +1627,16 @@ async function editOrderRate(client, message, user) {
       });
     } else if (input == 'n') {
       collector.stop();
+      stopped = true;
       exit = true;
     } else {
       await message.channel.send('```' + `Enter either 'live' or 'daily'` + '```');
     }
   }
 
-  collector.on('end', async (collected) => {
-    timedOut = true;
-    console.log('Timed out\n');
-  });
-
   if (exit) {
     return response.EXIT;
-  } else if (timedOut) {
+  } else if (!stopped) {
     return response.TIMEDOUT;
   } else {
     return response.SUCCESS;
@@ -1646,7 +1645,7 @@ async function editOrderRate(client, message, user) {
 
 async function editDefaultListingRate(client, message, user) {
   let exit = false;
-  let timedOut = false;
+  let stopped = false;
 
   await message.channel.send(
     '```' + `Editing Default Listing Update Rate\n\tEnter 'live' or 'manual'\n\tEnter 'n' to cancel` + '```'
@@ -1664,6 +1663,7 @@ async function editDefaultListingRate(client, message, user) {
         if (!err) {
           await message.channel.send('```Listing update refresh rate edited successfully```');
           collector.stop();
+          stopped = true;
           console.log('!alias settings edit completed\n');
         }
       }).catch((err) => {
@@ -1671,20 +1671,16 @@ async function editDefaultListingRate(client, message, user) {
       });
     } else if (input == 'n') {
       collector.stop();
+      stopped = true;
       exit = true;
     } else {
       await message.channel.send('```' + `Enter either 'live' or 'manual'` + '```');
     }
   }
 
-  collector.on('end', async (collected) => {
-    timedOut = true;
-    console.log('Timed out\n');
-  });
-
   if (exit) {
     return response.EXIT;
-  } else if (timedOut) {
+  } else if (!stopped) {
     return response.TIMEDOUT;
   } else {
     return response.SUCCESS;
@@ -1701,7 +1697,7 @@ async function editSpecifiedListingRate(client, message, user) {
   }
 
   let exit = false;
-  let timedOut = false;
+  let stopped = false;
   let num = '';
 
   await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
@@ -1715,6 +1711,7 @@ async function editSpecifiedListingRate(client, message, user) {
 
     if (num == 'n') {
       collector1.stop();
+      stopped = true;
       exit = true;
       console.log('Canceled');
     } else if (!isNaN(num)) {
@@ -1722,26 +1719,23 @@ async function editSpecifiedListingRate(client, message, user) {
         message.channel.send('```' + 'Entered listing number does not exist' + '```');
       } else {
         collector1.stop();
+        stopped = true;
       }
     } else {
       message.channel.send('```' + `Invalid format\nEnter a valid number` + '```');
     }
   }
 
-  collector1.on('end', async (collected) => {
-    console.log('Timed out\n');
-    timedOut = true;
-  });
-
   if (exit) {
     return response.EXIT;
-  } else if (timedOut) {
+  } else if (!stopped) {
     return response.TIMEDOUT;
   }
 
   await message.channel.send('```' + `Enter 'live' or 'manual'\nEnter 'n' to cancel` + '```');
 
   let input = '';
+  stopped = false;
 
   const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
@@ -1752,23 +1746,20 @@ async function editSpecifiedListingRate(client, message, user) {
 
     if (input == 'n') {
       collector2.stop();
+      stopped = true;
       exit = true;
       console.log('Canceled');
     } else if (input == 'live' || input == 'manual') {
       collector2.stop();
+      stopped = true;
     } else {
       message.channel.send('```' + `Invalid format\nEnter 'live' or 'manual` + '```');
     }
   }
 
-  collector2.on('end', async (collected) => {
-    console.log('Timed out\n');
-    timedOut = true;
-  });
-
   if (exit) {
     return response.EXIT;
-  } else if (timedOut) {
+  } else if (!stopped) {
     return response.TIMEDOUT;
   }
 
@@ -1850,7 +1841,7 @@ async function list(client, message, loginToken, sizingArray, query) {
   let returnString = '';
   let msg = null;
   let exit = false;
-  let timedOut = false;
+  let stopped = false;
 
   const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
@@ -1862,10 +1853,12 @@ async function list(client, message, loginToken, sizingArray, query) {
     if (input == 'y' || input == 'n') {
       if (input == 'n') {
         collector.stop();
+        stopped = true;
         console.log('Canceled\n');
         exit = true;
       } else {
         collector.stop();
+        stopped = true;
         msg = await message.channel.send('```Listing...```');
         [returnedEnum, returnString] = await doList(client, loginToken, message, searchProduct, sizingArray);
       }
@@ -1874,14 +1867,9 @@ async function list(client, message, loginToken, sizingArray, query) {
     }
   }
 
-  collector.on('end', async (collected) => {
-    console.log('Timed out\n');
-    timedOut = true;
-  });
-
   if (exit) {
     return [response.EXIT, returnString, msg];
-  } else if (timedOut) {
+  } else if (!stopped) {
     return [response.TIMEDOUT, returnString, msg];
   } else {
     return [response.SUCCESS, returnString, msg];
@@ -2002,6 +1990,7 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
 
     if (lower) {
       let skip = false;
+      let stopped = false;
 
       await message.channel.send(
         '```' +
@@ -2019,10 +2008,12 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
         if (input == 'y' || input == 'n') {
           if (input == 'n') {
             collector.stop();
+            stopped = true;
             await message.channel.send('```' + `Skipped size ${size}` + '```');
             skip = true;
           } else {
             collector.stop();
+            stopped = true;
             returnString = await whileRequest(client, loginToken, listing, amount, returnString);
             returnedEnum = response.SUCCESS;
           }
@@ -2031,10 +2022,9 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
         }
       }
 
-      collector.on('end', async (collected) => {
-        console.log('Timed out\n');
+      if (!stopped) {
         returnedEnum = response.TIMEDOUT;
-      });
+      }
 
       if (skip) {
         continue;
