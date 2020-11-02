@@ -349,28 +349,47 @@ async function deleteListing(user, aliasListings) {
 async function getListings(client, loginToken) {
   let getStatus = 0;
   let listings = {};
+  let i = 1;
 
-  while (getStatus != 200) {
-    listings = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
-      headers: {
-        'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-      },
-    }).then((res, err) => {
-      getStatus = res.status;
+  while (true) {
+    let temp = {};
 
-      if (res.status == 200) {
-        return res.json();
-      } else if (res.status == 401) {
-        throw new Error('Login expired');
-      } else {
-        console.log('Res is', res.status);
+    while (getStatus != 200) {
+      temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i}`, {
+        headers: {
+          'user-agent': client.config.aliasHeader,
+          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        },
+      }).then((res, err) => {
+        getStatus = res.status;
 
-        if (err) {
-          console.log(err);
+        if (res.status == 200) {
+          return res.json();
+        } else if (res.status == 401) {
+          throw new Error('Login expired');
+        } else {
+          console.log('Res is', res.status);
+
+          if (err) {
+            console.log(err);
+          }
         }
+      });
+    }
+
+    if (i == 1) {
+      listings = temp;
+    } else {
+      for (let i = 0; i < temp.listing.length; i++) {
+        listings.listing.push(temp.listing[i]);
       }
-    });
+    }
+
+    if (i == listings.metadata.total_pages) {
+      break;
+    }
+
+    i++;
   }
 
   return listings;

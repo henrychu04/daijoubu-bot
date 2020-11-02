@@ -105,15 +105,26 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        let listingsListingObj = [];
+        let placeholder = [];
+        let listingArray = [];
 
-        [toReturn, returnedEnum, listingsListingObj] = await allListings(user);
+        [listingArray, returnedEnum, placeholder] = await allListings(user);
 
         if (returnedEnum == response.SUCCESS) {
-          toReturn = '```' + toReturn + '```';
+          for (let i = 0; i < listingArray.length; i++) {
+            if (i == 0) {
+              let initialString = 'Current Listings:';
+              initialString += listingArray[i];
+              await message.channel.send('```' + initialString + '```');
+            } else {
+              await message.channel.send('```' + listingArray[i] + '```');
+            }
+          }
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account Currently Has No Items Listed```';
         }
+
+        console.log('!alias listings completed\n');
         break;
       case 'delete':
         if (args.length > 1) {
@@ -705,24 +716,50 @@ async function update(client, loginToken, message, user) {
 }
 
 async function getListings(client, loginToken) {
-  let listings = await fetch('https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1', {
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-  }).then((res, err) => {
-    if (res.status == 200) {
-      return res.json();
-    } else if (res.status == 401) {
-      throw new Error('Login expired');
-    } else {
-      console.log('Res is', res.status);
+  let getStatus = 0;
+  let listings = {};
+  let i = 1;
 
-      if (err) {
-        throw new Error(err.message);
+  while (true) {
+    let temp = {};
+
+    while (getStatus != 200) {
+      temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i}`, {
+        headers: {
+          'user-agent': client.config.aliasHeader,
+          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        },
+      }).then((res, err) => {
+        getStatus = res.status;
+
+        if (res.status == 200) {
+          return res.json();
+        } else if (res.status == 401) {
+          throw new Error('Login expired');
+        } else {
+          console.log('Res is', res.status);
+
+          if (err) {
+            console.log(err);
+          }
+        }
+      });
+    }
+
+    if (i == 1) {
+      listings = temp;
+    } else {
+      for (let i = 0; i < temp.listing.length; i++) {
+        listings.listing.push(temp.listing[i]);
       }
     }
-  });
+
+    if (i == listings.metadata.total_pages) {
+      break;
+    }
+
+    i++;
+  }
 
   return listings;
 }
@@ -782,22 +819,35 @@ async function updateListing(client, loginToken, obj) {
 async function allListings(user) {
   const userListings = await Listings.find({ d_id: user.d_id });
   const userListingsArray = userListings[0].listings;
-  let listingString = 'Current Listings:';
+  let listingArray = [];
 
   if (userListingsArray.length == 0) {
     return ['', response.NO_ITEMS, null];
   }
 
   let listingIds = [];
+  let j = 0;
 
-  userListingsArray.forEach((obj, i) => {
+  for (let i = 0; i < userListingsArray.length; i++) {
+    let obj = userListingsArray[i];
     listingIds.push(obj.id);
-    listingString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} - $${obj.price / 100}\n\t\tUpdate Rate: ${
-      obj.setting == 'manual' ? 'Manual' : 'Live'
-    }\n`;
-  });
 
-  return [listingString, response.SUCCESS, listingIds];
+    if (i % 15 == 0 && i != 0) {
+      j++;
+    }
+
+    if (listingArray[j] == undefined) {
+      listingArray[j] = `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} - $${obj.price / 100}\n\t\tUpdate Rate: ${
+        obj.setting == 'manual' ? 'Manual' : 'Live'
+      }\n`;
+    } else {
+      listingArray[j] += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} - $${obj.price / 100}\n\t\tUpdate Rate: ${
+        obj.setting == 'manual' ? 'Manual' : 'Live'
+      }\n`;
+    }
+  }
+
+  return [listingArray, response.SUCCESS, listingIds];
 }
 
 async function deleteSearch(client, loginToken, message, user) {
