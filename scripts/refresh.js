@@ -420,25 +420,66 @@ async function confirmOrders(client, user, refresh, webhook) {
     let date = `${month}/${day}`;
 
     let orders = [];
-    let pages = 0;
+    let getStatus = 0;
+    let purchaseOrders = {};
 
-    let purchaseOrders = await fetch(
-      'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
-      {
-        headers: {
-          'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(user.login)}`,
-        },
-      }
-    )
-      .then((res) => {
-        return res.json();
-      })
-      .catch((err) => {
-        throw new Error(err);
+    while (getStatus != 200) {
+      purchaseOrders = await fetch(
+        'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
+        {
+          headers: {
+            'user-agent': client.config.aliasHeader,
+            authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+          },
+        }
+      ).then((res, err) => {
+        getStatus = res.status;
+
+        if (res.status == 200) {
+          return res.json();
+        } else if (res.status == 401) {
+          throw new Error('Login expired');
+        } else {
+          console.log('Res is', res.status);
+
+          if (err) {
+            console.log(err);
+          }
+        }
       });
+    }
 
-    pages = purchaseOrders.metadata.total_pages;
+    for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
+      let temp = {};
+      getStatus = 0;
+
+      while (getStatus != 200) {
+        temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
+          headers: {
+            'user-agent': client.config.aliasHeader,
+            authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+          },
+        }).then((res, err) => {
+          getStatus = res.status;
+
+          if (res.status == 200) {
+            return res.json();
+          } else if (res.status == 401) {
+            throw new Error('Login expired');
+          } else {
+            console.log('Res is', res.status);
+
+            if (err) {
+              console.log(err);
+            }
+          }
+        });
+      }
+
+      for (let j = 0; j < temp.listing.length; j++) {
+        purchaseOrders.listing.push(temp.listing[i]);
+      }
+    }
 
     if (purchaseOrders.purchase_orders) {
       purchaseOrders.purchase_orders.forEach((order) => {
