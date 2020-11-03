@@ -176,7 +176,7 @@ async function goatSearch(client, query) {
   }
 
   const embed = new Discord.MessageEmbed()
-    .setColor('#7756fe')
+    .setColor(16777214)
     .setTitle(name)
     .setURL(productURL)
     .setThumbnail(image)
