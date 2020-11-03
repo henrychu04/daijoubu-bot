@@ -35,6 +35,30 @@ exports.run = async (client, message, args) => {
 };
 
 async function goatSearch(client, query) {
+  let res = await fetch('https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query', {
+    method: 'POST',
+    headers: client.config.goatHeader,
+    body: `{"params":"query=${encodeURIComponent(query)}"}`,
+  })
+    .then((res, err) => {
+      if (res.status == 200) {
+        return res.json();
+      } else {
+        console.log('Res is', res.status);
+
+        if (err) {
+          throw new Error(err.message);
+        }
+      }
+    })
+    .then((json) => {
+      if (json.hits.length != 0) {
+        return json.hits[0];
+      } else {
+        throw new Error('No hits');
+      }
+    });
+
   let category = res.product_category ? res.product_category : 'N/A';
   let name = res.name;
   let productURL = 'https://www.goat.com/sneakers/' + res.slug;
