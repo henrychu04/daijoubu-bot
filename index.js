@@ -38,13 +38,11 @@ client.on('ready', () => {
   client.user.setActivity('!help for more info');
 });
 
-client
-  .login(process.env.BOT_TOKEN)
-  .then(async () => {
-    await login.loggingIn().then(() => {
-      console.log('All Initial alias Logins Successfully Updated');
-      console.log('Ready!');
-      login.maintainLogin();
-    });
-  })
-  .then(monitor(client));
+client.login(process.env.BOT_TOKEN).then(async () => {
+  await login.loggingIn().then(() => {
+    console.log('All Initial alias Logins Successfully Updated');
+    console.log('Ready!\n');
+    login.maintainLogin();
+    monitor(client);
+  });
+});
