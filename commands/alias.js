@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const Discord = require('discord.js');
+const Money = require('js-money');
 const encryption = require('../scripts/encryption');
 const refresh = require('../scripts/refresh');
 
@@ -266,6 +267,15 @@ exports.run = async (client, message, args) => {
       case 'me':
         toReturn = await me(client, loginToken);
         break;
+      case 'consign':
+        let searchQuery = query.slice(9);
+
+        if (searchQuery.length == 0) {
+          throw new Error('Empty command');
+        }
+
+        toReturn = await consign(client, searchQuery);
+        break;
       case 'help':
         if (args.length > 1) {
           throw new Error('Too many parameters');
@@ -383,7 +393,7 @@ async function aliasSearch(client, query) {
       }
     });
 
-  let category = res.product_category;
+  let category = res.product_category ? res.product_category : 'N/A';
   let name = res.name;
   let productURL = 'https://www.goat.com/sneakers/' + res.slug;
   let description = '';
@@ -392,10 +402,10 @@ async function aliasSearch(client, query) {
     description = description.replace('<p>', '');
     description = description.replace('</p>', '');
   }
-  let image = res.main_glow_picture_url;
-  let colorway = res.details;
-  let retail = res.retail_price_cents;
-  let SKU = res.sku;
+  let image = res.main_glow_picture_url ? res.main_glow_picture_url : null;
+  let colorway = res.details ? res.details : 'N/A';
+  let retail = res.retail_price_cents ? '$' + res.retail_price_cents / 100 : 'N/A';
+  let SKU = res.sku ? res.sku : 'N/A';
   let date = res.release_date;
   let parsedDate = null;
 
@@ -406,28 +416,6 @@ async function aliasSearch(client, query) {
     parsedDate = SKU.substring(0, 4);
   } else {
     parsedDate = 'N/A';
-  }
-
-  if (!category) {
-    category = 'N/A';
-  }
-
-  if (!image) {
-    image = null;
-  }
-
-  if (!colorway) {
-    colorway = 'N/A';
-  }
-
-  if (!retail) {
-    retail = 'N/A';
-  } else {
-    retail = '$' + retail / 100;
-  }
-
-  if (!SKU) {
-    SKU = 'N/A';
   }
 
   let pageData = await fetch(
@@ -461,78 +449,31 @@ async function aliasSearch(client, query) {
   let highest = 0;
   let last = 0;
 
-  let array = [];
-
   for (variant of pageData.availability) {
-    if (
-      variant.lowest_price_cents == undefined &&
-      variant.highest_offer_cents == undefined &&
-      variant.last_sold_price_cents == undefined
-    ) {
-      continue;
-    }
-
-    let obj = {
-      size: variant.size,
-      lowest_price_cents: 0,
-      highest_offer_cents: 0,
-      last_sold_price_cents: 0,
-    };
-
-    if (variant.lowest_price_cents != undefined) {
-      obj.lowest_price_cents = variant.lowest_price_cents / 100;
-    }
-
-    if (variant.highest_offer_cents != undefined) {
-      obj.highest_offer_cents = variant.highest_offer_cents / 100;
-    }
-
-    if (variant.last_sold_price_cents != undefined) {
-      obj.last_sold_price_cents = variant.last_sold_price_cents / 100;
-    }
-
-    let exist = false;
-
-    for (temp of array) {
-      if (temp.size == obj.size) {
-        exist = true;
-
-        if (temp.lowest_price_cents < obj.lowest_price_cents) {
-          temp = obj;
-        }
-
-        break;
+    if (variant.lowest_price_cents || variant.highest_offer_cents || variant.last_sold_price_cents) {
+      if (variant.lowest_price_cents) {
+        lowestPrice += `${variant.size} - $${variant.lowest_price_cents / 100}\n`;
+        averageLowestPrice += variant.lowest_price_cents / 100;
+        lowest++;
+      } else {
+        lowestPrice += `${variant.size} - N/A\n`;
       }
-    }
 
-    if (!exist) {
-      array.push(obj);
-    }
-  }
+      if (variant.highest_offer_cents) {
+        highestBid += `${variant.size} - $${variant.highest_offer_cents / 100}\n`;
+        averageHighestBid += variant.highest_offer_cents / 100;
+        highest++;
+      } else {
+        highestBid += `${variant.size} - N/A\n`;
+      }
 
-  for (obj of array) {
-    if (obj.lowest_price_cents != 0) {
-      lowestPrice += `${obj.size} - $${obj.lowest_price_cents}\n`;
-      averageLowestPrice += obj.lowest_price_cents;
-      lowest++;
-    } else {
-      lowestPrice += `${obj.size} - N/A\n`;
-    }
-
-    if (obj.highest_offer_cents != 0) {
-      highestBid += `${obj.size} - $${obj.highest_offer_cents}\n`;
-      averageHighestBid += obj.highest_offer_cents;
-      highest++;
-    } else {
-      highestBid += `${obj.size} - N/A\n`;
-    }
-
-    if (obj.last_sold_price_cents != 0) {
-      lastSold += `${obj.size} - $${obj.last_sold_price_cents}\n`;
-      averageLastSold += obj.last_sold_price_cents;
-      last++;
-    } else {
-      lastSold += `${obj.size} - N/A\n`;
+      if (variant.last_sold_price_cents) {
+        lastSold += `${variant.size} - $${variant.last_sold_price_cents / 100}\n`;
+        averageLastSold += variant.last_sold_price_cents / 100;
+        last++;
+      } else {
+        lastSold += `${variant.size} - N/A\n`;
+      }
     }
   }
 
@@ -576,7 +517,7 @@ async function aliasSearch(client, query) {
     .setDescription(description)
     .addFields(
       { name: 'SKU', value: SKU, inline: true },
-      { name: 'Colorway', value: `${colorway ? colorway : 'N/A'}`, inline: true },
+      { name: 'Colorway', value: colorway, inline: true },
       { name: 'Price', value: retail, inline: true },
       { name: 'Release Date', value: parsedDate, inline: true },
       { name: '\u200b', value: '\u200b', inline: true },
@@ -2227,6 +2168,134 @@ async function me(client, loginToken) {
     );
 
   return meEmbed;
+}
+
+async function consign(client, query) {
+  let res = await fetch('https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query', {
+    method: 'POST',
+    headers: client.config.goatHeader,
+    body: `{"params":"query=${encodeURIComponent(query)}"}`,
+  })
+    .then((res, err) => {
+      if (res.status == 200) {
+        return res.json();
+      } else {
+        console.log('Res is', res.status);
+
+        if (err) {
+          throw new Error(err.message);
+        }
+      }
+    })
+    .then((json) => {
+      if (json.hits.length != 0) {
+        return json.hits[0];
+      } else {
+        throw new Error('No hits');
+      }
+    });
+
+  let data = await fetch(`https://www.goat.com/api/v1/product_variants/buy_bar_data?productTemplateId=${res.slug}`, {
+    method: 'GET',
+    headers: client.config.goatHeader,
+  }).then((res, err) => {
+    if (res.status == 200) {
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+
+      if (err) {
+        throw new Error(err.message);
+      }
+    }
+  });
+
+  let category = res.product_category ? res.product_category : 'N/A';
+  let name = res.name;
+  let productURL = 'https://www.goat.com/sneakers/' + res.slug;
+  let description = '';
+  if (res.story_html != null) {
+    description = res.story_html;
+    description = description.replace('<p>', '');
+    description = description.replace('</p>', '');
+  }
+  let image = res.main_glow_picture_url ? res.main_glow_picture_url : null;
+  let colorway = res.details ? res.details : 'N/A';
+  let retail = res.retail_price_cents ? '$' + res.retail_price_cents / 100 : 'N/A';
+  let SKU = res.sku ? res.sku : 'N/A';
+  let date = res.release_date;
+  let parsedDate = null;
+
+  if (date != null) {
+    let [month, day, year] = new Date(date).toLocaleDateString().split('/');
+    parsedDate = `${month.length == 1 ? '0' + month : month}/${day.length == 1 ? '0' + day : day}/${year}`;
+  } else if (res.brand_name == 'Supreme' && category == 'clothing') {
+    parsedDate = SKU.substring(0, 4);
+  } else {
+    parsedDate = 'N/A';
+  }
+
+  let consignString = '';
+  let lowestListing = '';
+  let potentialProfit = '';
+
+  for (obj of data) {
+    if (
+      obj.boxCondition == 'good_condition' &&
+      obj.instantShipLowestPriceCents.amount &&
+      obj.shoeCondition == 'new_no_defects'
+    ) {
+      consignString += `${obj.sizeOption.presentation} - $${obj.instantShipLowestPriceCents.amount / 100}\n`;
+
+      if (obj.lowestPriceCents.amount) {
+        lowestListing += `${obj.sizeOption.presentation} - $${obj.lowestPriceCents.amount / 100}\n`;
+      } else {
+        lowestListing += `${obj.sizeOption.presentation} - N/A\n`;
+      }
+
+      if (obj.instantShipLowestPriceCents.amount && obj.lowestPriceCents.amount) {
+        let consignNum = Money.fromDecimal(parseInt(obj.instantShipLowestPriceCents.amount / 100), 'USD');
+        let lowestNum = Money.fromDecimal(parseInt(obj.lowestPriceCents.amount / 100), 'USD');
+
+        let consignNum1 = consignNum.multiply(0.095, Math.ceil);
+        consignNum1 = consignNum1.add(new Money(500, Money.USD));
+        let consignNum2 = consignNum.subtract(consignNum1, Math.ceil);
+        consignNum2 = consignNum2.multiply(0.029, Math.ceil);
+        consignNum1 = consignNum1.add(consignNum2, Math.ceil);
+        let consignNumRevenue = consignNum.subtract(consignNum1, Math.ceil);
+
+        if (consignNumRevenue > lowestNum) {
+          potentialProfit += `${obj.sizeOption.presentation} - $${consignNumRevenue.subtract(lowestNum, Math.ceil)}\n`;
+        } else {
+          potentialProfit += `${obj.sizeOption.presentation} - N/A\n`;
+        }
+      }
+    }
+  }
+
+  const embed = new Discord.MessageEmbed()
+    .setColor('#7756fe')
+    .setTitle(name)
+    .setURL(productURL)
+    .setThumbnail(image)
+    .setDescription(description)
+    .addFields(
+      { name: 'SKU', value: SKU, inline: true },
+      { name: 'Colorway', value: colorway, inline: true },
+      { name: 'Price', value: retail, inline: true },
+      { name: 'Release Date', value: parsedDate, inline: true },
+      { name: '\u200b', value: '\u200b', inline: true },
+      { name: '\u200b', value: '\u200b', inline: true },
+      { name: 'Consignment Prices', value: '```' + consignString + '```', inline: true },
+      {
+        name: 'Lowest Asks',
+        value: '```' + lowestListing + '```',
+        inline: true,
+      },
+      { name: 'Potential Profit', value: '```' + potentialProfit + '```', inline: true }
+    );
+
+  return embed;
 }
 
 function help() {
