@@ -45,6 +45,15 @@ exports.run = async (client, message, args) => {
             throw new Error(err);
           }
         });
+    } else if (input.toLowerCase() == 'remove') {
+      await Users.updateOne({ _id: user._id }, { $set: { webhook: '' } }, async (err) => {
+        if (!err) {
+          await message.channel.send('```Webhook removed successfully```');
+          console.log('Webhook removed sucessfully\n');
+        }
+      }).catch((err) => {
+        throw new Error(err);
+      });
     } else {
       await Users.updateOne({ _id: user._id }, { $set: { webhook: input } }, async (err) => {
         if (!err) {
