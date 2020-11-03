@@ -34,7 +34,7 @@ module.exports = async function refresh(client, loginToken, user) {
         await addListing(user, aliasListings);
         await deleteListing(user, aliasListings);
         await syncListingPrice(user, aliasListings);
-        allListings = await updateLowest(client, user, allListings, webhook);
+        // allListings = await updateLowest(client, user, allListings, webhook);
       }
     } else {
       let aliasListings = await getListings(client, loginToken);

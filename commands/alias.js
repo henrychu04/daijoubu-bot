@@ -361,6 +361,9 @@ exports.run = async (client, message, args) => {
       case 'Error listing':
         message.channel.send('```Error listing item(s)```');
         break;
+      case 'Error editing listing update rate':
+        message.channel.send('```Error editing listing update rate```');
+        break;
       default:
         message.channel.send('```Unexpected Error```');
         break;
@@ -1528,7 +1531,7 @@ async function settings(client, message, user, edit) {
         exit = true;
         returnedEnum = response.EXIT;
       } else {
-        await message.channel.send('```' + `Enter either '0' or '1'` + '```');
+        await message.channel.send('```' + `Enter either '0', '1', or '2'` + '```');
       }
     }
 
@@ -1639,31 +1642,34 @@ async function editSpecifiedListingRate(client, message, user) {
 
   let exit = false;
   let stopped = false;
-  let num = '';
+  let all = false;
+  let input = '';
 
-  await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
+  await message.channel.send('```' + `Enter 'all' or listing number(s) to edit\nEnter 'n' to cancel` + '```');
 
   const collector1 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
   });
 
   for await (const message of collector1) {
-    num = message.content.toLowerCase();
+    input = message.content.toLowerCase();
+    let split = input.split(' ');
 
-    if (num == 'n') {
+    if (input == 'n') {
       collector1.stop();
       stopped = true;
       exit = true;
       console.log('Canceled');
-    } else if (!isNaN(num)) {
-      if (parseInt(num) >= listingIds.length) {
-        message.channel.send('```' + 'Entered listing number does not exist' + '```');
-      } else {
-        collector1.stop();
-        stopped = true;
-      }
+    } else if (input == 'all') {
+      collector1.stop();
+      stopped = true;
+      all = true;
+    } else if (checkNumInputs(split, listingIds.length - 1)) {
+      input = split;
+      collector1.stop();
+      stopped = true;
     } else {
-      message.channel.send('```' + `Invalid format\nEnter a valid number` + '```');
+      message.channel.send('```' + `Invalid format\nEnter valid number(s)` + '```');
     }
   }
 
@@ -1675,7 +1681,7 @@ async function editSpecifiedListingRate(client, message, user) {
 
   await message.channel.send('```' + `Enter 'live' or 'manual'\nEnter 'n' to cancel` + '```');
 
-  let input = '';
+  input = '';
   stopped = false;
 
   const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
@@ -1704,16 +1710,58 @@ async function editSpecifiedListingRate(client, message, user) {
     return response.TIMEDOUT;
   }
 
-  await Listings.updateOne({ 'listings.id': listingIds[num] }, { $set: { 'listings.$.setting': input } }, (err) => {
-    if (!err) {
-      message.channel.send('```' + 'Listing Update Rate Updated Successfully' + '```');
-      console.log('Listing refresh rate successfully updated\n');
+  let msg = await message.channel.send('```' + 'Editing ...' + '```');
+
+  let i = 0;
+
+  if (all) {
+    for (i = 0; i < listingIds.length; i++) {
+      await Listings.updateOne({ 'listings.id': listingIds[i] }, { $set: { 'listings.$.setting': input } }).catch(
+        (err) => {
+          throw new Error(err);
+        }
+      );
     }
-  }).catch((err) => {
-    throw new Error(err);
-  });
+
+    if (i == listingIds.length) {
+      await msg.edit('```' + 'Listing Update Rate(s) Updated Successfully' + '```');
+      console.log('Listing refresh rate(s) successfully updated\n');
+    } else {
+      throw new Error('Error editing listing update rate');
+    }
+  } else {
+    for (i = 0; i < input.length; i++) {
+      await Listings.updateOne(
+        { 'listings.id': listingIds[input[i]] },
+        { $set: { 'listings.$.setting': input } }
+      ).catch((err) => {
+        throw new Error(err);
+      });
+    }
+
+    if (i == input.length) {
+      await msg.edit('```' + 'Listing Update Rate(s) Updated Successfully' + '```');
+      console.log('Listing refresh rate(s) successfully updated\n');
+    } else {
+      throw new Error('Error editing listing update rate');
+    }
+  }
 
   return response.SUCCESS;
+}
+
+function checkNumInputs(split, arrayLength) {
+  for (let i = 0; i < split.length; i++) {
+    if (isNaN(split[i])) {
+      return false;
+    } else {
+      if (parseInt(split[i]) > arrayLength) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 async function checkListParams(params) {

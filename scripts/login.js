@@ -6,7 +6,7 @@ const Users = require('../models/users');
 
 function maintainLogin() {
   try {
-    console.log('Maintaining Logins ...\n');
+    console.log('Maintaining Logins ...');
     setInterval(loggingIn, 3600000);
   } catch (err) {
     console.log(err);
