@@ -1,7 +1,6 @@
 const fetch = require('node-fetch');
 const Discord = require('discord.js');
 const encryption = require('./encryption');
-const sleep = require('./sleep');
 
 const Users = require('../models/users');
 const Listings = require('../models/listings');

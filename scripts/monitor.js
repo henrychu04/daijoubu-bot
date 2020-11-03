@@ -1,6 +1,7 @@
 const refresh = require('./refresh');
 
 module.exports = function main(client) {
+  console.log('Monitoring accounts ...');
   refresh(client, null, null);
 
   setInterval(function () {
