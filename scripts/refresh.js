@@ -536,7 +536,10 @@ async function confirmOrders(client, user, refresh, webhook) {
 
             while (!success) {
               await webhook
-                .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
+                .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```', {
+                  username: 'Order Confirmations',
+                  avatarURL: client.config.aliasPicture,
+                })
                 .then(() => {
                   success = true;
                   console.log('Successfully Confirmed alias Orders\n');
@@ -559,7 +562,10 @@ async function confirmOrders(client, user, refresh, webhook) {
 
           while (!success) {
             await webhook
-              .send('```alias orders - ' + date + '\n' + returnString + '```')
+              .send('```alias orders - ' + date + '\n' + returnString + '```', {
+                username: 'Order Confirmations',
+                avatarURL: client.config.aliasPicture,
+              })
               .then(() => {
                 success = true;
                 console.log('Successfully Confirmed alias Orders\n');
@@ -583,7 +589,10 @@ async function confirmOrders(client, user, refresh, webhook) {
 
           while (!success) {
             await webhook
-              .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```')
+              .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```', {
+                username: 'Order Confirmations',
+                avatarURL: client.config.aliasPicture,
+              })
               .then(() => {
                 success = true;
                 console.log('Successfully Confirmed alias Orders\n');
@@ -611,7 +620,10 @@ async function confirmOrders(client, user, refresh, webhook) {
 
           while (!success) {
             await webhook
-              .send('```alias orders - ' + date + '\n' + returnString + '```')
+              .send('```alias orders - ' + date + '\n' + returnString + '```', {
+                username: 'Order Confirmations',
+                avatarURL: client.config.aliasPicture,
+              })
               .then(() => {
                 sucess = true;
               })
@@ -654,10 +666,10 @@ async function earnings(client, user, webhook) {
   if (earnings.amount_cents) {
     if (user.cashoutAmount < earnings.amount_cents) {
       crntEarnings = earnings.amount_cents;
-      
+
       if (webhook != null) {
         let success = false;
-        
+
         while (!success) {
           await webhook
             .send('```' + `Amount Available for Cashout: $${crntEarnings / 100}` + '```')
