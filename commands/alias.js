@@ -37,7 +37,9 @@ exports.run = async (client, message, args) => {
       command == 'confirm' ||
       command == 'settings' ||
       command == 'list' ||
-      command == 'me'
+      command == 'me' ||
+      command == 'earnings' ||
+      command == 'cashout'
     ) {
       user = await Users.find({ d_id: id });
 
@@ -275,6 +277,12 @@ exports.run = async (client, message, args) => {
         }
 
         toReturn = await consign(client, searchQuery);
+        break;
+      case 'earnings':
+        toReturn = await earnings(user);
+        break;
+      case 'cashout':
+        toReturn = '```' + 'Currently Not Available' + '```';
         break;
       case 'help':
         if (args.length > 1) {
@@ -2344,6 +2352,13 @@ async function consign(client, query) {
     );
 
   return embed;
+}
+
+async function earnings(user) {
+  let crntEarnings = '$' + user.cashoutAmount / 100;
+  let earningsString = 'Current Total Earnings: ' + crntEarnings;
+
+  return '```' + earningsString + '```';
 }
 
 function help() {

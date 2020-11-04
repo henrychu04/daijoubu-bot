@@ -34,6 +34,8 @@ exports.run = async (client, message, args) => {
             email: email,
             pw: encryption.encrypt(pw),
             login: encryption.encrypt(loginRes.auth_token.access_token),
+            webhook: '',
+            cashoutAmount: 0,
             settings: {
               orderRefresh: 'daily',
               adjustListing: 'manual',
@@ -61,7 +63,7 @@ exports.run = async (client, message, args) => {
 
           await message.channel.send('```New Login Successfully Added```');
 
-          await message.channel.send('```Webhook setup recommended\nEnter !webhook <webhook> to setup webhook````');
+          await message.channel.send('```Webhook setup recommended\nEnter !webhook <webhook> to setup webhook```');
         } else {
           if (encryption.decrypt(exist[0].pw) == pw) {
             throw new Error('Same pw');

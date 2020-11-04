@@ -35,6 +35,7 @@ module.exports = async function refresh(client, loginToken, user) {
         await deleteListing(user, aliasListings);
         await syncListingPrice(user, aliasListings);
         allListings = await updateLowest(client, user, allListings, webhook);
+        await earnings(client, user, webhook);
       }
     } else {
       let aliasListings = await getListings(client, loginToken);
@@ -428,7 +429,7 @@ async function confirmOrders(client, user, refresh, webhook) {
         {
           headers: {
             'user-agent': client.config.aliasHeader,
-            authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+            authorization: `Bearer ${encryption.decrypt(user.login)}`,
           },
         }
       ).then((res, err) => {
@@ -456,7 +457,7 @@ async function confirmOrders(client, user, refresh, webhook) {
         temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
           headers: {
             'user-agent': client.config.aliasHeader,
-            authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+            authorization: `Bearer ${encryption.decrypt(user.login)}`,
           },
         }).then((res, err) => {
           getStatus = res.status;
@@ -628,5 +629,63 @@ async function confirmOrders(client, user, refresh, webhook) {
         }
       }
     }
+  }
+}
+
+async function earnings(client, user, webhook) {
+  let earnings = await fetch('https://sell-api.goat.com/api/v1/users/earnings', {
+    method: 'GET',
+    headers: {
+      'user-agent': client.config.aliasHeader,
+      authorization: `Bearer ${encryption.decrypt(user.login)}`,
+    },
+  }).then((res, err) => {
+    if (res.status == 200) {
+      listStatus = res.status;
+      return res.json();
+    } else {
+      console.log('Res is', res.status);
+      throw new Error(err);
+    }
+  });
+
+  let crntEarnings = 0;
+
+  if (earnings.amount_cents) {
+    if (user.cashoutAmount < earnings.amount_cents) {
+      crntEarnings = earnings.amount_cents;
+      
+      if (webhook != null) {
+        let success = false;
+        
+        while (!success) {
+          await webhook
+            .send('```' + `Amount Available for Cashout: $${crntEarnings / 100}` + '```')
+            .then(() => {
+              sucess = true;
+              console.log('New Cashout Amount Detected - Webhook Sent\n');
+            })
+            .catch((err) => {
+              if (err.message == 'Unknown Webhook') {
+                throw new Error('Unknown webhook');
+              } else if (err.message == 'Invalid Webhook Token') {
+                throw new Error('Invalid webhook token');
+              } else {
+                throw new Error(err);
+              }
+            });
+        }
+      }
+    }
+  }
+
+  if (crntEarnings != user.cashoutAmount) {
+    await Users.updateOne({ _id: user._id }, { $set: { cashoutAmount: crntEarnings } }, async (err) => {
+      if (!err) {
+        console.log('Cashout Amount Updated Successfully\n');
+      }
+    }).catch((err) => {
+      throw new Error(err);
+    });
   }
 }

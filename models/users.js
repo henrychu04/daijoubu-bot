@@ -6,6 +6,7 @@ const userScehma = mongoose.Schema({
   pw: String,
   login: String,
   webhook: String,
+  cashoutAmount: Number,
   settings: {
     orderRefresh: String,
     adjustListing: String,
