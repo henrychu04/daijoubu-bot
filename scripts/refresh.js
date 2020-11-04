@@ -88,14 +88,14 @@ async function updateLowest(client, user, allListings, webhook) {
                 ).catch((err) => console.log(err));
               }
 
-              if (userListingsArray[i].setting == 'manual' && lowest != userListingsArray[i].lowest) {
-                manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
-                  userListingsArray[i].price / 100
-                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
-                manual++;
-              }
-
               if (lowest != userListingsArray[i].lowest) {
+                if (userListingsArray[i].setting == 'manual') {
+                  manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+                    userListingsArray[i].price / 100
+                  }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
+                  manual++;
+                }
+
                 await Listings.updateOne(
                   { 'listings.id': userListingsArray[i].id },
                   { $set: { 'listings.$.lowest': lowest } }
@@ -147,14 +147,14 @@ async function updateLowest(client, user, allListings, webhook) {
               ).catch((err) => console.log(err));
             }
 
-            if (userListingsArray[i].setting == 'manual' && lowest != userListingsArray[i].lowest) {
-              manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
-                userListingsArray[i].price / 100
-              }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
-              manual++;
-            }
-
             if (lowest != userListingsArray[i].lowest) {
+              if (userListingsArray[i].setting == 'manual') {
+                manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+                  userListingsArray[i].price / 100
+                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
+                manual++;
+              }
+
               await Listings.updateOne(
                 { 'listings.id': userListingsArray[i].id },
                 { $set: { 'listings.$.lowest': lowest } }
