@@ -2580,7 +2580,7 @@ async function consign(client, query) {
   let data = null;
   count = 0;
 
-  while (dataRes != null) {
+  while (dataRes != 200) {
     data = await fetch(`https://www.goat.com/api/v1/product_variants/buy_bar_data?productTemplateId=${res.slug}`, {
       method: 'GET',
       headers: client.config.goatHeader,
