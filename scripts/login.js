@@ -4,6 +4,8 @@ const config = require('../config.json');
 
 const Users = require('../models/users');
 
+const maxRetries = 3;
+
 function maintainLogin() {
   try {
     console.log('Maintaining Logins ...');
@@ -20,6 +22,7 @@ async function loggingIn() {
 
     for (; i < users.length; i++) {
       let goatRes = 0;
+      let count = 0;
 
       while (goatRes != 200) {
         let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
@@ -40,6 +43,12 @@ async function loggingIn() {
         await Users.updateOne({ _id: users[i]._id }, { login: loginToken }).catch((err) => {
           throw new Error(err);
         });
+
+        count++;
+
+        if (count == maxRetries) {
+          throw new Error('Invalid login');
+        }
       }
     }
 

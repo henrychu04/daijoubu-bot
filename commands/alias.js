@@ -15,6 +15,8 @@ const response = {
   TIMEDOUT: 'timedout',
 };
 
+const maxRetries = 3;
+
 exports.run = async (client, message, args) => {
   try {
     const query = message.content.slice(6);
@@ -315,28 +317,16 @@ exports.run = async (client, message, args) => {
         message.channel.send('```Command is missing parameters```');
         break;
       case 'Not exist':
-        message.channel.send('```Command has one or more non-existing listing ids```');
-        break;
-      case 'Error updating':
-        message.channel.send('```Error updating listing(s)```');
+        message.channel.send('```Fetch error - Page does not exist```');
         break;
       case 'Too many parameters':
         message.channel.send('```Command has too many parameters```');
         break;
-      case 'Too little parameters':
-        message.channel.send('```Command has too little parameters```');
-        break;
       case 'Incorrect format':
         message.channel.send('```Incorrect format```');
         break;
-      case 'Error deleting':
-        message.channel.send('```Error deleting listing(s)```');
-        break;
       case 'Login expired':
         message.channel.send('```Login expired```');
-        break;
-      case 'Error editing':
-        message.channel.send('```Error editing listing```');
         break;
       case 'No data':
         message.channel.send('```Matched product has no data```');
@@ -345,12 +335,6 @@ exports.run = async (client, message, args) => {
         message.channel.send(
           '```Command not available\nPlease login via daijoubu DMS with the format:\n\t!login <email> <password>```'
         );
-        break;
-      case 'Error confirming':
-        message.channel.send('```Error confirming order(s)```');
-        break;
-      case 'Order not exist':
-        message.channel.send('```Command has one or more non-existing order numbers```');
         break;
       case 'Invalid list command':
         message.channel.send(
@@ -372,6 +356,9 @@ exports.run = async (client, message, args) => {
       case 'Error editing listing update rate':
         message.channel.send('```Error editing listing update rate```');
         break;
+      case 'Max retries':
+        message.channel.send('```Request error - Max retries reached```');
+        break;
       default:
         message.channel.send('```Unexpected Error```');
         break;
@@ -380,29 +367,44 @@ exports.run = async (client, message, args) => {
 };
 
 async function aliasSearch(client, query) {
-  let res = await fetch('https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query', {
-    method: 'POST',
-    headers: client.config.goatHeader,
-    body: `{"params":"query=${encodeURIComponent(query)}"}`,
-  })
-    .then((res, err) => {
-      if (res.status == 200) {
-        return res.json();
-      } else {
-        console.log('Res is', res.status);
+  let searchRes = 0;
+  let res = null;
+  let count = 0;
 
-        if (err) {
-          throw new Error(err.message);
-        }
-      }
+  while (searchRes != 200) {
+    res = await fetch('https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query', {
+      method: 'POST',
+      headers: client.config.goatHeader,
+      body: `{"params":"query=${encodeURIComponent(query)}"}`,
     })
-    .then((json) => {
-      if (json.hits.length != 0) {
-        return json.hits[0];
-      } else {
-        throw new Error('No hits');
-      }
-    });
+      .then((res, err) => {
+        searchRes = res.status;
+
+        if (res.status == 200) {
+          return res.json();
+        } else {
+          console.log('Res is', res.status);
+          console.trace();
+
+          if (err) {
+            throw new Error(err);
+          }
+        }
+      })
+      .then((json) => {
+        if (json.hits.length != 0) {
+          return json.hits[0];
+        } else {
+          throw new Error('No hits');
+        }
+      });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
 
   let category = res.product_category ? res.product_category : 'N/A';
   let name = res.name;
@@ -429,22 +431,36 @@ async function aliasSearch(client, query) {
     parsedDate = 'N/A';
   }
 
-  let pageData = await fetch(
-    `https://sell-api.goat.com/api/v1/analytics/products/${res.slug}/availability?box_condition=1&shoe_condition=1`,
-    {
-      headers: client.config.headers,
-    }
-  ).then((res, err) => {
-    if (res.status == 200) {
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
+  let pageDataRes = 0;
+  count = 0;
 
-      if (err) {
-        throw new Error(err.message);
+  while (pageDataRes != 200) {
+    pageData = await fetch(
+      `https://sell-api.goat.com/api/v1/analytics/products/${res.slug}/availability?box_condition=1&shoe_condition=1`,
+      {
+        headers: client.config.headers,
       }
+    ).then((res, err) => {
+      pageDataRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
     }
-  });
+  }
 
   if (Object.keys(pageData).length == 0) {
     throw new Error('No data');
@@ -668,6 +684,7 @@ async function update(client, loginToken, message, user) {
 async function getListings(client, loginToken) {
   let getStatus = 0;
   let listings = {};
+  let count = 0;
 
   while (getStatus != 200) {
     listings = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1`, {
@@ -684,17 +701,25 @@ async function getListings(client, loginToken) {
         throw new Error('Login expired');
       } else {
         console.log('Res is', res.status);
+        console.trace();
 
         if (err) {
           console.log(err);
         }
       }
     });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
   }
 
   for (let i = 1; i < listings.metadata.total_pages; i++) {
     let temp = {};
     getStatus = 0;
+    count = 0;
 
     while (getStatus != 200) {
       temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i}`, {
@@ -711,12 +736,19 @@ async function getListings(client, loginToken) {
           throw new Error('Login expired');
         } else {
           console.log('Res is', res.status);
+          console.trace();
 
           if (err) {
             console.log(err);
           }
         }
       });
+
+      count++;
+
+      if (count == maxRetries) {
+        throw new Error('Max retries');
+      }
     }
 
     for (let j = 0; j < temp.listing.length; j++) {
@@ -748,32 +780,39 @@ function checkListings(obj, listingObj) {
 
 async function updateListing(client, loginToken, obj) {
   obj.price_cents = obj.product.lowest_price_cents;
+  let updateRes = 0;
+  let count = 0;
 
-  let updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${obj.id}`, {
-    method: 'PUT',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: `{"listing":${JSON.stringify(obj)}}`,
-  }).then((res, err) => {
-    if (res.status == 200) {
-      return res.status;
-    } else if (res.status == 401) {
-      throw new Error('Login expired');
-    } else if (res.status == 404) {
-      throw new Error('Not exist');
-    } else {
-      console.log('Res is', res.status);
+  while (updateRes != 200) {
+    updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${obj.id}`, {
+      method: 'PUT',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: `{"listing":${JSON.stringify(obj)}}`,
+    }).then((res, err) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
 
-      if (err) {
-        throw new Error(err.message);
+        if (err) {
+          throw new Error(err.message);
+        }
       }
-    }
-  });
 
-  if (updateRes != 200) {
-    throw new Error('Error Updating');
+      return res.status;
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
   }
 
   return updateRes;
@@ -890,7 +929,7 @@ async function deleteSearch(client, loginToken, message, user) {
 
   const msg = await message.channel.send('```' + `Deleting...` + '```');
 
-  let deleteRes = 0;
+  let deleteRes = null;
 
   if (all) {
     for (let i = 0; i < userListingsArray.length; i++) {
@@ -904,7 +943,7 @@ async function deleteSearch(client, loginToken, message, user) {
     }
   }
 
-  if (deleteRes == 200) {
+  if (deleteRes == response.SUCCESS) {
     return [response.SUCCESS, all, msg];
   }
 }
@@ -932,31 +971,43 @@ function checkNumParams(nums) {
 async function deletion(client, loginToken, listingId) {
   let deactivateRes = 0;
   let cancelRes = 0;
+  let count = 0;
 
-  deactivateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingId}/deactivate`, {
-    method: 'PUT',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: `{"id":"${listingId}"}`,
-  }).then((res, err) => {
-    if (res.status == 200) {
-      return res.status;
-    } else if (res.status == 401) {
-      throw new Error('Login expired');
-    } else if (res.status == 404) {
-      throw new Error('Not exist');
-    } else {
-      console.log('Res is', res.status);
+  while (deactivateRes != 200) {
+    deactivateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingId}/deactivate`, {
+      method: 'PUT',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: `{"id":"${listingId}"}`,
+    }).then((res, err) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else if (res.status != 200) {
+        console.log('Res is', res.status);
+        console.trace();
 
-      if (err) {
-        throw new Error(err.message);
+        if (err) {
+          throw new Error(err);
+        }
       }
-    }
-  });
 
-  if (deactivateRes == 200) {
+      return res.status;
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  count = 0;
+
+  while (cancelRes != 200) {
     cancelRes = await fetch(` https://sell-api.goat.com/api/v1/listings/${listingId}/cancel`, {
       method: 'PUT',
       headers: {
@@ -965,26 +1016,31 @@ async function deletion(client, loginToken, listingId) {
       },
       body: `{"id":"${listingId}"}`,
     }).then((res, err) => {
-      if (res.status == 200) {
-        return res.status;
-      } else if (res.status == 401) {
+      if (res.status == 401) {
         throw new Error('Login expired');
       } else if (res.status == 404) {
         throw new Error('Not exist');
-      } else {
+      } else if (res.status != 200) {
         console.log('Res is', res.status);
+        console.trace();
 
         if (err) {
-          throw new Error(err.message);
+          throw new Error(err);
         }
       }
+
+      return res.status;
     });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
   }
 
-  if (deactivateRes != 200 && cancelRes != 200) {
-    throw new Error('Error deleting');
-  } else if (deactivateRes == 200 && cancelRes == 200) {
-    return 200;
+  if (deactivateRes == 200 && cancelRes == 200) {
+    return response.SUCCESS;
   }
 }
 
@@ -1034,26 +1090,41 @@ async function editListing(client, loginToken, user, message) {
 
   await message.channel.send('```' + `Enter new price or 'lowest'\nEnter 'n' to cancel` + '```');
 
-  let getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input]}`, {
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-  }).then((res, err) => {
-    if (res.status == 200) {
-      return res.json();
-    } else if (res.status == 401) {
-      throw new Error('Login expired');
-    } else if (res.status == 404) {
-      throw new Error('Not exist');
-    } else {
-      console.log('Res is', res.status);
+  let getJSONRes = 0;
+  let getJSON = null;
+  let count = 0;
 
-      if (err) {
-        throw new Error(err.message);
+  while (getJSONRes != 200) {
+    getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input]}`, {
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+    }).then((res, err) => {
+      getJSONRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
       }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
     }
-  });
+  }
 
   let lowest = getJSON.listing.product.lowest_price_cents / 100;
   let price = 0;
@@ -1105,31 +1176,39 @@ async function editListing(client, loginToken, user, message) {
 
   getJSON.listing.price_cents = (parseInt(price) * 100).toString();
 
-  let editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input].id}`, {
-    method: 'PUT',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: `${JSON.stringify(getJSON)}`,
-  }).then((res) => {
-    if (res.status == 200) {
-      return res.status;
-    } else if (res.status == 401) {
-      throw new Error('Login expired');
-    } else if (res.status == 404) {
-      throw new Error('Not exist');
-    } else {
-      console.log('Res is', res.status);
+  let editRes = 0;
+  count = 0;
 
-      if (err) {
-        throw new Error(err.message);
+  while (editRes != 200) {
+    editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input].id}`, {
+      method: 'PUT',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: `${JSON.stringify(getJSON)}`,
+    }).then((res) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else if (res.status != 200) {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
       }
-    }
-  });
 
-  if (editRes != 200) {
-    throw new Error('Error editing');
+      return res.status;
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
   }
 
   return [response.SUCCESS, msg];
@@ -1184,6 +1263,7 @@ async function confirmEdit(lowest, price, message) {
 async function getOrders(client, loginToken) {
   let getStatus = 0;
   let purchaseOrders = {};
+  let count = 0;
 
   while (getStatus != 200) {
     purchaseOrders = await fetch(
@@ -1203,17 +1283,25 @@ async function getOrders(client, loginToken) {
         throw new Error('Login expired');
       } else {
         console.log('Res is', res.status);
+        console.trace();
 
         if (err) {
           console.log(err);
         }
       }
     });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
   }
 
   for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
     let temp = {};
     getStatus = 0;
+    count = 0;
 
     while (getStatus != 200) {
       temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
@@ -1230,12 +1318,19 @@ async function getOrders(client, loginToken) {
           throw new Error('Login expired');
         } else {
           console.log('Res is', res.status);
+          console.trace();
 
           if (err) {
             console.log(err);
           }
         }
       });
+
+      count++;
+
+      if (count == maxRetries) {
+        throw new Error('Max retries');
+      }
     }
 
     for (let j = 0; j < temp.listing.length; j++) {
@@ -1343,22 +1438,42 @@ async function confirm(client, loginToken, message) {
   let valid = false;
   let nums = [];
   let orders = [];
+  let purchaseOrdersRes = 0;
+  let purchaseOrders = null;
+  let count = 0;
 
-  let purchaseOrders = await fetch(
-    'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
-    {
-      headers: {
-        'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-      },
-    }
-  )
-    .then((res) => {
-      return res.json();
-    })
-    .catch((err) => {
-      throw new Error(err);
+  while (purchaseOrdersRes != 200) {
+    purchaseOrders = await fetch(
+      'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
+      {
+        headers: {
+          'user-agent': client.config.aliasHeader,
+          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        },
+      }
+    ).then((res, err) => {
+      purchaseOrdersRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
     });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
 
   let confirmString = '\tNeeds Confirmation:\n';
   let confirmNum = 0;
@@ -1448,38 +1563,78 @@ async function confirm(client, loginToken, message) {
 }
 
 async function confirmation(client, loginToken, number) {
-  let confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
-    method: 'PUT',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: `{"number":"${number}"}`,
-  })
-    .then((res) => {
+  let confirmation = 0;
+  let count = 0;
+
+  while (confirmation != 200) {
+    confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
+      method: 'PUT',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: `{"number":"${number}"}`,
+    }).then((res, err) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else if (res.status != 200) {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+
       return res.status;
-    })
-    .catch((err) => {
-      throw new Error(err);
     });
 
-  let shipping = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`, {
-    method: 'PUT',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: `{"number":"${number}"}`,
-  })
-    .then((res) => {
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  let shipping = 0;
+  count = 0;
+
+  while (shipping != 200) {
+    shipping = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`, {
+      method: 'PUT',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: `{"number":"${number}"}`,
+    }).then((res, err) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else if (res.status != 200) {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+
       return res.status;
-    })
-    .catch((err) => {
-      throw new Error(err);
     });
 
-  if (confirmation != 200 || shipping != 200) {
-    throw new Error('Error confirming');
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  if (confirmation == 200 && shipping == 200) {
+    return response.SUCCESS;
   }
 }
 
@@ -1879,37 +2034,72 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
   let url = searchProduct.url.split('/');
   let slug = url[url.length - 1];
 
-  let pageData = await fetch(
-    `https://sell-api.goat.com/api/v1/analytics/products/${slug}/availability?box_condition=1&shoe_condition=1`,
-    {
-      headers: client.config.headers,
-    }
-  ).then((res, err) => {
-    if (res.status == 200) {
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
+  let pageDataRes = 0;
+  let count = 0;
 
-      if (err) {
-        throw new Error(err.message);
+  while (pageDataRes != 200) {
+    pageData = await fetch(
+      `https://sell-api.goat.com/api/v1/analytics/products/${slug}/availability?box_condition=1&shoe_condition=1`,
+      {
+        headers: client.config.headers,
       }
-    }
-  });
+    ).then((res, err) => {
+      pageDataRes = res.status;
 
-  let product = await fetch('https://sell-api.goat.com/api/v1/listings/get-product', {
-    method: 'POST',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: `{"id":"${slug}"}`,
-  }).then((res, err) => {
-    if (res.status == 200) {
-      return res.json();
-    } else {
-      throw new Error(err);
+      if (res.status == 200) {
+        return res.json();
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
     }
-  });
+  }
+
+  let productRes = 0;
+  let product = null;
+  count = 0;
+
+  while (productRes != 200) {
+    product = await fetch('https://sell-api.goat.com/api/v1/listings/get-product', {
+      method: 'POST',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: `{"id":"${slug}"}`,
+    }).then((res, err) => {
+      productRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
 
   let listing = {
     listing: {
@@ -1975,7 +2165,7 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
       let j = 0;
 
       while (j < parseInt(amount)) {
-        await listRes(client, loginToken, listing);
+        await listReq(client, loginToken, listing);
         returnString += `\t\t${j}. size: ${listing.listing.sizeOption.name} - $${listing.listing.priceCents / 100}\n`;
         j++;
       }
@@ -2043,130 +2233,250 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
   }
 }
 
-async function listRes(client, loginToken, listing) {
-  let listStatus = 0;
-  let activateStatus = 0;
+async function listReq(client, loginToken, listing) {
+  let list = 0;
+  let count = 0;
 
-  let list = await fetch(`https://sell-api.goat.com/api/v1/listings`, {
-    method: 'POST',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: JSON.stringify(listing),
-  }).then((res, err) => {
-    if (res.status == 200) {
-      listStatus = res.status;
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
-      throw new Error(err);
+  while (list != 200) {
+    list = await fetch(`https://sell-api.goat.com/api/v1/listings`, {
+      method: 'POST',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: JSON.stringify(listing),
+    }).then((res, err) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status != 200) {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+
+      return res.status;
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
     }
-  });
+  }
 
-  let activate = await fetch(`https://sell-api.goat.com/api/v1/listings/${list.listing.id}/activate`, {
-    method: 'PUT',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: `{"id":"${list.listing.id}"}`,
-  }).then((res, err) => {
-    if (res.status == 200) {
-      activateStatus = res.status;
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
-      throw new Error(err);
+  let activate = 0;
+  count = 0;
+
+  while (activate != 200) {
+    activate = await fetch(`https://sell-api.goat.com/api/v1/listings/${list.listing.id}/activate`, {
+      method: 'PUT',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: `{"id":"${list.listing.id}"}`,
+    }).then((res, err) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status != 200) {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+
+      return res.status;
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
     }
-  });
-
-  if (listStatus != 200 || activateStatus != 200) {
-    throw new Error('Error listing');
   }
 }
 
 async function me(client, loginToken) {
-  let me = await fetch('https://sell-api.goat.com/api/v1/unstable/users/me', {
-    method: 'POST',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-    body: '{}',
-  }).then((res, err) => {
-    if (res.status == 200) {
-      listStatus = res.status;
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
-      throw new Error(err);
-    }
-  });
+  let meRes = 0;
+  let me = null;
+  let count = 0;
 
-  let purchaseOrdersCount = await fetch('https://sell-api.goat.com/api/v1/purchase-orders-count', {
-    method: 'GET',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-  }).then((res, err) => {
-    if (res.status == 200) {
-      listStatus = res.status;
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
-      throw new Error(err);
-    }
-  });
+  while (meRes != 200) {
+    me = await fetch('https://sell-api.goat.com/api/v1/unstable/users/me', {
+      method: 'POST',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: '{}',
+    }).then((res, err) => {
+      meRes = res.status;
 
-  let listingValues = await fetch('https://sell-api.goat.com/api/v1/listings-values', {
-    method: 'GET',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-  }).then((res, err) => {
-    if (res.status == 200) {
-      listStatus = res.status;
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
-      throw new Error(err);
-    }
-  });
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
 
-  let purchaseOrders = await fetch('https://sell-api.goat.com/api/v1/total-sales/purchase-orders', {
-    method: 'GET',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-  }).then((res, err) => {
-    if (res.status == 200) {
-      listStatus = res.status;
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
-      throw new Error(err);
-    }
-  });
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
 
-  let earnings = await fetch('https://sell-api.goat.com/api/v1/users/earnings', {
-    method: 'GET',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-    },
-  }).then((res, err) => {
-    if (res.status == 200) {
-      listStatus = res.status;
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
-      throw new Error(err);
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
     }
-  });
+  }
+
+  let purchaseOrdersCountRes = 0;
+  let purchaseOrdersCount = null;
+  count = 0;
+
+  while (purchaseOrdersCountRes != 200) {
+    purchaseOrdersCount = await fetch('https://sell-api.goat.com/api/v1/purchase-orders-count', {
+      method: 'GET',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+    }).then((res, err) => {
+      purchaseOrdersCountRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  let listingValuesRes = 0;
+  let listingValues = null;
+  count = 0;
+
+  while (listingValuesRes != 200) {
+    listingValues = await fetch('https://sell-api.goat.com/api/v1/listings-values', {
+      method: 'GET',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+    }).then((res, err) => {
+      listingValuesRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  let purchaseOrdersRes = 0;
+  let purchaseOrders = null;
+  count = 0;
+
+  while (purchaseOrdersRes != 200) {
+    purchaseOrders = await fetch('https://sell-api.goat.com/api/v1/total-sales/purchase-orders', {
+      method: 'GET',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+    }).then((res, err) => {
+      purchaseOrdersRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  let earningsRes = 0;
+  let earnings = null;
+  count = 0;
+
+  while (earningsRes != 200) {
+    earnings = await fetch('https://sell-api.goat.com/api/v1/users/earnings', {
+      method: 'GET',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+    }).then((res, err) => {
+      earningsRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
 
   const meEmbed = new Discord.MessageEmbed()
     .setColor('#7756fe')
@@ -2227,44 +2537,74 @@ async function me(client, loginToken) {
 }
 
 async function consign(client, query) {
-  let res = await fetch('https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query', {
-    method: 'POST',
-    headers: client.config.goatHeader,
-    body: `{"params":"query=${encodeURIComponent(query)}"}`,
-  })
-    .then((res, err) => {
+  let resStatus = 0;
+  let res = null;
+  let count = 0;
+
+  while (resStatus != 200) {
+    res = await fetch('https://2fwotdvm2o-dsn.algolia.net/1/indexes/product_variants_v2/query', {
+      method: 'POST',
+      headers: client.config.goatHeader,
+      body: `{"params":"query=${encodeURIComponent(query)}"}`,
+    })
+      .then((res, err) => {
+        resStatus = res.status;
+
+        if (res.status == 200) {
+          return res.json();
+        } else {
+          console.log('Res is', res.status);
+          console.trace();
+
+          if (err) {
+            throw new Error(err.message);
+          }
+        }
+      })
+      .then((json) => {
+        if (json.hits.length != 0) {
+          return json.hits[0];
+        } else {
+          throw new Error('No hits');
+        }
+      });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  let dataRes = 0;
+  let data = null;
+  count = 0;
+
+  while (dataRes != null) {
+    data = await fetch(`https://www.goat.com/api/v1/product_variants/buy_bar_data?productTemplateId=${res.slug}`, {
+      method: 'GET',
+      headers: client.config.goatHeader,
+    }).then((res, err) => {
+      dataRes = res.status;
+
       if (res.status == 200) {
         return res.json();
       } else {
         console.log('Res is', res.status);
+        console.trace();
 
         if (err) {
-          throw new Error(err.message);
+          throw new Error(err);
         }
-      }
-    })
-    .then((json) => {
-      if (json.hits.length != 0) {
-        return json.hits[0];
-      } else {
-        throw new Error('No hits');
       }
     });
 
-  let data = await fetch(`https://www.goat.com/api/v1/product_variants/buy_bar_data?productTemplateId=${res.slug}`, {
-    method: 'GET',
-    headers: client.config.goatHeader,
-  }).then((res, err) => {
-    if (res.status == 200) {
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
+    count++;
 
-      if (err) {
-        throw new Error(err.message);
-      }
+    if (count == maxRetries) {
+      throw new Error('Max retries');
     }
-  });
+  }
 
   let category = res.product_category ? res.product_category : 'N/A';
   let name = res.name;

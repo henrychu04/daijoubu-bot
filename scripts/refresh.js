@@ -5,6 +5,8 @@ const encryption = require('./encryption');
 const Users = require('../models/users');
 const Listings = require('../models/listings');
 
+const maxRetries = 3;
+
 module.exports = async function refresh(client, loginToken, user) {
   try {
     if (!loginToken) {
@@ -108,22 +110,37 @@ async function updateLowest(client, user, allListings, webhook) {
       }
 
       if (!exist) {
-        let pageData = await fetch(
-          `https://sell-api.goat.com/api/v1/analytics/products/${userListingsArray[i].slug}/availability?box_condition=1&shoe_condition=1`,
-          {
-            headers: client.config.headers,
-          }
-        ).then((res, err) => {
-          if (res.status == 200) {
-            return res.json();
-          } else {
-            console.log('Res is', res.status);
+        let pageDataRes = false;
+        let pageData = null;
+        let count = 0;
 
-            if (err) {
-              throw new Error(err.message);
+        while (!pageDataRes) {
+          pageData = await fetch(
+            `https://sell-api.goat.com/api/v1/analytics/products/${userListingsArray[i].slug}/availability?box_condition=1&shoe_condition=1`,
+            {
+              headers: client.config.headers,
             }
+          ).then((res, err) => {
+            pageDataRes = res.status;
+
+            if (res.status == 200) {
+              return res.json();
+            } else {
+              console.log('Res is', res.status);
+              console.trace();
+
+              if (err) {
+                console.log(err);
+              }
+            }
+          });
+
+          count++;
+
+          if (count == maxRetries) {
+            throw new Error('Max retries');
           }
-        });
+        }
 
         allListings.push({ slug: userListingsArray[i].slug, data: pageData });
 
@@ -169,6 +186,8 @@ async function updateLowest(client, user, allListings, webhook) {
       let success = false;
 
       if (webhook != null) {
+        let count = 0;
+
         while (!success) {
           await webhook
             .send('```' + liveString + '```', {
@@ -188,6 +207,12 @@ async function updateLowest(client, user, allListings, webhook) {
                 throw new Error(err);
               }
             });
+
+          count++;
+
+          if (count == maxRetries) {
+            throw new Error('Max retries');
+          }
         }
       }
     }
@@ -196,6 +221,8 @@ async function updateLowest(client, user, allListings, webhook) {
       let success = false;
 
       if (webhook != null) {
+        let count = 0;
+
         while (!success) {
           await webhook
             .send('```' + manualString + '```', {
@@ -215,6 +242,12 @@ async function updateLowest(client, user, allListings, webhook) {
                 throw new Error(err);
               }
             });
+
+          count++;
+
+          if (count == maxRetries) {
+            throw new Error('Max retries');
+          }
         }
       }
     }
@@ -238,6 +271,7 @@ async function updateListing(client, user, id, lowest) {
   obj.price_cents = lowest.toString();
 
   let updateRes = 0;
+  let count = 0;
 
   while (updateRes != 200) {
     updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
@@ -249,22 +283,30 @@ async function updateListing(client, user, id, lowest) {
       body: `{"listing":${JSON.stringify(obj)}}`,
     })
       .then((res, err) => {
-        if (res.status == 200) {
-          return res.status;
-        } else if (res.status == 401) {
+        if (res.status == 401) {
           throw new Error('Login expired');
         } else if (res.status == 404) {
           throw new Error('Not exist');
-        } else {
+        } else if (res.status != 200) {
           console.log('Res is', res.status);
+          console.trace();
+
           if (err) {
-            throw new Error(err.message);
+            console.log(err);
           }
         }
+
+        return res.status;
       })
       .catch((err) => {
         throw new Error(err);
       });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
   }
 }
 
@@ -352,6 +394,7 @@ async function deleteListing(user, aliasListings) {
 async function getListings(client, loginToken) {
   let getStatus = 0;
   let listings = {};
+  let count = 0;
 
   while (getStatus != 200) {
     listings = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1`, {
@@ -368,17 +411,25 @@ async function getListings(client, loginToken) {
         throw new Error('Login expired');
       } else {
         console.log('Res is', res.status);
+        console.trace();
 
         if (err) {
           console.log(err);
         }
       }
     });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
   }
 
   for (let i = 1; i < listings.metadata.total_pages; i++) {
     let temp = {};
     getStatus = 0;
+    count = 0;
 
     while (getStatus != 200) {
       temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i}`, {
@@ -395,12 +446,19 @@ async function getListings(client, loginToken) {
           throw new Error('Login expired');
         } else {
           console.log('Res is', res.status);
+          console.trace();
 
           if (err) {
             console.log(err);
           }
         }
       });
+
+      count++;
+
+      if (count == maxRetries) {
+        throw new Error('Max retries');
+      }
     }
 
     for (let j = 0; j < temp.listing.length; j++) {
@@ -414,6 +472,7 @@ async function getListings(client, loginToken) {
 async function confirmOrders(client, user, refresh, webhook) {
   let confirmed = 0;
   let number = 0;
+  let returnString = '';
 
   try {
     let crnt = new Date();
@@ -424,6 +483,7 @@ async function confirmOrders(client, user, refresh, webhook) {
     let orders = [];
     let getStatus = 0;
     let purchaseOrders = {};
+    let count = 0;
 
     while (getStatus != 200) {
       purchaseOrders = await fetch(
@@ -443,17 +503,25 @@ async function confirmOrders(client, user, refresh, webhook) {
           throw new Error('Login expired');
         } else {
           console.log('Res is', res.status);
+          console.trace();
 
           if (err) {
             console.log(err);
           }
         }
       });
+
+      count++;
+
+      if (count == maxRetries) {
+        throw new Error('Max retries');
+      }
     }
 
     for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
       let temp = {};
       getStatus = 0;
+      count = 0;
 
       while (getStatus != 200) {
         temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
@@ -470,12 +538,19 @@ async function confirmOrders(client, user, refresh, webhook) {
             throw new Error('Login expired');
           } else {
             console.log('Res is', res.status);
+            console.trace();
 
             if (err) {
               console.log(err);
             }
           }
         });
+
+        count++;
+
+        if (count == maxRetries) {
+          throw new Error('Max retries');
+        }
       }
 
       for (let j = 0; j < temp.listing.length; j++) {
@@ -492,31 +567,71 @@ async function confirmOrders(client, user, refresh, webhook) {
 
       for (let i = 0; i < orders.length; i++) {
         number = orders[i].number;
+        let confirmation = 0;
+        count = 0;
 
-        let confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
-          method: 'PUT',
-          headers: {
-            'user-agent': client.config.aliasHeader,
-            authorization: `Bearer ${encryption.decrypt(user.login)}`,
-          },
-          body: `{"number":"${number}"}`,
-        }).then((res) => {
-          return res.status;
-        });
-
-        let shipping = await fetch(
-          `https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`,
-          {
+        while (confirmation != 200) {
+          confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/confirm`, {
             method: 'PUT',
             headers: {
               'user-agent': client.config.aliasHeader,
               authorization: `Bearer ${encryption.decrypt(user.login)}`,
             },
             body: `{"number":"${number}"}`,
+          }).then((res, err) => {
+            if (res.status == 401) {
+              throw new Error('Login expired');
+            } else if (res.status != 200) {
+              console.log('Res is', res.status);
+              console.trace();
+
+              if (err) {
+                console.log(err);
+              }
+            }
+
+            return res.status;
+          });
+
+          count++;
+
+          if (count == maxRetries) {
+            throw new Error('Max retries');
           }
-        ).then((res) => {
-          return res.status;
-        });
+        }
+
+        let shipping = 0;
+        count = 0;
+
+        while (shipping != 200) {
+          shipping = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`, {
+            method: 'PUT',
+            headers: {
+              'user-agent': client.config.aliasHeader,
+              authorization: `Bearer ${encryption.decrypt(user.login)}`,
+            },
+            body: `{"number":"${number}"}`,
+          }).then((res, err) => {
+            if (res.status == 401) {
+              throw new Error('Login expired');
+            } else if (res.status != 200) {
+              console.log('Res is', res.status);
+              console.trace();
+
+              if (err) {
+                console.log(err);
+              }
+            }
+
+            return res.status;
+          });
+
+          count++;
+
+          if (count == maxRetries) {
+            throw new Error('Max retries');
+          }
+        }
 
         if (confirmation != 200 || shipping != 200) {
           throw new Error('Error confirming');
@@ -535,6 +650,7 @@ async function confirmOrders(client, user, refresh, webhook) {
         if (refresh == 'daily') {
           if (webhook != null) {
             let success = false;
+            count = 0;
 
             while (!success) {
               await webhook
@@ -555,12 +671,19 @@ async function confirmOrders(client, user, refresh, webhook) {
                     throw new Error(err);
                   }
                 });
+
+              count++;
+
+              if (count == maxRetries) {
+                throw new Error('Max retries');
+              }
             }
           }
         }
       } else {
         if (webhook != null) {
           let success = false;
+          count = 0;
 
           while (!success) {
             await webhook
@@ -581,6 +704,12 @@ async function confirmOrders(client, user, refresh, webhook) {
                   throw new Error(err);
                 }
               });
+
+            count++;
+
+            if (count == maxRetries) {
+              throw new Error('Max retries');
+            }
           }
         }
       }
@@ -588,6 +717,7 @@ async function confirmOrders(client, user, refresh, webhook) {
       if (refresh == 'daily') {
         if (webhook != null) {
           let success = false;
+          count = 0;
 
           while (!success) {
             await webhook
@@ -608,6 +738,12 @@ async function confirmOrders(client, user, refresh, webhook) {
                   throw new Error(err);
                 }
               });
+
+            count++;
+
+            if (count == maxRetries) {
+              throw new Error('Max retries');
+            }
           }
         }
       }
@@ -619,6 +755,7 @@ async function confirmOrders(client, user, refresh, webhook) {
       if (confirmed != 0) {
         if (webhook != null) {
           let success = false;
+          count = 0;
 
           while (!success) {
             await webhook
@@ -638,7 +775,40 @@ async function confirmOrders(client, user, refresh, webhook) {
                   throw new Error(err);
                 }
               });
-            await webhook.send('```' + `Error confirming order number ${number}` + '```');
+
+            count++;
+
+            if (count == maxRetries) {
+              throw new Error('Max retries');
+            }
+          }
+
+          count = 0;
+
+          while (!success) {
+            await webhook
+              .send('```' + `Error confirming order number ${number}` + '```', {
+                username: 'Order Confirmations',
+                avatarURL: client.config.aliasPicture,
+              })
+              .then(() => {
+                sucess = true;
+              })
+              .catch((err) => {
+                if (err.message == 'Unknown Webhook') {
+                  throw new Error('Unknown webhook');
+                } else if (err.message == 'Invalid Webhook Token') {
+                  throw new Error('Invalid webhook token');
+                } else {
+                  throw new Error(err);
+                }
+              });
+
+            count++;
+
+            if (count == maxRetries) {
+              throw new Error('Max retries');
+            }
           }
         }
       }
@@ -647,36 +817,57 @@ async function confirmOrders(client, user, refresh, webhook) {
 }
 
 async function earnings(client, user, webhook) {
-  let earnings = await fetch('https://sell-api.goat.com/api/v1/users/earnings', {
-    method: 'GET',
-    headers: {
-      'user-agent': client.config.aliasHeader,
-      authorization: `Bearer ${encryption.decrypt(user.login)}`,
-    },
-  }).then((res, err) => {
-    if (res.status == 200) {
-      listStatus = res.status;
-      return res.json();
-    } else {
-      console.log('Res is', res.status);
-      throw new Error(err);
+  let earningsRes = 0;
+  let earnings = null;
+  let count = 0;
+
+  while (earningsRes != 200) {
+    earnings = await fetch('https://sell-api.goat.com/api/v1/users/earnings', {
+      method: 'GET',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(user.login)}`,
+      },
+    }).then((res, err) => {
+      earningsRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          console.log(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
     }
-  });
+  }
 
   let crntEarnings = 0;
 
   if (earnings.amount_cents) {
-    if (user.cashoutAmount < earnings.amount_cents) {
-      crntEarnings = earnings.amount_cents;
+    crntEarnings = parseInt(earnings.amount_cents);
 
+    if (user.cashoutAmount < crntEarnings) {
       if (webhook != null) {
         let success = false;
+        count = 0;
 
         while (!success) {
           await webhook
-            .send('```' + `Amount Available for Cashout: $${crntEarnings / 100}` + '```')
+            .send('```' + `Amount Available for Cashout: $${crntEarnings / 100}` + '```', {
+              username: 'Earnings',
+              avatarURL: client.config.aliasPicture,
+            })
             .then(() => {
-              sucess = true;
+              success = true;
               console.log('New Cashout Amount Detected - Webhook Sent\n');
             })
             .catch((err) => {
@@ -688,6 +879,12 @@ async function earnings(client, user, webhook) {
                 throw new Error(err);
               }
             });
+
+          count++;
+
+          if (count == maxRetries) {
+            throw new Error('Max retries');
+          }
         }
       }
     }
