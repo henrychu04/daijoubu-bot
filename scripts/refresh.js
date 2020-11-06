@@ -27,7 +27,7 @@ module.exports = async function refresh(client, loginToken, user) {
 
         if (user.settings.orderRefresh == 'live') {
           await confirmOrders(client, user, user.settings.orderRefresh, webhook);
-        } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
+        } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 5 && date.getMinutes() == 1) {
           await confirmOrders(client, user, user.settings.orderRefresh, webhook);
         }
 
