@@ -71,9 +71,9 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + toReturn + '```';
         } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```All Listing(s) Match Their Lowest Asks```';
+          toReturn = '```All listing(s) match their lowest asks```';
         } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account Currently Has No Items Listed```';
+          toReturn = '```Account currently has no items listed```';
         }
         break;
       case 'update':
@@ -89,18 +89,18 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           if (updateAll) {
             await updateMsg
-              .edit('```All Listing(s) Updated Successfully```')
+              .edit('```All listing(s) updated successfully```')
               .then(console.log(`${message} completed\n`));
           } else {
             await updateMsg
-              .edit('```Specified Listing(s) Updated Successfully```')
+              .edit('```Specified listing(s) updated successfully```')
               .then(console.log(`${message} completed\n`));
           }
           await refresh(client, loginToken, user);
         } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```All Listing(s) Already Match Their Lowest Asks```';
+          toReturn = '```All listing(s) already match their lowest asks```';
         } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account Currently Has No Items Listed```';
+          toReturn = '```Account currently has no Items listed```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
@@ -120,7 +120,7 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           for (let i = 0; i < listingArray.length; i++) {
             if (i == 0) {
-              let initialString = 'Current Listings:';
+              let initialString = 'Current listings:';
               initialString += listingArray[i];
               await message.channel.send('```' + initialString + '```');
             } else {
@@ -128,7 +128,7 @@ exports.run = async (client, message, args) => {
             }
           }
         } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account Currently Has No Items Listed```';
+          toReturn = '```Account currently has no items listed```';
         }
 
         console.log('!alias listings completed\n');
@@ -146,16 +146,16 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           if (deleteAll) {
             await deleteMsg
-              .edit('```All Listing(s) Deleted Successfully```')
+              .edit('```All listing(s) deleted successfully```')
               .then(console.log(`${message} completed\n`));
           } else {
             await deleteMsg
-              .edit('```Specified Listing(s) Deleted Successfully```')
+              .edit('```Specified listing(s) deleted successfully```')
               .then(console.log(`${message} completed\n`));
           }
           await refresh(client, loginToken, user);
         } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account Currently Has No Items Listed```';
+          toReturn = '```Account currently has no items listed```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
@@ -172,7 +172,7 @@ exports.run = async (client, message, args) => {
         [returnedEnum, editMsg] = await editListing(client, loginToken, user, message);
 
         if (returnedEnum == response.SUCCESS) {
-          await editMsg.edit('```Listing Edited Successfully```').then(console.log(`${message} completed\n`));
+          await editMsg.edit('```Listing edited successfully```').then(console.log(`${message} completed\n`));
           await refresh(client, loginToken, user);
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
@@ -190,7 +190,7 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + toReturn + '```';
         } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account Currently Has No Open Orders```';
+          toReturn = '```Account currently has no open orders```';
         }
         break;
       case 'confirm':
@@ -202,17 +202,17 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           if (confirmAll) {
             await confirmMsg
-              .edit('```All Orders(s) Confirmed Successfully```')
+              .edit('```All orders(s) confirmed successfully```')
               .then(console.log(`${message} completed\n`));
           } else {
             await confirmMsg
-              .edit('```Specified Orders(s) Confirmed Successfully```')
+              .edit('```Specified orders(s) confirmed successfully```')
               .then(console.log(`${message} completed\n`));
           }
         } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```No Open Order(s) Currently On Account```';
+          toReturn = '```No open order(s) currently on account```';
         } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```Currently All Open Order(s) Are Confirmed```';
+          toReturn = '```Currently all open order(s) are confirmed```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
@@ -230,7 +230,7 @@ exports.run = async (client, message, args) => {
           throw new Error('Incorrect format');
         }
 
-        [toReturn, returnedEnum] = await settings(client, message, user, edit);
+        [toReturn, returnedEnum] = await settings(message, user, edit);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = toReturn;
@@ -239,7 +239,7 @@ exports.run = async (client, message, args) => {
         } else if (returnedEnum == response.TIMEDOUT) {
           toReturn = '```Command timed out```';
         } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account Currently Has No Items Listed```';
+          toReturn = '```Account currently has no items listed```';
         }
         break;
       case 'list':
@@ -265,7 +265,7 @@ exports.run = async (client, message, args) => {
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```No New Item(s) Listed```';
+          toReturn = '```No new item(s) listed```';
         } else if (returnedEnum == response.TIMEDOUT) {
           toReturn = '```Command timed out```';
         }
@@ -298,7 +298,7 @@ exports.run = async (client, message, args) => {
         [returnedEnum, newAmount, cashOutMsg] = await cashOut(client, loginToken, user, message);
 
         if (returnedEnum == response.SUCCESS) {
-          await cashOutMsg.edit('```' + `Current remaining earnings: $${newAmount / 100}` + '```');
+          await cashOutMsg.edit('```' + `Cash out successful\nCurrent remaining earnings: $${newAmount / 100}` + '```');
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
@@ -898,7 +898,7 @@ async function deleteSearch(client, loginToken, message, user) {
   if (returnedEnum == response.SUCCESS) {
     for (let i = 0; i < listings.length; i++) {
       if (i == 0) {
-        let initialString = 'Current Listings:';
+        let initialString = 'Current listings:';
         initialString += listings[i];
         await message.channel.send('```' + initialString + '```');
       } else {
@@ -1409,7 +1409,7 @@ async function getOrders(client, loginToken) {
       } else if (order.status == 'SHIPPED') {
         shippedString += `\t\t${shippedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
           order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n\t\t\tUPS Tracking Number: ${order.shipping_info.tracking_code}\n`;
+        }\n\t\t\tOrder number: ${order.number}\n\t\t\tUPS tracking number: ${order.shipping_info.tracking_code}\n`;
         shippedNum++;
       } else if (order.status == 'DROPPED_OFF') {
         droppedString += `\t\t${droppedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
@@ -1507,7 +1507,7 @@ async function confirm(client, loginToken, message) {
     }
   }
 
-  let confirmString = '\tNeeds Confirmation:\n';
+  let confirmString = '\tNeeds confirmation:\n';
   let confirmNum = 0;
 
   if (purchaseOrders.purchase_orders) {
@@ -1670,7 +1670,7 @@ async function confirmation(client, loginToken, number) {
   }
 }
 
-async function settings(client, message, user, edit) {
+async function settings(message, user, edit) {
   const userSettings = new Discord.MessageEmbed()
     .setColor('#7756fe')
     .setTitle('alias Settings')
@@ -1697,7 +1697,7 @@ async function settings(client, message, user, edit) {
 
     await message.channel.send(
       '```' +
-        `0. Order Confirmation Refresh Rate\n1. Default Listing Update Rate\n2. Specified Listing Update Rate\n\nEnter '0', '1', or '2' to edit\nEnter 'n' to cancel` +
+        `0. Order confirmation refresh rate\n1. Default listing update rate\n2. Specified listing update rate\n\nEnter '0', '1', or '2' to edit\nEnter 'n' to cancel` +
         '```'
     );
 
@@ -1711,15 +1711,15 @@ async function settings(client, message, user, edit) {
       if (input == 0) {
         collector.stop();
         stopped = true;
-        returnedEnum = await editOrderRate(client, message, user);
+        returnedEnum = await editOrderRate(message, user);
       } else if (input == 1) {
         collector.stop();
         stopped = true;
-        returnedEnum = await editDefaultListingRate(client, message, user);
+        returnedEnum = await editDefaultListingRate(message, user);
       } else if (input == 2) {
         collector.stop();
         stopped = true;
-        returnedEnum = await editSpecifiedListingRate(client, message, user);
+        returnedEnum = await editSpecifiedListingRate(message, user);
       } else if (input == 'n') {
         collector.stop();
         stopped = true;
@@ -1738,12 +1738,12 @@ async function settings(client, message, user, edit) {
   }
 }
 
-async function editOrderRate(client, message, user) {
+async function editOrderRate(message, user) {
   let exit = false;
   let stopped = false;
 
   await message.channel.send(
-    '```' + `Editing Order Confirmation Refresh Rate\n\tEnter 'live' or 'daily'\n\tEnter 'n' to cancel` + '```'
+    '```' + `Editing order confirmation refresh rate\n\tEnter 'live' or 'daily'\n\tEnter 'n' to cancel` + '```'
   );
 
   const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
@@ -1782,12 +1782,12 @@ async function editOrderRate(client, message, user) {
   }
 }
 
-async function editDefaultListingRate(client, message, user) {
+async function editDefaultListingRate(message, user) {
   let exit = false;
   let stopped = false;
 
   await message.channel.send(
-    '```' + `Editing Default Listing Update Rate\n\tEnter 'live' or 'manual'\n\tEnter 'n' to cancel` + '```'
+    '```' + `Editing default listing update rate\n\tEnter 'live' or 'manual'\n\tEnter 'n' to cancel` + '```'
   );
 
   const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
@@ -1826,7 +1826,7 @@ async function editDefaultListingRate(client, message, user) {
   }
 }
 
-async function editSpecifiedListingRate(client, message, user) {
+async function editSpecifiedListingRate(message, user) {
   let [listingString, listingEnum, listingIds] = await allListings(user);
 
   if (listingEnum == response.SUCCESS) {
@@ -1919,7 +1919,7 @@ async function editSpecifiedListingRate(client, message, user) {
     }
 
     if (i == listingIds.length) {
-      await msg.edit('```' + 'Listing Update Rate(s) Updated Successfully' + '```');
+      await msg.edit('```' + 'Listing update rate(s) updated successfully' + '```');
       console.log('Listing refresh rate(s) successfully updated\n');
     } else {
       throw new Error('Error editing listing update rate');
@@ -1935,7 +1935,7 @@ async function editSpecifiedListingRate(client, message, user) {
     }
 
     if (i == input.length) {
-      await msg.edit('```' + 'Listing Update Rate(s) Updated Successfully' + '```');
+      await msg.edit('```' + 'Listing update rate(s) updated successfully' + '```');
       console.log('Listing refresh rate(s) successfully updated\n');
     } else {
       throw new Error('Error editing listing update rate');
@@ -2731,7 +2731,7 @@ async function consign(client, query) {
 
 async function earnings(user) {
   let crntEarnings = '$' + user.cashoutAmount / 100;
-  let earningsString = 'Current Total Earnings: ' + crntEarnings;
+  let earningsString = 'Current total earnings: ' + crntEarnings;
 
   return ['```' + earningsString + '```', user.cashoutAmount];
 }
