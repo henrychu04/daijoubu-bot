@@ -303,6 +303,8 @@ exports.run = async (client, message, args) => {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
           toReturn = '```Command timed out```';
+        } else if (returnedEnum == response.NO_CHANGE) {
+          toReturn = '```No earnings available for cash out```';
         }
         break;
       case 'help':
@@ -377,6 +379,9 @@ exports.run = async (client, message, args) => {
         break;
       case 'Max retries':
         message.channel.send('```Request error - Max retries reached```');
+        break;
+      case 'Missing phone number':
+        message.channel.send('```Account is missing phone number\nCommand not available until one is added```');
         break;
       default:
         message.channel.send('```Unexpected Error```');
@@ -2802,6 +2807,11 @@ async function cashOut(client, loginToken, user, message) {
   };
 
   let [earningsString, crntAmount] = await earnings(user);
+
+  if (crntAmount == 0) {
+    return [response.NO_CHANGE, null, null];
+  }
+
   await sendOtp();
 
   let phoneRes = 0;
@@ -2838,6 +2848,10 @@ async function cashOut(client, loginToken, user, message) {
     if (count == maxRetries) {
       throw new Error('Max retries');
     }
+  }
+
+  if (!phone.user.phone_number || phone.user.phone_number.length == 0) {
+    throw new Error('Missing phone number');
   }
 
   let phoneNum = phone.user.phone_number.substring(phone.user.phone_number.length - 4);
