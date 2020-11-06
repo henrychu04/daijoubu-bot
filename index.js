@@ -40,7 +40,7 @@ client.on('ready', () => {
 
 client.login(process.env.BOT_TOKEN).then(async () => {
   await login.loggingIn().then(() => {
-    console.log('All Initial alias Logins Successfully Updated');
+    console.log('All initial alias logins successfully updated');
     console.log('Ready!');
     login.maintainLogin();
     monitor(client);

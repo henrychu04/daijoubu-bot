@@ -120,18 +120,18 @@ exports.run = async (client, message, args) => {
         if (returnedEnum == response.SUCCESS) {
           for (let i = 0; i < listingArray.length; i++) {
             if (i == 0) {
-              let initialString = 'Current listings:';
+              let initialString = 'Current Listings:';
               initialString += listingArray[i];
               await message.channel.send('```' + initialString + '```');
             } else {
               await message.channel.send('```' + listingArray[i] + '```');
             }
           }
+          console.log('!alias listings completed\n');
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account currently has no items listed```';
         }
 
-        console.log('!alias listings completed\n');
         break;
       case 'delete':
         if (args.length > 1) {
@@ -298,7 +298,8 @@ exports.run = async (client, message, args) => {
         [returnedEnum, newAmount, cashOutMsg] = await cashOut(client, loginToken, user, message);
 
         if (returnedEnum == response.SUCCESS) {
-          await cashOutMsg.edit('```' + `Cash out successful\nCurrent remaining earnings: $${newAmount / 100}` + '```');
+          await cashOutMsg.edit('```' + 'Cash out successful' + '```');
+          toReturn = ('```' + `Current Available Earnings: $${newAmount / 100}` + '```');
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
@@ -600,7 +601,7 @@ async function check(client, loginToken, user) {
     return ['', response.NO_ITEMS, null, null];
   }
 
-  let newLowestAsksString = 'Current listings with a lower ask:';
+  let newLowestAsksString = 'Current Listings With a Lower Ask:';
   let i = 0;
   let userListingsCheckArray = [];
 
@@ -898,7 +899,7 @@ async function deleteSearch(client, loginToken, message, user) {
   if (returnedEnum == response.SUCCESS) {
     for (let i = 0; i < listings.length; i++) {
       if (i == 0) {
-        let initialString = 'Current listings:';
+        let initialString = 'Current Listings:';
         initialString += listings[i];
         await message.channel.send('```' + initialString + '```');
       } else {
@@ -1370,7 +1371,7 @@ async function getOrders(client, loginToken) {
     }
   }
 
-  let returnString = 'Current open orders:\n';
+  let returnString = 'Current Open Orders:\n';
 
   let reviewString = '\tIn Review:\n';
   let reviewNum = 0;
@@ -1507,7 +1508,7 @@ async function confirm(client, loginToken, message) {
     }
   }
 
-  let confirmString = '\tNeeds confirmation:\n';
+  let confirmString = '\tNeeds Confirmation:\n';
   let confirmNum = 0;
 
   if (purchaseOrders.purchase_orders) {
@@ -2061,7 +2062,7 @@ async function list(client, message, loginToken, sizingArray, query) {
 }
 
 async function doList(client, loginToken, message, searchProduct, sizingArray) {
-  let returnString = 'Successfully listed:\n\t' + searchProduct.title + '\n';
+  let returnString = 'Successfully Listed:\n\t' + searchProduct.title + '\n';
   let returnedEnum = null;
   let url = searchProduct.url.split('/');
   let slug = url[url.length - 1];
@@ -2731,7 +2732,7 @@ async function consign(client, query) {
 
 async function earnings(user) {
   let crntEarnings = '$' + user.cashoutAmount / 100;
-  let earningsString = 'Current total earnings: ' + crntEarnings;
+  let earningsString = 'Current Available Earnings: ' + crntEarnings;
 
   return ['```' + earningsString + '```', user.cashoutAmount];
 }
@@ -2997,7 +2998,7 @@ async function cashOut(client, loginToken, user, message) {
 
   await Users.updateOne({ _id: user._id }, { $set: { cashoutAmount: parseInt(newAmount) } }, async (err) => {
     if (!err) {
-      console.log('Cashout Amount Updated Successfully\n');
+      console.log('Cashout amount updated successfully\n');
     }
   }).catch((err) => {
     throw new Error(err);

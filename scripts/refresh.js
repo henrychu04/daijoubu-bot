@@ -196,7 +196,7 @@ async function updateLowest(client, user, allListings, webhook) {
             })
             .then(() => {
               success = true;
-              console.log('Successfully Updated Live alias Listings\n');
+              console.log('Successfully updated live alias listings\n');
             })
             .catch((err) => {
               if (err.message == 'Unknown Webhook') {
@@ -231,7 +231,7 @@ async function updateLowest(client, user, allListings, webhook) {
             })
             .then(() => {
               success = true;
-              console.log('Successfully Updated Manual alias Listings\n');
+              console.log('Successfully updated manual alias listings\n');
             })
             .catch((err) => {
               if (err.message == 'Unknown Webhook') {
@@ -660,7 +660,7 @@ async function confirmOrders(client, user, refresh, webhook) {
                 })
                 .then(() => {
                   success = true;
-                  console.log('Successfully Confirmed alias Orders\n');
+                  console.log('Successfully confirmed alias orders\n');
                 })
                 .catch((err) => {
                   if (err.message == 'Unknown Webhook') {
@@ -693,7 +693,7 @@ async function confirmOrders(client, user, refresh, webhook) {
               })
               .then(() => {
                 success = true;
-                console.log('Successfully Confirmed alias Orders\n');
+                console.log('Successfully confirmed alias orders\n');
               })
               .catch((err) => {
                 if (err.message == 'Unknown Webhook') {
@@ -727,7 +727,7 @@ async function confirmOrders(client, user, refresh, webhook) {
               })
               .then(() => {
                 success = true;
-                console.log('Successfully Confirmed alias Orders\n');
+                console.log('Successfully confirmed alias orders\n');
               })
               .catch((err) => {
                 if (err.message == 'Unknown Webhook') {
@@ -862,13 +862,13 @@ async function earnings(client, user, webhook) {
 
         while (!success) {
           await webhook
-            .send('```' + `Amount Available for Cashout: $${crntEarnings / 100}` + '```', {
+            .send('```' + `Amount available for cashout: $${crntEarnings / 100}` + '```', {
               username: 'Earnings',
               avatarURL: client.config.aliasPicture,
             })
             .then(() => {
               success = true;
-              console.log('New Cashout Amount Detected - Webhook Sent\n');
+              console.log('New cashout amount detected - webhook sent\n');
             })
             .catch((err) => {
               if (err.message == 'Unknown Webhook') {
@@ -893,7 +893,7 @@ async function earnings(client, user, webhook) {
   if (crntEarnings != user.cashoutAmount) {
     await Users.updateOne({ _id: user._id }, { $set: { cashoutAmount: crntEarnings } }, async (err) => {
       if (!err) {
-        console.log('Cashout Amount Updated Successfully\n');
+        console.log('Cashout amount updated successfully\n');
       }
     }).catch((err) => {
       throw new Error(err);
