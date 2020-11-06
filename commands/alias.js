@@ -13,6 +13,7 @@ const response = {
   NO_CHANGE: 'no_change',
   EXIT: 'exit',
   TIMEDOUT: 'timedout',
+  ERROR: 'error',
 };
 
 const maxRetries = 3;
@@ -281,10 +282,27 @@ exports.run = async (client, message, args) => {
         toReturn = await consign(client, searchQuery);
         break;
       case 'earnings':
-        toReturn = await earnings(user);
+        let amount = 0;
+
+        [toReturn, amount] = await earnings(user);
         break;
       case 'cashout':
-        toReturn = '```' + 'Currently Not Available' + '```';
+        if (args.length > 1) {
+          throw new Error('Too many parameters');
+        }
+
+        let newAmount = 0;
+        let cashOutMsg = null;
+
+        [returnedEnum, newAmount, cashOutMsg] = await cashOut(client, loginToken, user, message);
+
+        if (returnedEnum == response.SUCCESS) {
+          await cashOutMsg.edit('```' + `Current remaining earnings: $${newAmount / 100}` + '```');
+        } else if (returnedEnum == response.EXIT) {
+          toReturn = '```Canceled```';
+        } else if (returnedEnum == response.TIMEDOUT) {
+          toReturn = '```Command timed out```';
+        }
         break;
       case 'help':
         if (args.length > 1) {
@@ -801,7 +819,7 @@ async function updateListing(client, loginToken, obj) {
         console.trace();
 
         if (err) {
-          throw new Error(err.message);
+          throw new Error(err);
         }
       }
 
@@ -1981,7 +1999,7 @@ async function checkListParams(params) {
 
 async function list(client, message, loginToken, sizingArray, query) {
   let searchProduct = await aliasSearch(client, query).catch((err) => {
-    throw new Error(err.message);
+    throw new Error(err);
   });
 
   await message.channel.send(searchProduct);
@@ -2557,7 +2575,7 @@ async function consign(client, query) {
           console.trace();
 
           if (err) {
-            throw new Error(err.message);
+            throw new Error(err);
           }
         }
       })
@@ -2698,7 +2716,268 @@ async function earnings(user) {
   let crntEarnings = '$' + user.cashoutAmount / 100;
   let earningsString = 'Current Total Earnings: ' + crntEarnings;
 
-  return '```' + earningsString + '```';
+  return ['```' + earningsString + '```', user.cashoutAmount];
+}
+
+async function cashOut(client, loginToken, user, message) {
+  let sendOtp = async function () {
+    let otpRes = 0;
+    let count = 0;
+
+    while (otpRes != 200) {
+      otpRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/send-otp', {
+        method: 'POST',
+        headers: {
+          'user-agent': client.config.aliasHeader,
+          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        },
+        body: `{}`,
+      }).then((res, err) => {
+        if (res.status == 401) {
+          throw new Error('Login expired');
+        } else if (res.status == 404) {
+          throw new Error('Not exist');
+        } else if (res.status != 200) {
+          console.log('Res is', res.status);
+          console.trace();
+
+          if (err) {
+            throw new Error(err);
+          }
+        }
+
+        return res.status;
+      });
+
+      count++;
+
+      if (count == maxRetries) {
+        throw new Error('Max retries');
+      }
+    }
+  };
+
+  let verifyOtp = async function (num) {
+    let otpRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/verify-otp', {
+      method: 'POST',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: `{"oneTimePassword":"${num}"}`,
+    }).then((res, err) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else if (res.status != 200 && res.status != 400) {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+
+      return res.status;
+    });
+
+    if (otpRes == 200) {
+      return response.SUCCESS;
+    } else {
+      return response.ERROR;
+    }
+  };
+
+  let [earningsString, crntAmount] = await earnings(user);
+  await sendOtp();
+
+  let phoneRes = 0;
+  let phone = null;
+  let count = 0;
+
+  while (phoneRes != 200) {
+    phone = await fetch('https://sell-api.goat.com/api/v1/unstable/users/me', {
+      method: 'POST',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: '{}',
+    }).then((res, err) => {
+      phoneRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  let phoneNum = phone.user.phone_number.substring(phone.user.phone_number.length - 4);
+
+  await message.channel.send('```' + `A security code has been sent to the phone number ending in ${phoneNum}` + '```');
+  await message.channel.send('```' + `Enter the security code or 's' to send again` + '```');
+
+  let stopped = false;
+  let exit = false;
+  let input = '';
+
+  const collector1 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector1) {
+    input = message.content.toLowerCase();
+
+    if (input == 'n') {
+      collector1.stop();
+      stopped = true;
+      exit = true;
+      console.log('Canceled\n');
+    } else if (input == 's') {
+      await sendOtp();
+    } else if (!isNaN(input)) {
+      if (input.length != 6) {
+        message.channel.send('```' + 'Security code should have 6 digits\nEnter again' + '```');
+      }
+
+      let verifyEnum = await verifyOtp(input);
+
+      if (verifyEnum == response.SUCCESS) {
+        collector1.stop();
+        stopped = true;
+      } else {
+        message.channel.send('```' + 'Invalid security code\nEnter again' + '```');
+      }
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter 'all' or amount to cash out` + '```');
+    }
+  }
+
+  if (exit) {
+    return [response.EXIT, null, null];
+  } else if (!stopped) {
+    return [response.TIMEDOUT, null, null];
+  }
+
+  let all = false;
+  stopped = false;
+  exit = false;
+  input = '';
+
+  await message.channel.send(earningsString);
+  await message.channel.send('```' + `Enter 'all' or amount to cash out` + '```');
+
+  const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector2) {
+    input = message.content.toLowerCase();
+
+    if (input == 'n') {
+      collector2.stop();
+      stopped = true;
+      exit = true;
+      console.log('Canceled\n');
+    } else if (!isNaN(input)) {
+      if (input > crntAmount / 100) {
+        message.channel.send(
+          '```' + `Entered input is greater than available earnings\nEnter 'all' or a lesser value` + '```'
+        );
+      } else {
+        collector2.stop();
+        stopped = true;
+      }
+    } else if (input == 'all') {
+      collector2.stop();
+      all = true;
+      stopped = true;
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter 'all' or amount to cash out` + '```');
+    }
+  }
+
+  if (exit) {
+    return [response.EXIT, null, null];
+  } else if (!stopped) {
+    return [response.TIMEDOUT, null, null];
+  }
+
+  let msg = await message.channel.send('```' + 'Cashing out ...' + '```');
+
+  let cashOutRes = 0;
+  let cashOut = null;
+  count = 0;
+
+  if (all) {
+    input = crntAmount;
+  } else {
+    input *= 100;
+  }
+
+  while (cashOutRes != 200) {
+    cashOut = await fetch('https://sell-api.goat.com/api/v1/users/cashout', {
+      method: 'POST',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+      },
+      body: `{"cashOutCents":"${input}"}`,
+    }).then((res, err) => {
+      cashOutRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  let newAmount = 0;
+
+  if (cashOut.remaining_balance_cents) {
+    newAmount = cashOut.remaining_balance_cents;
+  }
+
+  await Users.updateOne({ _id: user._id }, { $set: { cashoutAmount: parseInt(newAmount) } }, async (err) => {
+    if (!err) {
+      console.log('Cashout Amount Updated Successfully\n');
+    }
+  }).catch((err) => {
+    throw new Error(err);
+  });
+
+  return [response.SUCCESS, newAmount, msg];
 }
 
 function help() {
