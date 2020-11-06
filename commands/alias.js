@@ -60,9 +60,10 @@ exports.run = async (client, message, args) => {
     switch (command) {
       case 'check':
         let checkListingObj = [];
+        let userListingsCheckArray = [];
 
         if (args.length < 2) {
-          [toReturn, returnedEnum, checkListingObj] = await check(client, loginToken, user);
+          [toReturn, returnedEnum, checkListingObj, userListingsCheckArray] = await check(client, loginToken, user);
         } else {
           throw new Error('Too many parameters');
         }
@@ -591,25 +592,28 @@ async function check(client, loginToken, user) {
   }
 
   if (userListingsArray.length == 0) {
-    return ['', response.NO_ITEMS, null];
+    return ['', response.NO_ITEMS, null, null];
   }
 
   let newLowestAsksString = 'Current listings with a lower ask:';
   let i = 0;
+  let userListingsCheckArray = [];
 
   userListingsArray.forEach((obj) => {
     if (obj.price > obj.lowest) {
       newLowestAsksString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} $${obj.price / 100} => $${
         obj.lowest / 100
       }\n`;
+
+      userListingsCheckArray.push(obj);
       i++;
     }
   });
 
   if (i > 0) {
-    return [newLowestAsksString, response.SUCCESS, listingObj];
+    return [newLowestAsksString, response.SUCCESS, listingObj, userListingsCheckArray];
   } else {
-    return ['', response.NO_CHANGE, null];
+    return ['', response.NO_CHANGE, null, null];
   }
 }
 
@@ -620,7 +624,7 @@ async function update(client, loginToken, message, user) {
   let exit = false;
   let stopped = false;
 
-  let [listingString, listingEnum, listingObj] = await check(client, loginToken, user);
+  let [listingString, listingEnum, listingObj, userListingsCheckArray] = await check(client, loginToken, user);
 
   if (listingEnum == response.SUCCESS) {
     await message.channel.send('```' + listingString + '```');
@@ -689,7 +693,12 @@ async function update(client, loginToken, message, user) {
   } else {
     if (valid) {
       for (let i = 0; i < nums.length; i++) {
-        updateRes = await updateListing(client, loginToken, listingObj[nums[i]]);
+        for (let j = 0; j < listingObj.length; j++) {
+          if (listingObj[j].id == userListingsCheckArray[i].id) {
+            updateRes = await updateListing(client, loginToken, listingObj[j]);
+            break;
+          }
+        }
       }
     }
   }
@@ -2252,10 +2261,11 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
 }
 
 async function listReq(client, loginToken, listing) {
-  let list = 0;
+  let list = null;
+  let listRes = 0;
   let count = 0;
 
-  while (list != 200) {
+  while (listRes != 200) {
     list = await fetch(`https://sell-api.goat.com/api/v1/listings`, {
       method: 'POST',
       headers: {
@@ -2264,18 +2274,20 @@ async function listReq(client, loginToken, listing) {
       },
       body: JSON.stringify(listing),
     }).then((res, err) => {
-      if (res.status == 401) {
+      listRes = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
         throw new Error('Login expired');
-      } else if (res.status != 200) {
+      } else {
         console.log('Res is', res.status);
         console.trace();
 
         if (err) {
-          throw new Error(err);
+          console.log(err);
         }
       }
-
-      return res.status;
     });
 
     count++;
