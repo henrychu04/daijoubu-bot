@@ -299,7 +299,7 @@ exports.run = async (client, message, args) => {
 
         if (returnedEnum == response.SUCCESS) {
           await cashOutMsg.edit('```' + 'Cash out successful' + '```');
-          toReturn = ('```' + `Current Available Earnings: $${newAmount / 100}` + '```');
+          toReturn = '```' + `Current Available Earnings: $${newAmount / 100}` + '```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.TIMEDOUT) {
@@ -686,7 +686,7 @@ async function update(client, loginToken, message, user) {
     return [response.TIMEDOUT, null, null];
   }
 
-  const msg = await message.channel.send('```' + `Updating...` + '```');
+  const msg = await message.channel.send('```' + `Updating ...` + '```');
 
   let updateRes = 0;
 
@@ -950,17 +950,13 @@ async function deleteSearch(client, loginToken, message, user) {
     }
   }
 
-  collector.on('end', async (collected) => {
-    console.log('Timed out\n');
-  });
-
   if (exit) {
     return [response.EXIT, null, null];
   } else if (!stopped) {
     return [response.TIMEDOUT, null, null];
   }
 
-  const msg = await message.channel.send('```' + `Deleting...` + '```');
+  const msg = await message.channel.send('```' + `Deleting ...` + '```');
 
   let deleteRes = null;
 
@@ -1205,7 +1201,7 @@ async function editListing(client, loginToken, user, message) {
     return [response.TIMEDOUT, null];
   }
 
-  const msg = await message.channel.send('```Editing...```');
+  const msg = await message.channel.send('```Editing ...```');
 
   getJSON.listing.price_cents = (parseInt(price) * 100).toString();
 
@@ -2044,7 +2040,7 @@ async function list(client, message, loginToken, sizingArray, query) {
       } else {
         collector.stop();
         stopped = true;
-        msg = await message.channel.send('```Listing...```');
+        msg = await message.channel.send('```Listing ...```');
         [returnedEnum, returnString] = await doList(client, loginToken, message, searchProduct, sizingArray);
       }
     } else {
@@ -2813,8 +2809,6 @@ async function cashOut(client, loginToken, user, message) {
     return [response.NO_CHANGE, null, null];
   }
 
-  await sendOtp();
-
   let phoneRes = 0;
   let phone = null;
   let count = 0;
@@ -2855,6 +2849,8 @@ async function cashOut(client, loginToken, user, message) {
     throw new Error('Missing phone number');
   }
 
+  await sendOtp();
+
   let phoneNum = phone.user.phone_number.substring(phone.user.phone_number.length - 4);
 
   await message.channel.send('```' + `A security code has been sent to the phone number ending in ${phoneNum}` + '```');
@@ -2879,17 +2875,17 @@ async function cashOut(client, loginToken, user, message) {
     } else if (input == 's') {
       await sendOtp();
     } else if (!isNaN(input)) {
-      if (input.length != 6) {
-        message.channel.send('```' + 'Security code should have 6 digits\nEnter again' + '```');
-      }
+      if (input.length == 6) {
+        let verifyEnum = await verifyOtp(input);
 
-      let verifyEnum = await verifyOtp(input);
-
-      if (verifyEnum == response.SUCCESS) {
-        collector1.stop();
-        stopped = true;
+        if (verifyEnum == response.SUCCESS) {
+          collector1.stop();
+          stopped = true;
+        } else {
+          message.channel.send('```' + 'Invalid security code\nEnter again' + '```');
+        }
       } else {
-        message.channel.send('```' + 'Invalid security code\nEnter again' + '```');
+        message.channel.send('```' + 'Security code should have 6 digits\nEnter again' + '```');
       }
     } else {
       message.channel.send('```' + `Invalid format\nEnter 'all' or amount to cash out` + '```');

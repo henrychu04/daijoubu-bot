@@ -654,7 +654,7 @@ async function confirmOrders(client, user, refresh, webhook) {
 
             while (!success) {
               await webhook
-                .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```', {
+                .send('```alias Orders - ' + date + '\n' + 'No orders to confirm```', {
                   username: 'Order Confirmations',
                   avatarURL: client.config.aliasPicture,
                 })
@@ -687,7 +687,7 @@ async function confirmOrders(client, user, refresh, webhook) {
 
           while (!success) {
             await webhook
-              .send('```alias orders - ' + date + '\n' + returnString + '```', {
+              .send('```alias Orders - ' + date + '\n' + returnString + '```', {
                 username: 'Order Confirmations',
                 avatarURL: client.config.aliasPicture,
               })
@@ -721,7 +721,7 @@ async function confirmOrders(client, user, refresh, webhook) {
 
           while (!success) {
             await webhook
-              .send('```alias orders - ' + date + '\n' + 'No orders to confirm.```', {
+              .send('```alias Orders - ' + date + '\n' + 'No orders to confirm```', {
                 username: 'Order Confirmations',
                 avatarURL: client.config.aliasPicture,
               })
@@ -759,7 +759,7 @@ async function confirmOrders(client, user, refresh, webhook) {
 
           while (!success) {
             await webhook
-              .send('```alias orders - ' + date + '\n' + returnString + '```', {
+              .send('```alias Orders - ' + date + '\n' + returnString + '```', {
                 username: 'Order Confirmations',
                 avatarURL: client.config.aliasPicture,
               })
