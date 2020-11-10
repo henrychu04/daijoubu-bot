@@ -225,7 +225,7 @@ exports.run = async (client, message, args) => {
 
         if (args.length > 2) {
           throw new Error('Too many parameters');
-        } else if (args[1].toLowerCase() == 'edit') {
+        } else if (args[1] && args[1].toLowerCase() == 'edit') {
           edit = true;
         } else if (args[1] && args[1].toLowerCase() != 'edit') {
           throw new Error('Incorrect format');
@@ -1086,6 +1086,7 @@ async function editListing(client, loginToken, user, message) {
 
   let exit = false;
   let stopped = false;
+  let input = '';
 
   await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
 
@@ -1094,7 +1095,7 @@ async function editListing(client, loginToken, user, message) {
   });
 
   for await (const message of collector1) {
-    let input = message.content.toLowerCase();
+    input = message.content.toLowerCase();
 
     if (input == 'n') {
       collector1.stop();
@@ -1837,7 +1838,7 @@ async function editSpecifiedListingRate(message, user) {
   let exit = false;
   let stopped = false;
   let all = false;
-  let input = '';
+  let nums = '';
 
   await message.channel.send('```' + `Enter 'all' or listing number(s) to edit\nEnter 'n' to cancel` + '```');
 
@@ -1846,20 +1847,20 @@ async function editSpecifiedListingRate(message, user) {
   });
 
   for await (const message of collector1) {
-    input = message.content.toLowerCase();
-    let split = input.split(' ');
+    nums = message.content.toLowerCase();
+    let split = nums.split(' ');
 
-    if (input == 'n') {
+    if (nums == 'n') {
       collector1.stop();
       stopped = true;
       exit = true;
       console.log('Canceled');
-    } else if (input == 'all') {
+    } else if (nums == 'all') {
       collector1.stop();
       stopped = true;
       all = true;
     } else if (checkNumInputs(split, listingIds.length - 1)) {
-      input = split;
+      nums = split;
       collector1.stop();
       stopped = true;
     } else {
@@ -1875,7 +1876,7 @@ async function editSpecifiedListingRate(message, user) {
 
   await message.channel.send('```' + `Enter 'live' or 'manual'\nEnter 'n' to cancel` + '```');
 
-  input = '';
+  let input = '';
   stopped = false;
 
   const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
@@ -1924,16 +1925,16 @@ async function editSpecifiedListingRate(message, user) {
       throw new Error('Error editing listing update rate');
     }
   } else {
-    for (i = 0; i < input.length; i++) {
+    for (i = 0; i < nums.length; i++) {
       await Listings.updateOne(
-        { 'listings.id': listingIds[input[i]] },
+        { 'listings.id': listingIds[nums[i]] },
         { $set: { 'listings.$.setting': input } }
       ).catch((err) => {
         throw new Error(err);
       });
     }
 
-    if (i == input.length) {
+    if (i == nums.length) {
       await msg.edit('```' + 'Listing update rate(s) updated successfully' + '```');
       console.log('Listing refresh rate(s) successfully updated\n');
     } else {
