@@ -186,7 +186,9 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        [toReturn, returnedEnum] = await getOrders(client, loginToken);
+        let purchaseOrders = {};
+
+        [toReturn, returnedEnum, purchaseOrders] = await getOrders(client, loginToken);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + toReturn + '```';

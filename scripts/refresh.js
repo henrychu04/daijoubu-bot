@@ -5,6 +5,7 @@ const encryption = require('./encryption');
 
 const Users = require('../models/users');
 const Listings = require('../models/listings');
+const Orders = require('../models/orders');
 
 const maxRetries = 3;
 
@@ -32,12 +33,25 @@ module.exports = async function refresh(client, loginToken, user) {
           await confirmOrders(client, user, user.settings.orderRefresh, webhook);
         }
 
+        const userListings = await Listings.find({ d_id: user.d_id });
+        const userListingsArray = userListings[0].listings;
+
         let aliasListings = await getListings(client, user.login);
 
-        await addListing(user, aliasListings);
-        await deleteListing(user, aliasListings);
-        await syncListingPrice(user, aliasListings);
-        allListings = await updateLowest(client, user, allListings, webhook);
+        await addListing(user, aliasListings, userListingsArray);
+        await deleteListing(user, aliasListings, userListingsArray);
+        await syncListingPrice(aliasListings, userListingsArray);
+        allListings = await updateLowest(client, user, allListings, webhook, userListingsArray);
+
+        const userOrders = await Orders.find({ d_id: user.d_id });
+        const userOrdersArray = userOrders[0].orders;
+
+        let aliasOrders = await getOrders(client, user.login);
+
+        await addOrder(client, user, aliasOrders, webhook, userOrdersArray);
+        await deleteOrder(user, aliasOrders, userOrdersArray);
+        await syncOrders(client, user, aliasOrders, webhook, userOrdersArray);
+
         await earnings(client, user, webhook);
       }
     } else {
@@ -53,11 +67,8 @@ module.exports = async function refresh(client, loginToken, user) {
   }
 };
 
-async function updateLowest(client, user, allListings, webhook) {
+async function updateLowest(client, user, allListings, webhook, userListingsArray) {
   try {
-    const userListings = await Listings.find({ d_id: user.d_id });
-    const userListingsArray = userListings[0].listings;
-
     let liveString = 'Listings Updated:\n';
     let live = 0;
     let manualString = 'Listings With a New Lowest Ask:\n';
@@ -312,10 +323,7 @@ async function updateListing(client, user, id, lowest) {
   }
 }
 
-async function syncListingPrice(user, aliasListings) {
-  const userListings = await Listings.find({ d_id: user.d_id });
-  const userListingsArray = userListings[0].listings;
-
+async function syncListingPrice(aliasListings, userListingsArray) {
   for (let i = 0; i < userListingsArray.length; i++) {
     if (aliasListings.listing) {
       for (let j = 0; j < aliasListings.listing.length; j++) {
@@ -332,16 +340,14 @@ async function syncListingPrice(user, aliasListings) {
   }
 }
 
-async function addListing(user, aliasListings) {
-  const userListings = await Listings.find({ d_id: user.d_id });
-  const userListingsArray = userListings[0].listings;
-
+async function addListing(user, aliasListings, userListingsArray) {
   if (aliasListings.listing) {
     for (let i = 0; i < aliasListings.listing.length; i++) {
+      let crnt = aliasListings.listing[i];
       let exist = false;
 
       userListingsArray.forEach((listing) => {
-        if (listing.id == aliasListings.listing[i].id) {
+        if (listing.id == crnt.id) {
           exist = true;
         }
       });
@@ -351,32 +357,28 @@ async function addListing(user, aliasListings) {
       }
 
       let obj = {
-        id: aliasListings.listing[i].id,
-        name: aliasListings.listing[i].product.name,
-        size: parseFloat(aliasListings.listing[i].size_option.value),
-        price: parseInt(aliasListings.listing[i].price_cents),
-        slug: aliasListings.listing[i].product.id,
-        lowest: parseInt(aliasListings.listing[i].product.lowest_price_cents),
+        id: crnt.id,
+        name: crnt.product.name,
+        size: parseFloat(crnt.size_option.value),
+        price: parseInt(crnt.price_cents),
+        slug: crnt.product.id,
+        lowest: parseInt(crnt.product.lowest_price_cents),
         setting: user.settings.adjustListing,
       };
 
-      await Listings.updateOne({ _id: userListings[0]._id }, { $push: { listings: obj } }).catch((err) =>
-        console.log(err)
-      );
+      await Listings.updateOne({ d_id: user.d_id }, { $push: { listings: obj } }).catch((err) => console.log(err));
     }
   }
 }
 
-async function deleteListing(user, aliasListings) {
-  const userListings = await Listings.find({ d_id: user.d_id });
-  const userListingsArray = userListings[0].listings;
-
+async function deleteListing(user, aliasListings, userListingsArray) {
   for (let i = 0; i < userListingsArray.length; i++) {
+    let crnt = userListingsArray[i];
     let deleted = true;
 
     if (aliasListings.listing) {
       aliasListings.listing.forEach((listing) => {
-        if (userListingsArray[i].id == listing.id) {
+        if (crnt.id == listing.id) {
           deleted = false;
         }
       });
@@ -386,10 +388,9 @@ async function deleteListing(user, aliasListings) {
       continue;
     }
 
-    await Listings.updateOne(
-      { _id: userListings[0]._id },
-      { $pull: { listings: { id: userListingsArray[i].id } } }
-    ).catch((err) => console.log(err));
+    await Listings.updateOne({ d_id: user.d_id }, { $pull: { listings: { id: crnt.id } } }).catch((err) =>
+      console.log(err)
+    );
   }
 }
 
@@ -900,5 +901,316 @@ async function earnings(client, user, webhook) {
     }).catch((err) => {
       throw new Error(err);
     });
+  }
+}
+
+async function getOrders(client, loginToken) {
+  let getStatus = 0;
+  let purchaseOrders = {};
+  let count = 0;
+
+  while (getStatus != 200) {
+    purchaseOrders = await fetch(
+      'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
+      {
+        headers: {
+          'user-agent': client.config.aliasHeader,
+          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        },
+      }
+    ).then((res, err) => {
+      getStatus = res.status;
+
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          console.log(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
+    let temp = {};
+    getStatus = 0;
+    count = 0;
+
+    while (getStatus != 200) {
+      temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
+        headers: {
+          'user-agent': client.config.aliasHeader,
+          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        },
+      }).then((res, err) => {
+        getStatus = res.status;
+
+        if (res.status == 200) {
+          return res.json();
+        } else if (res.status == 401) {
+          throw new Error('Login expired');
+        } else {
+          console.log('Res is', res.status);
+          console.trace();
+
+          if (err) {
+            console.log(err);
+          }
+        }
+      });
+
+      count++;
+
+      if (count == maxRetries) {
+        throw new Error('Max retries');
+      }
+    }
+
+    for (let j = 0; j < temp.listing.length; j++) {
+      purchaseOrders.listing.push(temp.listing[i]);
+    }
+  }
+
+  return purchaseOrders;
+}
+
+async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
+  let added = false;
+  let j = 0;
+  let newOrderString = 'New Open Order(s):\n';
+
+  if (aliasOrders.purchase_orders) {
+    for (let i = 0; i < aliasOrders.purchase_orders.length; i++) {
+      let crnt = aliasOrders.purchase_orders[i];
+      let exist = false;
+
+      userOrdersArray.forEach((order) => {
+        if (order.number == crnt.number) {
+          exist = true;
+        }
+      });
+
+      if (exist) {
+        continue;
+      } else {
+        added = true;
+      }
+
+      let obj = {
+        number: crnt.number,
+        status: crnt.status,
+        take_action_by: crnt.take_action_by,
+        size: crnt.listing.size,
+        price_cents: crnt.listing.price_cents,
+        name: crnt.listing.product.name,
+      };
+
+      let date = new Date(crnt.take_action_by);
+
+      newOrderString += `\t${j}. ${obj.name} - ${obj.size} $${obj.price_cents / 100}\n\t\tStatus: ${convertStatus(
+        obj.status
+      )}\n\t\tTake action by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+
+      j++;
+
+      await Orders.updateOne({ d_id: user.d_id }, { $push: { orders: obj } }).catch((err) => console.log(err));
+    }
+  }
+
+  if (added) {
+    if (webhook != null) {
+      let success = false;
+      let count = 0;
+
+      while (!success) {
+        await webhook
+          .send('```' + newOrderString + '```', {
+            username: 'Orders',
+            avatarURL: client.config.aliasPicture,
+          })
+          .then(() => {
+            success = true;
+            console.log(`User: ${user.d_id}\nNew order added - webhook successfully sent\n`);
+          })
+          .catch((err) => {
+            if (err.message == 'Unknown Webhook') {
+              throw new Error('Unknown webhook');
+            } else if (err.message == 'Invalid Webhook Token') {
+              throw new Error('Invalid webhook token');
+            } else {
+              throw new Error(err);
+            }
+          });
+
+        count++;
+
+        if (count == maxRetries) {
+          throw new Error('Max retries');
+        }
+      }
+    }
+  }
+}
+
+async function deleteOrder(user, aliasOrders, userOrdersArray) {
+  for (let i = 0; i < userOrdersArray.length; i++) {
+    let crnt = userOrdersArray[i];
+    let deleted = true;
+
+    if (aliasOrders.purchase_orders) {
+      aliasOrders.purchase_orders.forEach((order) => {
+        if (crnt.number == order.number) {
+          deleted = false;
+        }
+      });
+    }
+
+    if (!deleted) {
+      continue;
+    }
+
+    await Orders.updateOne({ d_id: user.d_id }, { $pull: { orders: { number: crnt.number } } }).catch((err) =>
+      console.log(err)
+    );
+  }
+}
+
+async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
+  let changed = false;
+  let changedString = 'Updated Order(s):\n';
+  let k = 0;
+
+  for (let i = 0; i < userOrdersArray.length; i++) {
+    if (aliasOrders.purchase_orders) {
+      for (let j = 0; j < aliasOrders.purchase_orders.length; j++) {
+        let crnt = userOrdersArray[i];
+
+        if (crnt.number == aliasOrders.purchase_orders[j].number) {
+          let statusChange = false;
+          let dateChange = false;
+          let oldStatus = '';
+          let oldDate = '';
+
+          if (crnt.status != aliasOrders.purchase_orders[j].status) {
+            changed = true;
+            statusChange = true;
+            oldStatus = crnt.status;
+            crnt.status = aliasOrders.purchase_orders[j].status;
+          }
+
+          if (crnt.take_action_by != aliasOrders.purchase_orders[j].take_action_by) {
+            changed = true;
+            dateChange = true;
+            oldDate = crnt.take_action_by;
+            crnt.take_action_by = aliasOrders.purchase_orders[j].take_action_by;
+          }
+
+          if (statusChange && dateChange) {
+            let oldParsedDate = new Date(oldDate);
+            let newParsedDate = new Date(crnt.take_action_by);
+
+            changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${
+              crnt.price_cents / 100
+            }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
+              oldParsedDate.getMonth() + 1
+            }/${oldParsedDate.getDate()} => ${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`;
+            k++;
+          } else if (statusChange) {
+            let date = new Date(crnt.take_action_by);
+
+            changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${
+              crnt.price_cents / 100
+            }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
+              date.getMonth() + 1
+            }/${date.getDate()}`;
+            k++;
+          } else if (dateChange) {
+            let oldParsedDate = new Date(oldDate);
+            let newParsedDate = new Date(crnt.take_action_by);
+
+            changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${
+              crnt.price_cents / 100
+            }\n\t\tStatus: ${convertStatus(crnt.status)}\n\t\tTake action by: ${
+              oldParsedDate.getMonth() + 1
+            }/${oldParsedDate.getDate()} => ${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`;
+            k++;
+          }
+
+          if (changed) {
+            await Orders.updateOne(
+              { 'orders.number': crnt.number },
+              {
+                $set: {
+                  'orders.$': crnt,
+                },
+              }
+            ).catch((err) => console.log(err));
+          }
+        }
+      }
+    }
+  }
+
+  if (changed) {
+    if (webhook != null) {
+      let success = false;
+      let count = 0;
+
+      while (!success) {
+        await webhook
+          .send('```' + changedString + '```', {
+            username: 'Orders',
+            avatarURL: client.config.aliasPicture,
+          })
+          .then(() => {
+            success = true;
+            console.log(`User: ${user.d_id}\nOrder change detected - webhook successfully sent\n`);
+          })
+          .catch((err) => {
+            if (err.message == 'Unknown Webhook') {
+              throw new Error('Unknown webhook');
+            } else if (err.message == 'Invalid Webhook Token') {
+              throw new Error('Invalid webhook token');
+            } else {
+              throw new Error(err);
+            }
+          });
+
+        count++;
+
+        if (count == maxRetries) {
+          throw new Error('Max retries');
+        }
+      }
+    }
+  }
+}
+
+function convertStatus(status) {
+  if (status == 'IN_REVIEW') {
+    return 'In Review';
+  } else if (status == 'NEEDS_CONFIRMATION') {
+    return 'Needs Confirmation';
+  } else if (status == 'NEEDS_SHIPPING') {
+    return 'Needs Shipping';
+  } else if (status == 'SHIPPED') {
+    return 'Shipped';
+  } else if (status == 'DROPPED_OFF') {
+    return 'Dropped Off';
+  } else if (status == 'RECEIVED') {
+    return 'Received';
+  } else {
+    return status;
   }
 }
