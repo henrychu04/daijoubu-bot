@@ -7,6 +7,7 @@ const refresh = require('../scripts/refresh');
 
 const Users = require('../models/users');
 const Listings = require('../models/listings');
+const Orders = require('../models/orders');
 
 const response = {
   SUCCESS: 'success',
@@ -186,9 +187,7 @@ exports.run = async (client, message, args) => {
           throw new Error('Too many parameters');
         }
 
-        let purchaseOrders = {};
-
-        [toReturn, returnedEnum, purchaseOrders] = await getOrders(client, loginToken);
+        [toReturn, returnedEnum] = await getOrders(user);
 
         if (returnedEnum == response.SUCCESS) {
           toReturn = '```' + toReturn + '```';
@@ -1308,82 +1307,12 @@ async function confirmEdit(lowest, price, message) {
   }
 }
 
-async function getOrders(client, loginToken) {
-  let getStatus = 0;
-  let purchaseOrders = {};
-  let count = 0;
+async function getOrders(user) {
+  const userOrders = await Orders.find({ d_id: user.d_id });
+  const userOrdersArray = userOrders[0].orders;
 
-  while (getStatus != 200) {
-    purchaseOrders = await fetch(
-      'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
-      {
-        headers: {
-          'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-        },
-      }
-    ).then((res, err) => {
-      getStatus = res.status;
-
-      if (res.status == 200) {
-        return res.json();
-      } else if (res.status == 401) {
-        throw new Error('Login expired');
-      } else {
-        console.log('Res is', res.status);
-        console.trace();
-
-        if (err) {
-          console.log(err);
-        }
-      }
-    });
-
-    count++;
-
-    if (count == maxRetries) {
-      throw new Error('Max retries');
-    }
-  }
-
-  for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
-    let temp = {};
-    getStatus = 0;
-    count = 0;
-
-    while (getStatus != 200) {
-      temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
-        headers: {
-          'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-        },
-      }).then((res, err) => {
-        getStatus = res.status;
-
-        if (res.status == 200) {
-          return res.json();
-        } else if (res.status == 401) {
-          throw new Error('Login expired');
-        } else {
-          console.log('Res is', res.status);
-          console.trace();
-
-          if (err) {
-            console.log(err);
-          }
-        }
-      });
-
-      count++;
-
-      if (count == maxRetries) {
-        throw new Error('Max retries');
-      }
-    }
-
-    for (let j = 0; j < temp.listing.length; j++) {
-      purchaseOrders.listing.push(temp.listing[i]);
-    }
+  if (userOrdersArray.length == 0) {
+    return ['', response.NO_ITEMS];
   }
 
   let returnString = 'Current Open Orders:\n';
@@ -1403,81 +1332,75 @@ async function getOrders(client, loginToken) {
   let newString = '';
   let i = 0;
 
-  if (purchaseOrders.purchase_orders) {
-    purchaseOrders.purchase_orders.forEach((order) => {
-      let date = new Date(order.take_action_by);
+  userOrdersArray.forEach((order) => {
+    let date = new Date(order.take_action_by);
 
-      if (order.status == 'IN_REVIEW') {
-        reviewString += `\t\t${reviewNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
-          order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n`;
-        reviewNum++;
-      } else if (order.status == 'NEEDS_CONFIRMATION') {
-        confirmString += `\t\t${confirmNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
-          order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
-        confirmNum++;
-      } else if (order.status == 'NEEDS_SHIPPING') {
-        needShipString += `\t\t${needShipNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
-          order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`;
-        needShipNum++;
-      } else if (order.status == 'SHIPPED') {
-        shippedString += `\t\t${shippedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
-          order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n\t\t\tUPS tracking number: ${order.shipping_info.tracking_code}\n`;
-        shippedNum++;
-      } else if (order.status == 'DROPPED_OFF') {
-        droppedString += `\t\t${droppedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
-          order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n`;
-        droppedNum++;
-      } else if (order.status == 'RECEIVED') {
-        receivedString += `\t\t${receivedNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
-          order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n`;
-        receivedNum++;
-      } else {
-        newString += `\t${i}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
-          order.listing.price_cents / 100
-        }\n\t\tOrder number: ${order.number}\n`;
-        i++;
-        console.log(`\nNew order status is '${order.status}'\n`);
-      }
-    });
-
-    if (i != 0) {
-      returnString += newString + '\n';
+    if (order.status == 'IN_REVIEW') {
+      reviewString += `\t\t${reviewNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+        order.number
+      }\n`;
+      reviewNum++;
+    } else if (order.status == 'NEEDS_CONFIRMATION') {
+      confirmString += `\t\t${confirmNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+        order.number
+      }\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      confirmNum++;
+    } else if (order.status == 'NEEDS_SHIPPING') {
+      needShipString += `\t\t${needShipNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+        order.number
+      }\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      needShipNum++;
+    } else if (order.status == 'SHIPPED') {
+      shippedString += `\t\t${shippedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+        order.number
+      }\n\t\t\tUPS tracking number: ${order.tracking}\n`;
+      shippedNum++;
+    } else if (order.status == 'DROPPED_OFF') {
+      droppedString += `\t\t${droppedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+        order.number
+      }\n`;
+      droppedNum++;
+    } else if (order.status == 'RECEIVED') {
+      receivedString += `\t\t${receivedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+        order.number
+      }\n`;
+      receivedNum++;
+    } else {
+      newString += `\t${i}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${order.number}\n`;
+      i++;
+      console.log(`\nNew order status is '${order.status}'\n`);
     }
+  });
 
-    if (reviewNum != 0) {
-      returnString += reviewString + '\n';
-    }
-
-    if (confirmNum != 0) {
-      returnString += confirmString + '\n';
-    }
-
-    if (needShipNum != 0) {
-      returnString += needShipString + '\n';
-    }
-
-    if (droppedNum != 0) {
-      returnString += droppedString + '\n';
-    }
-
-    if (shippedNum != 0) {
-      returnString += shippedString + '\n';
-    }
-
-    if (receivedNum != 0) {
-      returnString += receivedString + '\n';
-    }
-
-    return [returnString, response.SUCCESS, purchaseOrders];
-  } else {
-    return ['', response.NO_ITEMS, {}];
+  if (i != 0) {
+    returnString += newString + '\n';
   }
+
+  if (reviewNum != 0) {
+    returnString += reviewString + '\n';
+  }
+
+  if (confirmNum != 0) {
+    returnString += confirmString + '\n';
+  }
+
+  if (needShipNum != 0) {
+    returnString += needShipString + '\n';
+  }
+
+  if (droppedNum != 0) {
+    returnString += droppedString + '\n';
+  }
+
+  if (shippedNum != 0) {
+    returnString += shippedString + '\n';
+  }
+
+  if (receivedNum != 0) {
+    returnString += receivedString + '\n';
+  }
+
+  return [returnString, response.SUCCESS];
 }
 
 async function confirm(client, loginToken, message) {
@@ -1531,7 +1454,7 @@ async function confirm(client, loginToken, message) {
       let date = new Date(order.take_action_by);
 
       if (order.status == 'NEEDS_CONFIRMATION') {
-        confirmString += `\t\t${confirmNum}. ${order.listing.product.name} - ${order.listing.size_option.name} $${
+        confirmString += `\t\t${confirmNum}. ${order.listing.product.name} - ${order.size} $${
           order.listing.price_cents / 100
         }\n\t\t\tOrder number: ${order.number}\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
 

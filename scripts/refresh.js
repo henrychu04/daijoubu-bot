@@ -1011,9 +1011,10 @@ async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
         number: crnt.number,
         status: crnt.status,
         take_action_by: crnt.take_action_by,
-        size: crnt.listing.size,
-        price_cents: crnt.listing.price_cents,
+        size: parseFloat(crnt.listing.size),
+        price: parseInt(crnt.listing.price_cents),
         name: crnt.listing.product.name,
+        tracking: '',
       };
 
       let date = new Date(crnt.take_action_by);
@@ -1120,30 +1121,58 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
             let oldParsedDate = new Date(oldDate);
             let newParsedDate = new Date(crnt.take_action_by);
 
-            changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${
-              crnt.price_cents / 100
-            }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
-              oldParsedDate.getMonth() + 1
-            }/${oldParsedDate.getDate()} => ${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`;
+            if (status == 'SHIPPED') {
+              crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
+
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                oldStatus
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
+                oldParsedDate.getMonth() + 1
+              }/${oldParsedDate.getDate()} => ${
+                newParsedDate.getMonth() + 1
+              }/${newParsedDate.getDate()}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
+            } else {
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                oldStatus
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
+                oldParsedDate.getMonth() + 1
+              }/${oldParsedDate.getDate()} => ${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}\n`;
+            }
             k++;
           } else if (statusChange) {
             let date = new Date(crnt.take_action_by);
 
-            changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${
-              crnt.price_cents / 100
-            }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
-              date.getMonth() + 1
-            }/${date.getDate()}`;
+            if (status == 'SHIPPED') {
+              crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
+
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                oldStatus
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
+                date.getMonth() + 1
+              }/${date.getDate()}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
+            } else {
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                oldStatus
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+            }
             k++;
           } else if (dateChange) {
             let oldParsedDate = new Date(oldDate);
             let newParsedDate = new Date(crnt.take_action_by);
 
-            changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${
-              crnt.price_cents / 100
-            }\n\t\tStatus: ${convertStatus(crnt.status)}\n\t\tTake action by: ${
-              oldParsedDate.getMonth() + 1
-            }/${oldParsedDate.getDate()} => ${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`;
+            if (status == 'SHIPPED') {
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                crnt.status
+              )}\n\t\tTake action by: ${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()} => ${
+                newParsedDate.getMonth() + 1
+              }/${newParsedDate.getDate()}\n`;
+            } else {
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                crnt.status
+              )}\n\t\tTake action by: ${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()} => ${
+                newParsedDate.getMonth() + 1
+              }/${newParsedDate.getDate()}\n`;
+            }
             k++;
           }
 

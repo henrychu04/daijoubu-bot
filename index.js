@@ -11,7 +11,17 @@ let client = new Discord.Client();
 const config = require('./config.json');
 client.config = config;
 
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).then(console.log('Connected to MongoDB'));
+let mongoConnnected = false;
+
+while (!mongoConnnected) {
+  mongoose
+    .connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then((mongoConnnected = true))
+    .then(console.log('Connected to MongoDB'))
+    .catch((err) => {
+      throw new Error(err);
+    });
+}
 
 const Sentry = require('@sentry/node');
 
