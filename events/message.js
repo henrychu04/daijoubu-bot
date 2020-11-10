@@ -10,6 +10,8 @@ module.exports = (client, message) => {
 
   if (!cmd) return;
 
+  console.log('User:', message.author.id);
+
   if (command == 'login') {
     console.log(`Command: !login ${args[0]}`);
   } else {

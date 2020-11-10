@@ -12,7 +12,7 @@ const response = {
   NO_ITEMS: 'no_items',
   NO_CHANGE: 'no_change',
   EXIT: 'exit',
-  TIMEDOUT: 'timedout',
+  TIMEOUT: 'timeout',
   ERROR: 'error',
 };
 
@@ -20,15 +20,15 @@ const maxRetries = 3;
 
 exports.run = async (client, message, args) => {
   try {
-    const query = message.content.slice(6);
-    const command = args[0];
-    let loginToken = '';
-    const id = message.author.id;
-    let user = null;
-
     if (args.length == 0) {
       throw new Error('Empty command');
     }
+
+    const query = message.content.slice(6);
+    const command = args[0].toLowerCase();
+    let loginToken = '';
+    const id = message.author.id;
+    let user = null;
 
     if (
       command == 'check' ||
@@ -103,7 +103,7 @@ exports.run = async (client, message, args) => {
           toReturn = '```Account currently has no Items listed```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEDOUT) {
+        } else if (returnedEnum == response.TIMEOUT) {
           toReturn = '```Command timed out```';
         }
         break;
@@ -158,7 +158,7 @@ exports.run = async (client, message, args) => {
           toReturn = '```Account currently has no items listed```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEDOUT) {
+        } else if (returnedEnum == response.TIMEOUT) {
           toReturn = '```Command timed out```';
         }
         break;
@@ -176,7 +176,7 @@ exports.run = async (client, message, args) => {
           await refresh(client, loginToken, user);
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEDOUT) {
+        } else if (returnedEnum == response.TIMEOUT) {
           toReturn = '```Command timed out```';
         }
         break;
@@ -215,7 +215,7 @@ exports.run = async (client, message, args) => {
           toReturn = '```Currently all open order(s) are confirmed```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEDOUT) {
+        } else if (returnedEnum == response.TIMEOUT) {
           toReturn = '```Command timed out```';
         }
         break;
@@ -224,9 +224,9 @@ exports.run = async (client, message, args) => {
 
         if (args.length > 2) {
           throw new Error('Too many parameters');
-        } else if (args[1] == 'edit') {
+        } else if (args[1].toLowerCase() == 'edit') {
           edit = true;
-        } else if (args[1] && args[1] != 'edit') {
+        } else if (args[1] && args[1].toLowerCase() != 'edit') {
           throw new Error('Incorrect format');
         }
 
@@ -236,14 +236,14 @@ exports.run = async (client, message, args) => {
           toReturn = toReturn;
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEDOUT) {
+        } else if (returnedEnum == response.TIMEOUT) {
           toReturn = '```Command timed out```';
         } else if (returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account currently has no items listed```';
         }
         break;
       case 'list':
-        let params = message.content.slice(11).split(' ');
+        let params = message.content.slice(11).toLowerCase().split(' ');
 
         let valid = false;
         let sizingArray = [];
@@ -266,7 +266,7 @@ exports.run = async (client, message, args) => {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.NO_CHANGE) {
           toReturn = '```No new item(s) listed```';
-        } else if (returnedEnum == response.TIMEDOUT) {
+        } else if (returnedEnum == response.TIMEOUT) {
           toReturn = '```Command timed out```';
         }
         break;
@@ -302,7 +302,7 @@ exports.run = async (client, message, args) => {
           toReturn = '```' + `Current Available Earnings: $${newAmount / 100}` + '```';
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEDOUT) {
+        } else if (returnedEnum == response.TIMEOUT) {
           toReturn = '```Command timed out```';
         } else if (returnedEnum == response.NO_CHANGE) {
           toReturn = '```No earnings available for cash out```';
@@ -683,7 +683,7 @@ async function update(client, loginToken, message, user) {
   if (exit) {
     return [response.EXIT, null, null];
   } else if (!stopped) {
-    return [response.TIMEDOUT, null, null];
+    return [response.TIMEOUT, null, null];
   }
 
   const msg = await message.channel.send('```' + `Updating ...` + '```');
@@ -953,7 +953,7 @@ async function deleteSearch(client, loginToken, message, user) {
   if (exit) {
     return [response.EXIT, null, null];
   } else if (!stopped) {
-    return [response.TIMEDOUT, null, null];
+    return [response.TIMEOUT, null, null];
   }
 
   const msg = await message.channel.send('```' + `Deleting ...` + '```');
@@ -1114,7 +1114,7 @@ async function editListing(client, loginToken, user, message) {
   if (exit) {
     return [response.EXIT, null];
   } else if (!stopped) {
-    return [response.TIMEDOUT, null];
+    return [response.TIMEOUT, null];
   }
 
   await message.channel.send('```' + `Enter new price or 'lowest'\nEnter 'n' to cancel` + '```');
@@ -1198,7 +1198,7 @@ async function editListing(client, loginToken, user, message) {
   if (exit) {
     return [response.EXIT, null];
   } else if (!stopped) {
-    return [response.TIMEDOUT, null];
+    return [response.TIMEOUT, null];
   }
 
   const msg = await message.channel.send('```Editing ...```');
@@ -1571,7 +1571,7 @@ async function confirm(client, loginToken, message) {
   if (exit) {
     return [response.EXIT, null, null];
   } else if (!stopped) {
-    return [response.TIMEDOUT, null, null];
+    return [response.TIMEOUT, null, null];
   }
 
   let msg = await message.channel.send('```Confirming ... ```');
@@ -1728,7 +1728,7 @@ async function settings(message, user, edit) {
     }
 
     if (!stopped) {
-      return ['', response.TIMEDOUT];
+      return ['', response.TIMEOUT];
     } else {
       return ['', returnedEnum];
     }
@@ -1773,7 +1773,7 @@ async function editOrderRate(message, user) {
   if (exit) {
     return response.EXIT;
   } else if (!stopped) {
-    return response.TIMEDOUT;
+    return response.TIMEOUT;
   } else {
     return response.SUCCESS;
   }
@@ -1817,7 +1817,7 @@ async function editDefaultListingRate(message, user) {
   if (exit) {
     return response.EXIT;
   } else if (!stopped) {
-    return response.TIMEDOUT;
+    return response.TIMEOUT;
   } else {
     return response.SUCCESS;
   }
@@ -1868,7 +1868,7 @@ async function editSpecifiedListingRate(message, user) {
   if (exit) {
     return response.EXIT;
   } else if (!stopped) {
-    return response.TIMEDOUT;
+    return response.TIMEOUT;
   }
 
   await message.channel.send('```' + `Enter 'live' or 'manual'\nEnter 'n' to cancel` + '```');
@@ -1899,7 +1899,7 @@ async function editSpecifiedListingRate(message, user) {
   if (exit) {
     return response.EXIT;
   } else if (!stopped) {
-    return response.TIMEDOUT;
+    return response.TIMEOUT;
   }
 
   let msg = await message.channel.send('```' + 'Editing ...' + '```');
@@ -2051,7 +2051,7 @@ async function list(client, message, loginToken, sizingArray, query) {
   if (exit) {
     return [response.EXIT, returnString, msg];
   } else if (!stopped) {
-    return [response.TIMEDOUT, returnString, msg];
+    return [response.TIMEOUT, returnString, msg];
   } else {
     return [response.SUCCESS, returnString, msg];
   }
@@ -2239,7 +2239,7 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
       }
 
       if (!stopped) {
-        returnedEnum = response.TIMEDOUT;
+        returnedEnum = response.TIMEOUT;
       }
 
       if (skip) {
@@ -2895,7 +2895,7 @@ async function cashOut(client, loginToken, user, message) {
   if (exit) {
     return [response.EXIT, null, null];
   } else if (!stopped) {
-    return [response.TIMEDOUT, null, null];
+    return [response.TIMEOUT, null, null];
   }
 
   let all = false;
@@ -2939,7 +2939,7 @@ async function cashOut(client, loginToken, user, message) {
   if (exit) {
     return [response.EXIT, null, null];
   } else if (!stopped) {
-    return [response.TIMEDOUT, null, null];
+    return [response.TIMEOUT, null, null];
   }
 
   let msg = await message.channel.send('```' + 'Cashing out ...' + '```');

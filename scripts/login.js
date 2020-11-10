@@ -8,7 +8,7 @@ const maxRetries = 3;
 
 function maintainLogin() {
   try {
-    console.log('Maintaining Logins ...');
+    console.log('Maintaining logins ...');
     setInterval(loggingIn, 3600000);
   } catch (err) {
     console.log(err);
