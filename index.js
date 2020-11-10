@@ -13,6 +13,12 @@ client.config = config;
 
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).then(console.log('Connected to MongoDB'));
 
+const Sentry = require('@sentry/node');
+
+Sentry.init({
+  dsn: 'https://2556d4deb96b458c815d9a27b6e4117a@o474352.ingest.sentry.io/5510541',
+});
+
 fs.readdir('./events/', (err, files) => {
   if (err) return console.error(err);
   files.forEach((file) => {

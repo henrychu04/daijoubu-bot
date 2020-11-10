@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const Sentry = require('@sentry/node');
 const encryption = require('../scripts/encryption');
 
 const Users = require('../models/users');
@@ -89,6 +90,7 @@ exports.run = async (client, message, args) => {
     }
   } catch (err) {
     console.log(err);
+    Sentry.captureException(err);
 
     if (err.message == 'Invalid login') {
       message.channel.send('```Unable to login to alias\nIncorrect email and / or password```');

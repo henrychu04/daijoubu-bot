@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 const Discord = require('discord.js');
 const Money = require('js-money');
+const Sentry = require('@sentry/node');
 const encryption = require('../scripts/encryption');
 const refresh = require('../scripts/refresh');
 
@@ -330,6 +331,7 @@ exports.run = async (client, message, args) => {
     }
   } catch (err) {
     console.log(err);
+    Sentry.captureException(err);
 
     switch (err.message) {
       case 'No hits':

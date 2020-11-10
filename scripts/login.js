@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const encryption = require('./encryption');
+const Sentry = require('@sentry/node');
 const config = require('../config.json');
 
 const Users = require('../models/users');
@@ -12,6 +13,7 @@ function maintainLogin() {
     setInterval(loggingIn, 3600000);
   } catch (err) {
     console.log(err);
+    Sentry.captureException(err);
   }
 }
 
