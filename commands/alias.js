@@ -251,18 +251,29 @@ exports.run = async (client, message, args) => {
         let searchParams = '';
         let listString = '';
         let listMsg = null;
+        let lower = false;
 
         [valid, returnedEnum, sizingArray, searchParams] = await checkListParams(params);
 
         if (!valid && returnedEnum == response.NO_CHANGE) {
           throw new Error('Invalid list command');
         } else if (valid) {
-          [returnedEnum, listString, listMsg] = await list(client, message, loginToken, sizingArray, searchParams);
+          [returnedEnum, listString, listMsg, lower] = await list(
+            client,
+            user,
+            message,
+            loginToken,
+            sizingArray,
+            searchParams
+          );
         }
 
         if (returnedEnum == response.SUCCESS) {
-          await listMsg.edit('```' + listString + '```').then(console.log(`${message} completed\n`));
-          await refresh(client, loginToken, user);
+          if (!lower) {
+            await listMsg.edit('```' + listString + '```').then(console.log(`${message} completed\n`));
+          } else {
+            toReturn = '```' + listString + '```';
+          }
         } else if (returnedEnum == response.EXIT) {
           toReturn = '```Canceled```';
         } else if (returnedEnum == response.NO_CHANGE) {
@@ -363,7 +374,7 @@ exports.run = async (client, message, args) => {
       case 'Invalid list command':
         message.channel.send(
           '```' +
-            `Incorrect format\nCorrect format is:\n\n!alias list <search parameters> [<size (num)>,<price (num, 'lowest')>,<amount (num) - optional>] [] ...` +
+            `Incorrect format\nCorrect format is:\n\n!alias list <search parameters> [<size (num)> REQUIRED,<price (num, 'lowest')> REQUIRED,<amount (num)> OR <listing update rate ('live', 'manual')> OPTIONAL,<listing update rate ('live', 'manual')> OPTIONAL] [] ...\n\nExamples:\n\t[10,lowest]\t[10,500]\t[10,500,live]\t[10,500,manual]\t[10,500,4,live]` +
             '```'
         );
         break;
@@ -385,6 +396,9 @@ exports.run = async (client, message, args) => {
         break;
       case 'Missing phone number':
         message.channel.send('```Account is missing phone number\nCommand not available until one is added```');
+        break;
+      case 'Invalid size':
+        message.channel.send('```Listing parameters has one or more non-existing sizes```');
         break;
       default:
         message.channel.send('```Unexpected Error```');
@@ -1926,12 +1940,11 @@ async function editSpecifiedListingRate(message, user) {
     }
   } else {
     for (i = 0; i < nums.length; i++) {
-      await Listings.updateOne(
-        { 'listings.id': listingIds[nums[i]] },
-        { $set: { 'listings.$.setting': input } }
-      ).catch((err) => {
-        throw new Error(err);
-      });
+      await Listings.updateOne({ 'listings.id': listingIds[nums[i]] }, { $set: { 'listings.$.setting': input } }).catch(
+        (err) => {
+          throw new Error(err);
+        }
+      );
     }
 
     if (i == nums.length) {
@@ -1994,7 +2007,26 @@ async function checkListParams(params) {
         return [false, response.NO_CHANGE, [], ''];
       }
 
-      if (crntArray[2] && isNaN(crntArray[2])) {
+      if (crntArray[2]) {
+        if (isNaN(crntArray[2])) {
+          if (crntArray[2].toLowerCase() != 'live' && crntArray[2].toLowerCase() != 'manual') {
+            console.log('here3\n');
+            return [false, response.NO_CHANGE, [], ''];
+          }
+        }
+      }
+
+      let rate = false;
+
+      if (crntArray[2] && (crntArray[2].toLowerCase() == 'live' || crntArray[2].toLowerCase() == 'manual')) {
+        rate = true;
+      }
+
+      if (crntArray[3] && rate && (crntArray[3].toLowerCase() == 'live' || crntArray[3].toLowerCase() == 'manual')) {
+        return [false, response.NO_CHANGE, [], ''];
+      }
+
+      if (crntArray[3] && !rate && crntArray[3].toLowerCase() != 'live' && crntArray[3].toLowerCase() != 'manual') {
         return [false, response.NO_CHANGE, [], ''];
       }
 
@@ -2011,13 +2043,12 @@ async function checkListParams(params) {
   return [true, response.SUCCESS, sizingArray, query];
 }
 
-async function list(client, message, loginToken, sizingArray, query) {
+async function list(client, user, message, loginToken, sizingArray, query) {
   let searchProduct = await aliasSearch(client, query).catch((err) => {
     throw new Error(err);
   });
 
   await message.channel.send(searchProduct);
-
   await message.channel.send(
     '```' + `Is this the product that you want to list?\nEnter 'y' to confirm, enter 'n' to cancel` + '```'
   );
@@ -2026,6 +2057,7 @@ async function list(client, message, loginToken, sizingArray, query) {
   let msg = null;
   let exit = false;
   let stopped = false;
+  let lower = false;
 
   const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
@@ -2044,7 +2076,15 @@ async function list(client, message, loginToken, sizingArray, query) {
         collector.stop();
         stopped = true;
         msg = await message.channel.send('```Listing ...```');
-        [returnedEnum, returnString] = await doList(client, loginToken, message, searchProduct, sizingArray);
+
+        [returnedEnum, returnString, lower] = await doList(
+          client,
+          user,
+          loginToken,
+          message,
+          searchProduct,
+          sizingArray
+        );
       }
     } else {
       await message.channel.send('```' + `Enter either 'y' or 'n'` + '```');
@@ -2052,15 +2092,15 @@ async function list(client, message, loginToken, sizingArray, query) {
   }
 
   if (exit) {
-    return [response.EXIT, returnString, msg];
+    return [response.EXIT, returnString, msg, lower];
   } else if (!stopped) {
-    return [response.TIMEOUT, returnString, msg];
+    return [response.TIMEOUT, returnString, msg, lower];
   } else {
-    return [response.SUCCESS, returnString, msg];
+    return [response.SUCCESS, returnString, msg, lower];
   }
 }
 
-async function doList(client, loginToken, message, searchProduct, sizingArray) {
+async function doList(client, user, loginToken, message, searchProduct, sizingArray) {
   let returnString = 'Successfully Listed:\n\t' + searchProduct.title + '\n';
   let returnedEnum = null;
   let url = searchProduct.url.split('/');
@@ -2149,55 +2189,71 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
   };
 
   let i = 0;
+  let detectedLower = false;
 
   for (i = 0; i < sizingArray.length; i++) {
     let crnt = sizingArray[i].substring(1, sizingArray[i].length - 1).split(',');
 
     let size = crnt[0];
     let price = crnt[1];
-    let amount = crnt[2];
+    let rate = null;
+    let amount = null;
 
-    if (!amount) {
+    if (crnt[2] && (crnt[2].toLowerCase() == 'live' || crnt[2].toLowerCase() == 'manual')) {
+      rate = crnt[2].toLowerCase();
+    } else if (!isNaN(crnt[2])) {
+      amount = crnt[2];
+    }
+
+    if (crnt[3]) {
+      rate = crnt[3].toLowerCase();
+    }
+
+    let lowest = 0;
+    let lower = false;
+    let existingSize = false;
+
+    if (amount == null) {
       amount = 1;
     }
 
     listing.listing.sizeOption.name = size;
     listing.listing.sizeOption.value = parseFloat(size);
 
-    if (price == 'lowest') {
-      for (let k = 0; k < pageData.availability.length; k++) {
-        if (pageData.availability[k].size == parseFloat(size)) {
-          if (!pageData.availability[k].lowest_price_cents) {
-            throw new Error('No lowest ask');
-          }
+    for (let k = 0; k < pageData.availability.length; k++) {
+      if (pageData.availability[k].size == parseFloat(size)) {
+        existingSize = true;
 
-          price = pageData.availability[k].lowest_price_cents;
-          listing.listing.priceCents = parseInt(price);
-          break;
+        if (!pageData.availability[k].lowest_price_cents) {
+          throw new Error('No lowest ask');
+        } else {
+          lowest = parseInt(pageData.availability[k].lowest_price_cents);
         }
-      }
-    } else {
-      listing.listing.priceCents = parseInt(price) * 100;
-    }
 
-    let lower = false;
-    let lowest = 0;
+        if (price == 'lowest') {
+          price = lowest;
+          listing.listing.priceCents = price;
+        } else {
+          listing.listing.priceCents = parseInt(price) * 100;
+        }
 
-    for (variant of pageData.availability) {
-      if (variant.size == size) {
-        if (variant.lowest_price_cents > listing.listing.priceCents) {
-          lowest = variant.lowest_price_cents / 100;
+        if (lowest / 100 > listing.listing.priceCents) {
           lower = true;
-          break;
+          detectedLower = true;
         }
+        break;
       }
     }
 
-    async function whileRequest(client, loginToken, listing, amount, returnString) {
+    if (!existingSize) {
+      throw new Error('Invalid size');
+    }
+
+    async function whileRequest(listing, amount, returnString) {
       let j = 0;
 
       while (j < parseInt(amount)) {
-        await listReq(client, loginToken, listing);
+        await listReq(client, loginToken, listing, user, rate, lowest);
         returnString += `\t\t${j}. size: ${listing.listing.sizeOption.name} - $${listing.listing.priceCents / 100}\n`;
         j++;
       }
@@ -2213,7 +2269,11 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
 
       await message.channel.send(
         '```' +
-          `Current lowest ask for size ${size}: $${lowest}\nYou entered $${price}, a lower asking price than the current lowest asking price of $${lowest}\nEnter 'y to confirm, 'n' to skip` +
+          `Current lowest ask for size ${size}: $${
+            lowest / 100
+          }\nYou entered $${price}, a lower asking price than the current lowest asking price of $${
+            lowest / 100
+          }\n\nEnter 'y to confirm, 'n' to skip size ${size}` +
           '```'
       );
 
@@ -2233,7 +2293,7 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
           } else {
             collector.stop();
             stopped = true;
-            returnString = await whileRequest(client, loginToken, listing, amount, returnString);
+            returnString = await whileRequest(listing, amount, returnString);
             returnedEnum = response.SUCCESS;
           }
         } else {
@@ -2249,7 +2309,7 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
         continue;
       }
     } else {
-      returnString = await whileRequest(client, loginToken, listing, amount, returnString);
+      returnString = await whileRequest(listing, amount, returnString);
       returnedEnum = response.SUCCESS;
     }
   }
@@ -2259,81 +2319,93 @@ async function doList(client, loginToken, message, searchProduct, sizingArray) {
       returnedEnum = response.NO_CHANGE;
     }
 
-    return [returnedEnum, returnString];
+    return [returnedEnum, returnString, detectedLower];
   } else {
     throw new Error('Error listing');
   }
 }
 
-async function listReq(client, loginToken, listing) {
+async function listReq(client, loginToken, listing, user, rate, lowest) {
   let list = null;
   let listRes = 0;
   let count = 0;
 
-  while (listRes != 200) {
-    list = await fetch(`https://sell-api.goat.com/api/v1/listings`, {
-      method: 'POST',
-      headers: {
-        'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-      },
-      body: JSON.stringify(listing),
-    }).then((res, err) => {
-      listRes = res.status;
+  // while (listRes != 200) {
+  //   list = await fetch(`https://sell-api.goat.com/api/v1/listings`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'user-agent': client.config.aliasHeader,
+  //       authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+  //     },
+  //     body: JSON.stringify(listing),
+  //   }).then((res, err) => {
+  //     listRes = res.status;
 
-      if (res.status == 200) {
-        return res.json();
-      } else if (res.status == 401) {
-        throw new Error('Login expired');
-      } else {
-        console.log('Res is', res.status);
-        console.trace();
+  //     if (res.status == 200) {
+  //       return res.json();
+  //     } else if (res.status == 401) {
+  //       throw new Error('Login expired');
+  //     } else {
+  //       console.log('Res is', res.status);
+  //       console.trace();
 
-        if (err) {
-          console.log(err);
-        }
-      }
-    });
+  //       if (err) {
+  //         console.log(err);
+  //       }
+  //     }
+  //   });
 
-    count++;
+  //   count++;
 
-    if (count == maxRetries) {
-      throw new Error('Max retries');
-    }
-  }
+  //   if (count == maxRetries) {
+  //     throw new Error('Max retries');
+  //   }
+  // }
 
-  let activate = 0;
-  count = 0;
+  // let activate = 0;
+  // count = 0;
 
-  while (activate != 200) {
-    activate = await fetch(`https://sell-api.goat.com/api/v1/listings/${list.listing.id}/activate`, {
-      method: 'PUT',
-      headers: {
-        'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-      },
-      body: `{"id":"${list.listing.id}"}`,
-    }).then((res, err) => {
-      if (res.status == 401) {
-        throw new Error('Login expired');
-      } else if (res.status != 200) {
-        console.log('Res is', res.status);
-        console.trace();
+  // while (activate != 200) {
+  //   activate = await fetch(`https://sell-api.goat.com/api/v1/listings/${list.listing.id}/activate`, {
+  //     method: 'PUT',
+  //     headers: {
+  //       'user-agent': client.config.aliasHeader,
+  //       authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+  //     },
+  //     body: `{"id":"${list.listing.id}"}`,
+  //   }).then((res, err) => {
+  //     if (res.status == 401) {
+  //       throw new Error('Login expired');
+  //     } else if (res.status != 200) {
+  //       console.log('Res is', res.status);
+  //       console.trace();
 
-        if (err) {
-          throw new Error(err);
-        }
-      }
+  //       if (err) {
+  //         throw new Error(err);
+  //       }
+  //     }
 
-      return res.status;
-    });
+  //     return res.status;
+  //   });
 
-    count++;
+  //   count++;
 
-    if (count == maxRetries) {
-      throw new Error('Max retries');
-    }
-  }
+  //   if (count == maxRetries) {
+  //     throw new Error('Max retries');
+  //   }
+  // }
+
+  let obj = {
+    id: listing.listing.id,
+    name: listing.listing.product.name,
+    size: parseFloat(listing.listing.sizeOption.value),
+    price: parseInt(listing.listing.priceCents),
+    slug: listing.listing.productId,
+    lowest: parseInt(lowest),
+    setting: rate == null ? user.settings.adjustListing : rate,
+  };
+
+  // await Listings.updateOne({ d_id: user.d_id }, { $push: { listings: obj } }).catch((err) => console.log(err));
 }
 
 async function me(client, loginToken) {
