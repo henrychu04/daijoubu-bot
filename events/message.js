@@ -1,7 +1,11 @@
 module.exports = (client, message) => {
   if (message.author.bot) return;
 
-  if (message.content.indexOf(client.config.prefix) !== 0) return;
+  if (message.guild.id == '739493918558781490') {
+    if (message.content.indexOf(client.config.rudymfPrefix) !== 0) return;
+  } else {
+    if (message.content.indexOf(client.config.prefix) !== 0) return;
+  }
 
   const args = message.content.slice(client.config.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
