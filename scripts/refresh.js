@@ -1121,7 +1121,7 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
             let oldParsedDate = new Date(oldDate);
             let newParsedDate = new Date(crnt.take_action_by);
 
-            if (status == 'SHIPPED') {
+            if (crnt.status == 'SHIPPED') {
               crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
 
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
