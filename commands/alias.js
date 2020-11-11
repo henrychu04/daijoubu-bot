@@ -344,16 +344,7 @@ exports.run = async (client, message, args) => {
       }
     } catch (err) {
       console.log(err);
-
-      Sentry.captureException(err, (scope) => {
-        scope.clear();
-        scope.setUser({
-          id: id,
-        });
-        return scope;
-      });
-
-      Sentry.configureScope((scope) => scope.setUser(null));
+      Sentry.captureException(err);
 
       switch (err.message) {
         case 'No hits':
@@ -395,6 +386,19 @@ exports.run = async (client, message, args) => {
         case 'Invalid size':
           message.channel.send('```Listing parameters has one or more non-existing sizes```');
           break;
+        case 'Too many parameters':
+          message.channel.send('```Command has too many parameters```');
+          break;
+        case 'Incorrect format':
+          message.channel.send('```Incorrect format```');
+          break;
+        case 'Invalid list command':
+          message.channel.send(
+            '```' +
+              `Incorrect format\nCorrect format is:\n\n!alias list <search parameters> [<size (num)> REQUIRED,<price (num, 'lowest')> REQUIRED,<amount (num)> OR <listing update rate ('live', 'manual')> OPTIONAL,<listing update rate ('live', 'manual')> OPTIONAL] [] ...\n\nExamples:\n\t[10,lowest]\t[10,500]\t[10,500,live]\t[10,500,manual]\t[10,500,4,live]` +
+              '```'
+          );
+          break;
         default:
           message.channel.send('```Unexpected Error```');
           break;
@@ -406,19 +410,6 @@ exports.run = async (client, message, args) => {
     switch (err.message) {
       case 'Empty command':
         message.channel.send('```Command is missing parameters```');
-        break;
-      case 'Too many parameters':
-        message.channel.send('```Command has too many parameters```');
-        break;
-      case 'Incorrect format':
-        message.channel.send('```Incorrect format```');
-        break;
-      case 'Invalid list command':
-        message.channel.send(
-          '```' +
-            `Incorrect format\nCorrect format is:\n\n!alias list <search parameters> [<size (num)> REQUIRED,<price (num, 'lowest')> REQUIRED,<amount (num)> OR <listing update rate ('live', 'manual')> OPTIONAL,<listing update rate ('live', 'manual')> OPTIONAL] [] ...\n\nExamples:\n\t[10,lowest]\t[10,500]\t[10,500,live]\t[10,500,manual]\t[10,500,4,live]` +
-            '```'
-        );
         break;
       default:
         message.channel.send('```Unexpected Error```');
