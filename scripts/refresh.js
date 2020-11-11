@@ -146,7 +146,7 @@ async function updateLowest(client, user, allListings, webhook, userListingsArra
 
         allListings.set(userListingsArray[i].slug, pageData);
 
-        for (size of existing.availability) {
+        for (size of pageData.availability) {
           if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
             let lowest = parseInt(size.lowest_price_cents);
 
