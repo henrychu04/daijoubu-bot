@@ -14,7 +14,7 @@ module.exports = async function refresh(client, loginToken, user) {
     if (!loginToken) {
       const users = await Users.find();
       const date = new Date();
-      let allListings = [];
+      let allListings = new Map();
 
       for (let i = 0; i < users.length; i++) {
         let user = users[i];
@@ -75,54 +75,43 @@ async function updateLowest(client, user, allListings, webhook, userListingsArra
     let manual = 0;
 
     for (let i = 0; i < userListingsArray.length; i++) {
-      let exist = false;
+      if (allListings.has(userListingsArray[i].slug)) {
+        let existing = allListings.get(userListingsArray[i].slug);
 
-      for (let j = 0; j < allListings.length; j++) {
-        exist = false;
+        for (size of existing.availability) {
+          if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
+            let lowest = parseInt(size.lowest_price_cents);
 
-        if (userListingsArray[i].slug == allListings[j].slug) {
-          exist = true;
+            if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
+              await updateListing(client, user, userListingsArray[i].id, lowest);
 
-          for (let k = 0; k < allListings[j].data.availability.length; k++) {
-            let size = allListings[j].data.availability[k];
+              liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+                userListingsArray[i].price / 100
+              }\n\t\t$${userListingsArray[i].price} => $${lowest / 100}\n`;
+              live++;
 
-            if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
-              let lowest = parseInt(size.lowest_price_cents);
+              await Listings.updateOne(
+                { 'listings.id': userListingsArray[i].id },
+                { $set: { 'listings.$.price': lowest } }
+              ).catch((err) => console.log(err));
+            }
 
-              if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
-                await updateListing(client, user, userListingsArray[i].id, lowest);
-
-                liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+            if (lowest != userListingsArray[i].lowest) {
+              if (userListingsArray[i].setting == 'manual') {
+                manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
                   userListingsArray[i].price / 100
-                }\n\t\t$${userListingsArray[i].price} => $${lowest / 100}\n`;
-                live++;
-
-                await Listings.updateOne(
-                  { 'listings.id': userListingsArray[i].id },
-                  { $set: { 'listings.$.price': lowest } }
-                ).catch((err) => console.log(err));
+                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
+                manual++;
               }
 
-              if (lowest != userListingsArray[i].lowest) {
-                if (userListingsArray[i].setting == 'manual') {
-                  manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
-                    userListingsArray[i].price / 100
-                  }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
-                  manual++;
-                }
-
-                await Listings.updateOne(
-                  { 'listings.id': userListingsArray[i].id },
-                  { $set: { 'listings.$.lowest': lowest } }
-                ).catch((err) => console.log(err));
-              }
+              await Listings.updateOne(
+                { 'listings.id': userListingsArray[i].id },
+                { $set: { 'listings.$.lowest': lowest } }
+              ).catch((err) => console.log(err));
             }
           }
-          break;
         }
-      }
-
-      if (!exist) {
+      } else {
         let pageDataRes = false;
         let pageData = null;
         let count = 0;
@@ -155,11 +144,9 @@ async function updateLowest(client, user, allListings, webhook, userListingsArra
           }
         }
 
-        allListings.push({ slug: userListingsArray[i].slug, data: pageData });
+        allListings.set(userListingsArray[i].slug, pageData);
 
-        for (let j = 0; j < pageData.availability.length; j++) {
-          let size = pageData.availability[j];
-
+        for (size of existing.availability) {
           if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
             let lowest = parseInt(size.lowest_price_cents);
 
@@ -991,8 +978,7 @@ async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
   let newOrderString = 'New Open Order(s):\n';
 
   if (aliasOrders.purchase_orders) {
-    for (let i = 0; i < aliasOrders.purchase_orders.length; i++) {
-      let crnt = aliasOrders.purchase_orders[i];
+    for (crnt of aliasOrders.purchase_orders) {
       let exist = false;
 
       userOrdersArray.forEach((order) => {
@@ -1186,6 +1172,7 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
               }
             ).catch((err) => console.log(err));
           }
+          break;
         }
       }
     }
