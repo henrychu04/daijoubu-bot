@@ -10,23 +10,25 @@ const Orders = require('../models/orders');
 const maxRetries = 3;
 
 module.exports = async function refresh(client, loginToken, user) {
-  try {
-    if (!loginToken) {
-      const users = await Users.find();
+  if (!loginToken) {
+    const users = await Users.find();
+    let allListings = new Map();
+
+    for (let i = 0; i < users.length; i++) {
       const date = new Date();
-      let allListings = new Map();
 
-      for (let i = 0; i < users.length; i++) {
-        let user = users[i];
-        let webhook = null;
+      let user = users[i];
 
-        if (user.webhook.length != 0) {
-          let split = user.webhook.split('/');
-          let id = split[5];
-          let token = split[6];
-          webhook = new Discord.WebhookClient(id, token);
-        }
+      let webhook = null;
 
+      if (user.webhook.length != 0) {
+        let split = user.webhook.split('/');
+        let id = split[5];
+        let token = split[6];
+        webhook = new Discord.WebhookClient(id, token);
+      }
+
+      try {
         if (user.settings.orderRefresh == 'live') {
           await confirmOrders(client, user, user.settings.orderRefresh, webhook);
         } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 5 && date.getMinutes() == 1) {
@@ -53,17 +55,40 @@ module.exports = async function refresh(client, loginToken, user) {
         await syncOrders(client, user, aliasOrders, webhook, userOrdersArray);
 
         await earnings(client, user, webhook);
+      } catch (err) {
+        console.log(err);
+
+        Sentry.captureException(err, (scope) => {
+          scope.clear();
+          scope.setUser({
+            id: user.d_id,
+          });
+          return scope;
+        });
+
+        Sentry.configureScope((scope) => scope.setUser(null));
       }
-    } else {
+    }
+  } else {
+    try {
       let aliasListings = await getListings(client, loginToken);
 
       await addListing(user, aliasListings);
       await deleteListing(user, aliasListings);
       await syncListingPrice(user, aliasListings);
+    } catch (err) {
+      console.log(err);
+
+      Sentry.captureException(err, (scope) => {
+        scope.clear();
+        scope.setUser({
+          id: user.d_id,
+        });
+        return scope;
+      });
+
+      Sentry.configureScope((scope) => scope.setUser(null));
     }
-  } catch (err) {
-    console.log(err);
-    Sentry.captureException(err);
   }
 };
 

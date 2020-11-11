@@ -32,328 +32,380 @@ exports.run = async (client, message, args) => {
     const id = message.author.id;
     let user = null;
 
-    if (
-      command == 'check' ||
-      command == 'update' ||
-      command == 'listings' ||
-      command == 'delete' ||
-      command == 'edit' ||
-      command == 'orders' ||
-      command == 'confirm' ||
-      command == 'settings' ||
-      command == 'list' ||
-      command == 'me' ||
-      command == 'earnings' ||
-      command == 'cashout'
-    ) {
-      user = await Users.find({ d_id: id });
+    try {
+      if (
+        command == 'check' ||
+        command == 'update' ||
+        command == 'listings' ||
+        command == 'delete' ||
+        command == 'edit' ||
+        command == 'orders' ||
+        command == 'confirm' ||
+        command == 'settings' ||
+        command == 'list' ||
+        command == 'me' ||
+        command == 'earnings' ||
+        command == 'cashout'
+      ) {
+        user = await Users.find({ d_id: id });
 
-      if (user.length == 0) {
-        throw new Error('Not logged in');
+        if (user.length == 0) {
+          throw new Error('Not logged in');
+        }
+
+        user = user[0];
+        loginToken = user.login;
       }
 
-      user = user[0];
-      loginToken = user.login;
-    }
+      let toReturn = '';
+      let returnedEnum = null;
 
-    let toReturn = '';
-    let returnedEnum = null;
+      switch (command) {
+        case 'check':
+          let checkListingObj = [];
+          let userListingsCheckArray = [];
 
-    switch (command) {
-      case 'check':
-        let checkListingObj = [];
-        let userListingsCheckArray = [];
-
-        if (args.length < 2) {
-          [toReturn, returnedEnum, checkListingObj, userListingsCheckArray] = await check(client, loginToken, user);
-        } else {
-          throw new Error('Too many parameters');
-        }
-
-        if (returnedEnum == response.SUCCESS) {
-          toReturn = '```' + toReturn + '```';
-        } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```All listing(s) match their lowest asks```';
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account currently has no items listed```';
-        }
-        break;
-      case 'update':
-        let updateAll = false;
-        let updateMsg = null;
-
-        if (args.length > 1) {
-          throw new Error('Too many parameters');
-        }
-
-        [returnedEnum, updateAll, updateMsg] = await update(client, loginToken, message, user);
-
-        if (returnedEnum == response.SUCCESS) {
-          if (updateAll) {
-            await updateMsg
-              .edit('```All listing(s) updated successfully```')
-              .then(console.log(`${message} completed\n`));
+          if (args.length < 2) {
+            [toReturn, returnedEnum, checkListingObj, userListingsCheckArray] = await check(client, loginToken, user);
           } else {
-            await updateMsg
-              .edit('```Specified listing(s) updated successfully```')
-              .then(console.log(`${message} completed\n`));
+            throw new Error('Too many parameters');
           }
-          await refresh(client, loginToken, user);
-        } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```All listing(s) already match their lowest asks```';
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account currently has no Items listed```';
-        } else if (returnedEnum == response.EXIT) {
-          toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEOUT) {
-          toReturn = '```Command timed out```';
-        }
-        break;
-      case 'listings':
-        if (args.length > 1) {
-          throw new Error('Too many parameters');
-        }
 
-        let placeholder = [];
-        let listingArray = [];
+          if (returnedEnum == response.SUCCESS) {
+            toReturn = '```' + toReturn + '```';
+          } else if (returnedEnum == response.NO_CHANGE) {
+            toReturn = '```All listing(s) match their lowest asks```';
+          } else if (returnedEnum == response.NO_ITEMS) {
+            toReturn = '```Account currently has no items listed```';
+          }
+          break;
+        case 'update':
+          let updateAll = false;
+          let updateMsg = null;
 
-        [listingArray, returnedEnum, placeholder] = await allListings(user);
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
 
-        if (returnedEnum == response.SUCCESS) {
-          for (let i = 0; i < listingArray.length; i++) {
-            if (i == 0) {
-              let initialString = 'Current Listings:';
-              initialString += listingArray[i];
-              await message.channel.send('```' + initialString + '```');
+          [returnedEnum, updateAll, updateMsg] = await update(client, loginToken, message, user);
+
+          if (returnedEnum == response.SUCCESS) {
+            if (updateAll) {
+              await updateMsg
+                .edit('```All listing(s) updated successfully```')
+                .then(console.log(`${message} completed\n`));
             } else {
-              await message.channel.send('```' + listingArray[i] + '```');
+              await updateMsg
+                .edit('```Specified listing(s) updated successfully```')
+                .then(console.log(`${message} completed\n`));
             }
+            await refresh(client, loginToken, user);
+          } else if (returnedEnum == response.NO_CHANGE) {
+            toReturn = '```All listing(s) already match their lowest asks```';
+          } else if (returnedEnum == response.NO_ITEMS) {
+            toReturn = '```Account currently has no Items listed```';
+          } else if (returnedEnum == response.EXIT) {
+            toReturn = '```Canceled```';
+          } else if (returnedEnum == response.TIMEOUT) {
+            toReturn = '```Command timed out```';
           }
-          console.log('!alias listings completed\n');
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account currently has no items listed```';
-        }
+          break;
+        case 'listings':
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
 
-        break;
-      case 'delete':
-        if (args.length > 1) {
-          throw new Error('Too many parameters');
-        }
+          let placeholder = [];
+          let listingArray = [];
 
-        let deleteAll = false;
-        let deleteMsg = null;
+          [listingArray, returnedEnum, placeholder] = await allListings(user);
 
-        [returnedEnum, deleteAll, deleteMsg] = await deleteSearch(client, loginToken, message, user);
+          if (returnedEnum == response.SUCCESS) {
+            for (let i = 0; i < listingArray.length; i++) {
+              if (i == 0) {
+                let initialString = 'Current Listings:';
+                initialString += listingArray[i];
+                await message.channel.send('```' + initialString + '```');
+              } else {
+                await message.channel.send('```' + listingArray[i] + '```');
+              }
+            }
+            console.log('!alias listings completed\n');
+          } else if (returnedEnum == response.NO_ITEMS) {
+            toReturn = '```Account currently has no items listed```';
+          }
 
-        if (returnedEnum == response.SUCCESS) {
-          if (deleteAll) {
-            await deleteMsg
-              .edit('```All listing(s) deleted successfully```')
-              .then(console.log(`${message} completed\n`));
+          break;
+        case 'delete':
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
+
+          let deleteAll = false;
+          let deleteMsg = null;
+
+          [returnedEnum, deleteAll, deleteMsg] = await deleteSearch(client, loginToken, message, user);
+
+          if (returnedEnum == response.SUCCESS) {
+            if (deleteAll) {
+              await deleteMsg
+                .edit('```All listing(s) deleted successfully```')
+                .then(console.log(`${message} completed\n`));
+            } else {
+              await deleteMsg
+                .edit('```Specified listing(s) deleted successfully```')
+                .then(console.log(`${message} completed\n`));
+            }
+            await refresh(client, loginToken, user);
+          } else if (returnedEnum == response.NO_ITEMS) {
+            toReturn = '```Account currently has no items listed```';
+          } else if (returnedEnum == response.EXIT) {
+            toReturn = '```Canceled```';
+          } else if (returnedEnum == response.TIMEOUT) {
+            toReturn = '```Command timed out```';
+          }
+          break;
+        case 'edit':
+          let editMsg = null;
+
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
+
+          [returnedEnum, editMsg] = await editListing(client, loginToken, user, message);
+
+          if (returnedEnum == response.SUCCESS) {
+            await editMsg.edit('```Listing edited successfully```').then(console.log(`${message} completed\n`));
+            await refresh(client, loginToken, user);
+          } else if (returnedEnum == response.EXIT) {
+            toReturn = '```Canceled```';
+          } else if (returnedEnum == response.TIMEOUT) {
+            toReturn = '```Command timed out```';
+          }
+          break;
+        case 'orders':
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
+
+          [toReturn, returnedEnum] = await getOrders(user);
+
+          if (returnedEnum == response.SUCCESS) {
+            toReturn = '```' + toReturn + '```';
+          } else if (returnedEnum == response.NO_ITEMS) {
+            toReturn = '```Account currently has no open orders```';
+          }
+          break;
+        case 'confirm':
+          let confirmAll = false;
+          let confirmMsg = null;
+
+          [returnedEnum, confirmAll, confirmMsg] = await confirm(client, loginToken, message);
+
+          if (returnedEnum == response.SUCCESS) {
+            if (confirmAll) {
+              await confirmMsg
+                .edit('```All orders(s) confirmed successfully```')
+                .then(console.log(`${message} completed\n`));
+            } else {
+              await confirmMsg
+                .edit('```Specified orders(s) confirmed successfully```')
+                .then(console.log(`${message} completed\n`));
+            }
+          } else if (returnedEnum == response.NO_ITEMS) {
+            toReturn = '```No open order(s) currently on account```';
+          } else if (returnedEnum == response.NO_CHANGE) {
+            toReturn = '```Currently all open order(s) are confirmed```';
+          } else if (returnedEnum == response.EXIT) {
+            toReturn = '```Canceled```';
+          } else if (returnedEnum == response.TIMEOUT) {
+            toReturn = '```Command timed out```';
+          }
+          break;
+        case 'settings':
+          let edit = false;
+
+          if (args.length > 2) {
+            throw new Error('Too many parameters');
+          } else if (args[1] && args[1].toLowerCase() == 'edit') {
+            edit = true;
+          } else if (args[1] && args[1].toLowerCase() != 'edit') {
+            throw new Error('Incorrect format');
+          }
+
+          [toReturn, returnedEnum] = await settings(message, user, edit);
+
+          if (returnedEnum == response.SUCCESS) {
+            toReturn = toReturn;
+          } else if (returnedEnum == response.EXIT) {
+            toReturn = '```Canceled```';
+          } else if (returnedEnum == response.TIMEOUT) {
+            toReturn = '```Command timed out```';
+          } else if (returnedEnum == response.NO_ITEMS) {
+            toReturn = '```Account currently has no items listed```';
+          }
+          break;
+        case 'list':
+          let params = message.content.slice(11).toLowerCase().split(' ');
+
+          let valid = false;
+          let sizingArray = [];
+          let searchParams = '';
+          let listString = '';
+          let listMsg = null;
+          let lower = false;
+
+          [valid, returnedEnum, sizingArray, searchParams] = await checkListParams(params);
+
+          if (!valid && returnedEnum == response.NO_CHANGE) {
+            throw new Error('Invalid list command');
+          } else if (valid) {
+            [returnedEnum, listString, listMsg, lower] = await list(
+              client,
+              user,
+              message,
+              loginToken,
+              sizingArray,
+              searchParams
+            );
+          }
+
+          if (returnedEnum == response.SUCCESS) {
+            if (!lower) {
+              await listMsg.edit('```' + listString + '```').then(console.log(`${message} completed\n`));
+            } else {
+              toReturn = '```' + listString + '```';
+            }
+          } else if (returnedEnum == response.EXIT) {
+            toReturn = '```Canceled```';
+          } else if (returnedEnum == response.NO_CHANGE) {
+            toReturn = '```No new item(s) listed```';
+          } else if (returnedEnum == response.TIMEOUT) {
+            toReturn = '```Command timed out```';
+          }
+          break;
+        case 'me':
+          toReturn = await me(client, loginToken);
+          break;
+        case 'consign':
+          let searchQuery = query.slice(9);
+
+          if (searchQuery.length == 0) {
+            throw new Error('Empty command');
+          }
+
+          toReturn = await consign(client, searchQuery);
+          break;
+        case 'earnings':
+          let amount = 0;
+
+          [toReturn, amount] = await earnings(user);
+          break;
+        case 'cashout':
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
+
+          let newAmount = 0;
+          let cashOutMsg = null;
+
+          [returnedEnum, newAmount, cashOutMsg] = await cashOut(client, loginToken, user, message);
+
+          if (returnedEnum == response.SUCCESS) {
+            await cashOutMsg.edit('```' + 'Cash out successful' + '```');
+            toReturn = '```' + `Current Available Earnings: $${newAmount / 100}` + '```';
+          } else if (returnedEnum == response.EXIT) {
+            toReturn = '```Canceled```';
+          } else if (returnedEnum == response.TIMEOUT) {
+            toReturn = '```Command timed out```';
+          } else if (returnedEnum == response.NO_CHANGE) {
+            toReturn = '```No earnings available for cash out```';
+          }
+          break;
+        case 'help':
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
           } else {
-            await deleteMsg
-              .edit('```Specified listing(s) deleted successfully```')
-              .then(console.log(`${message} completed\n`));
+            toReturn = help();
           }
-          await refresh(client, loginToken, user);
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account currently has no items listed```';
-        } else if (returnedEnum == response.EXIT) {
-          toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEOUT) {
-          toReturn = '```Command timed out```';
-        }
-        break;
-      case 'edit':
-        let editMsg = null;
+          break;
+        default:
+          toReturn = await aliasSearch(client, query);
+          break;
+      }
 
-        if (args.length > 1) {
-          throw new Error('Too many parameters');
-        }
+      if (toReturn != '') {
+        await message.channel
+          .send(toReturn)
+          .then(console.log(`${message} completed\n`))
+          .catch((err) => {
+            throw new Error(err);
+          });
+      }
+    } catch (err) {
+      console.log(err);
 
-        [returnedEnum, editMsg] = await editListing(client, loginToken, user, message);
-
-        if (returnedEnum == response.SUCCESS) {
-          await editMsg.edit('```Listing edited successfully```').then(console.log(`${message} completed\n`));
-          await refresh(client, loginToken, user);
-        } else if (returnedEnum == response.EXIT) {
-          toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEOUT) {
-          toReturn = '```Command timed out```';
-        }
-        break;
-      case 'orders':
-        if (args.length > 1) {
-          throw new Error('Too many parameters');
-        }
-
-        [toReturn, returnedEnum] = await getOrders(user);
-
-        if (returnedEnum == response.SUCCESS) {
-          toReturn = '```' + toReturn + '```';
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account currently has no open orders```';
-        }
-        break;
-      case 'confirm':
-        let confirmAll = false;
-        let confirmMsg = null;
-
-        [returnedEnum, confirmAll, confirmMsg] = await confirm(client, loginToken, message);
-
-        if (returnedEnum == response.SUCCESS) {
-          if (confirmAll) {
-            await confirmMsg
-              .edit('```All orders(s) confirmed successfully```')
-              .then(console.log(`${message} completed\n`));
-          } else {
-            await confirmMsg
-              .edit('```Specified orders(s) confirmed successfully```')
-              .then(console.log(`${message} completed\n`));
-          }
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```No open order(s) currently on account```';
-        } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```Currently all open order(s) are confirmed```';
-        } else if (returnedEnum == response.EXIT) {
-          toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEOUT) {
-          toReturn = '```Command timed out```';
-        }
-        break;
-      case 'settings':
-        let edit = false;
-
-        if (args.length > 2) {
-          throw new Error('Too many parameters');
-        } else if (args[1] && args[1].toLowerCase() == 'edit') {
-          edit = true;
-        } else if (args[1] && args[1].toLowerCase() != 'edit') {
-          throw new Error('Incorrect format');
-        }
-
-        [toReturn, returnedEnum] = await settings(message, user, edit);
-
-        if (returnedEnum == response.SUCCESS) {
-          toReturn = toReturn;
-        } else if (returnedEnum == response.EXIT) {
-          toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEOUT) {
-          toReturn = '```Command timed out```';
-        } else if (returnedEnum == response.NO_ITEMS) {
-          toReturn = '```Account currently has no items listed```';
-        }
-        break;
-      case 'list':
-        let params = message.content.slice(11).toLowerCase().split(' ');
-
-        let valid = false;
-        let sizingArray = [];
-        let searchParams = '';
-        let listString = '';
-        let listMsg = null;
-        let lower = false;
-
-        [valid, returnedEnum, sizingArray, searchParams] = await checkListParams(params);
-
-        if (!valid && returnedEnum == response.NO_CHANGE) {
-          throw new Error('Invalid list command');
-        } else if (valid) {
-          [returnedEnum, listString, listMsg, lower] = await list(
-            client,
-            user,
-            message,
-            loginToken,
-            sizingArray,
-            searchParams
-          );
-        }
-
-        if (returnedEnum == response.SUCCESS) {
-          if (!lower) {
-            await listMsg.edit('```' + listString + '```').then(console.log(`${message} completed\n`));
-          } else {
-            toReturn = '```' + listString + '```';
-          }
-        } else if (returnedEnum == response.EXIT) {
-          toReturn = '```Canceled```';
-        } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```No new item(s) listed```';
-        } else if (returnedEnum == response.TIMEOUT) {
-          toReturn = '```Command timed out```';
-        }
-        break;
-      case 'me':
-        toReturn = await me(client, loginToken);
-        break;
-      case 'consign':
-        let searchQuery = query.slice(9);
-
-        if (searchQuery.length == 0) {
-          throw new Error('Empty command');
-        }
-
-        toReturn = await consign(client, searchQuery);
-        break;
-      case 'earnings':
-        let amount = 0;
-
-        [toReturn, amount] = await earnings(user);
-        break;
-      case 'cashout':
-        if (args.length > 1) {
-          throw new Error('Too many parameters');
-        }
-
-        let newAmount = 0;
-        let cashOutMsg = null;
-
-        [returnedEnum, newAmount, cashOutMsg] = await cashOut(client, loginToken, user, message);
-
-        if (returnedEnum == response.SUCCESS) {
-          await cashOutMsg.edit('```' + 'Cash out successful' + '```');
-          toReturn = '```' + `Current Available Earnings: $${newAmount / 100}` + '```';
-        } else if (returnedEnum == response.EXIT) {
-          toReturn = '```Canceled```';
-        } else if (returnedEnum == response.TIMEOUT) {
-          toReturn = '```Command timed out```';
-        } else if (returnedEnum == response.NO_CHANGE) {
-          toReturn = '```No earnings available for cash out```';
-        }
-        break;
-      case 'help':
-        if (args.length > 1) {
-          throw new Error('Too many parameters');
-        } else {
-          toReturn = help();
-        }
-        break;
-      default:
-        toReturn = await aliasSearch(client, query);
-        break;
-    }
-
-    if (toReturn != '') {
-      await message.channel
-        .send(toReturn)
-        .then(console.log(`${message} completed\n`))
-        .catch((err) => {
-          throw new Error(err);
+      Sentry.captureException(err, (scope) => {
+        scope.clear();
+        scope.setUser({
+          id: id,
         });
+        return scope;
+      });
+
+      Sentry.configureScope((scope) => scope.setUser(null));
+
+      switch (err.message) {
+        case 'No hits':
+          message.channel.send('```No products found matching search parameters```');
+          break;
+        case 'Not exist':
+          message.channel.send('```Fetch error - Page does not exist```');
+          break;
+        case 'Login expired':
+          message.channel.send('```Login expired```');
+          break;
+        case 'No data':
+          message.channel.send('```Matched product has no data```');
+          break;
+        case 'Not logged in':
+          message.channel.send(
+            '```Command not available\nPlease login via daijoubu DMS with the format:\n\t!login <email> <password>```'
+          );
+          break;
+        case 'No lowest ask':
+          message.channel.send(
+            '```' +
+              'One or more listing sizes does not have a lowest asking price\nPlease check prices again and adjust accordingly' +
+              '```'
+          );
+          break;
+        case 'Error listing':
+          message.channel.send('```Error listing item(s)```');
+          break;
+        case 'Error editing listing update rate':
+          message.channel.send('```Error editing listing update rate```');
+          break;
+        case 'Max retries':
+          message.channel.send('```Request error - Max retries reached```');
+          break;
+        case 'Missing phone number':
+          message.channel.send('```Account is missing phone number\nCommand not available until one is added```');
+          break;
+        case 'Invalid size':
+          message.channel.send('```Listing parameters has one or more non-existing sizes```');
+          break;
+        default:
+          message.channel.send('```Unexpected Error```');
+          break;
+      }
     }
   } catch (err) {
     console.log(err);
-    Sentry.captureException(err);
 
     switch (err.message) {
-      case 'No hits':
-        message.channel.send('```No products found matching search parameters```');
-        break;
       case 'Empty command':
         message.channel.send('```Command is missing parameters```');
-        break;
-      case 'Not exist':
-        message.channel.send('```Fetch error - Page does not exist```');
         break;
       case 'Too many parameters':
         message.channel.send('```Command has too many parameters```');
@@ -361,45 +413,12 @@ exports.run = async (client, message, args) => {
       case 'Incorrect format':
         message.channel.send('```Incorrect format```');
         break;
-      case 'Login expired':
-        message.channel.send('```Login expired```');
-        break;
-      case 'No data':
-        message.channel.send('```Matched product has no data```');
-        break;
-      case 'Not logged in':
-        message.channel.send(
-          '```Command not available\nPlease login via daijoubu DMS with the format:\n\t!login <email> <password>```'
-        );
-        break;
       case 'Invalid list command':
         message.channel.send(
           '```' +
             `Incorrect format\nCorrect format is:\n\n!alias list <search parameters> [<size (num)> REQUIRED,<price (num, 'lowest')> REQUIRED,<amount (num)> OR <listing update rate ('live', 'manual')> OPTIONAL,<listing update rate ('live', 'manual')> OPTIONAL] [] ...\n\nExamples:\n\t[10,lowest]\t[10,500]\t[10,500,live]\t[10,500,manual]\t[10,500,4,live]` +
             '```'
         );
-        break;
-      case 'No lowest ask':
-        message.channel.send(
-          '```' +
-            'One or more listing sizes does not have a lowest asking price\nPlease check prices again and adjust accordingly' +
-            '```'
-        );
-        break;
-      case 'Error listing':
-        message.channel.send('```Error listing item(s)```');
-        break;
-      case 'Error editing listing update rate':
-        message.channel.send('```Error editing listing update rate```');
-        break;
-      case 'Max retries':
-        message.channel.send('```Request error - Max retries reached```');
-        break;
-      case 'Missing phone number':
-        message.channel.send('```Account is missing phone number\nCommand not available until one is added```');
-        break;
-      case 'Invalid size':
-        message.channel.send('```Listing parameters has one or more non-existing sizes```');
         break;
       default:
         message.channel.send('```Unexpected Error```');
