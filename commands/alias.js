@@ -156,7 +156,6 @@ exports.run = async (client, message, args) => {
                 .edit('```Specified listing(s) deleted successfully```')
                 .then(console.log(`${message} completed\n`));
             }
-            await refresh(client, loginToken, user);
           } else if (returnedEnum == response.NO_ITEMS) {
             toReturn = '```Account currently has no items listed```';
           } else if (returnedEnum == response.EXIT) {
@@ -915,6 +914,7 @@ async function allListings(user) {
 async function deleteSearch(client, loginToken, message, user) {
   const userListings = await Listings.find({ d_id: user.d_id });
   const userListingsArray = userListings[0].listings;
+
   let all = false;
   let valid = true;
   let nums = [];
@@ -989,12 +989,12 @@ async function deleteSearch(client, loginToken, message, user) {
 
   if (all) {
     for (let i = 0; i < userListingsArray.length; i++) {
-      deleteRes = await deletion(client, loginToken, userListingsArray[i].id);
+      deleteRes = await deletion(client, loginToken, user, userListingsArray[i].id);
     }
   } else {
     if (valid) {
       for (let i = 0; i < nums.length; i++) {
-        deleteRes = await deletion(client, loginToken, userListingsArray[parseInt(nums[i])].id);
+        deleteRes = await deletion(client, loginToken, user, userListingsArray[parseInt(nums[i])].id);
       }
     }
   }
@@ -1024,7 +1024,7 @@ function checkNumParams(nums) {
   return true;
 }
 
-async function deletion(client, loginToken, listingId) {
+async function deletion(client, loginToken, user, listingId) {
   let deactivateRes = 0;
   let cancelRes = 0;
   let count = 0;
@@ -1094,6 +1094,10 @@ async function deletion(client, loginToken, listingId) {
       throw new Error('Max retries');
     }
   }
+
+  await Listings.updateOne({ d_id: user.d_id }, { $pull: { listings: { id: listingId } } }).catch((err) =>
+    console.log(err)
+  );
 
   if (deactivateRes == 200 && cancelRes == 200) {
     return response.SUCCESS;
@@ -2331,7 +2335,7 @@ async function listReq(client, loginToken, listing, user, rate, lowest) {
   }
 
   let obj = {
-    id: listing.listing.id,
+    id: list.listing.id,
     name: listing.listing.product.name,
     size: parseFloat(listing.listing.sizeOption.value),
     price: parseInt(listing.listing.priceCents),
