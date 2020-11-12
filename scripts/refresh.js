@@ -1137,17 +1137,23 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
 
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
-                oldParsedDate.getMonth() + 1
-              }/${oldParsedDate.getDate()} => ${
-                newParsedDate.getMonth() + 1
-              }/${newParsedDate.getDate()}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
-            } else {
+              )} => ${convertStatus(crnt.status)}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
+            } else if (crnt.status == 'NEEDS_CONFIRMATION') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
               )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
                 oldParsedDate.getMonth() + 1
               }/${oldParsedDate.getDate()} => ${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}\n`;
+            } else if (crnt.status == 'NEEDS_SHIPPING') {
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                oldStatus
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
+                oldParsedDate.getMonth() + 1
+              }/${oldParsedDate.getDate()} => ${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}\n`;
+            } else {
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                oldStatus
+              )} => ${convertStatus(crnt.status)}\n\t\t\n`;
             }
             k++;
           } else if (statusChange) {
@@ -1158,20 +1164,38 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
 
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
-                date.getMonth() + 1
-              }/${date.getDate()}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
-            } else {
+              )} => ${convertStatus(crnt.status)}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
+            } else if (crnt.status == 'NEEDS_CONFIRMATION') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
               )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+            } else if (crnt.status == 'NEEDS_SHIPPING') {
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                oldStatus
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+            } else {
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                oldStatus
+              )} => ${convertStatus(crnt.status)}\n`;
             }
             k++;
           } else if (dateChange) {
             let oldParsedDate = new Date(oldDate);
             let newParsedDate = new Date(crnt.take_action_by);
 
-            if (status == 'SHIPPED') {
+            if (crnt.status == 'SHIPPED') {
+              crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
+
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                crnt.status
+              )}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
+            } else if (crnt.status == 'NEEDS_CONFIRMATION') {
+              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
+                crnt.status
+              )}\n\t\tTake action by: ${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()} => ${
+                newParsedDate.getMonth() + 1
+              }/${newParsedDate.getDate()}\n`;
+            } else if (crnt.status == 'NEEDS_SHIPPING') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 crnt.status
               )}\n\t\tTake action by: ${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()} => ${
@@ -1180,9 +1204,7 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
             } else {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 crnt.status
-              )}\n\t\tTake action by: ${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()} => ${
-                newParsedDate.getMonth() + 1
-              }/${newParsedDate.getDate()}\n`;
+              )}\n`;
             }
             k++;
           }
