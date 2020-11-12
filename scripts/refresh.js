@@ -999,7 +999,7 @@ async function getOrders(client, loginToken) {
 
 async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
   let added = false;
-  let j = 0;
+  let i = 0;
   let newOrderString = 'New Open Order(s):\n';
 
   if (aliasOrders.purchase_orders) {
@@ -1030,11 +1030,11 @@ async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
 
       let date = new Date(crnt.take_action_by);
 
-      newOrderString += `\t${j}. ${obj.name} - ${obj.size} $${obj.price_cents / 100}\n\t\tStatus: ${convertStatus(
+      newOrderString += `\t${i}. ${obj.name} - ${obj.size} $${obj.price_cents / 100}\n\t\tStatus: ${convertStatus(
         obj.status
       )}\n\t\tTake action by: ${date.getMonth() + 1}/${date.getDate()}\n`;
 
-      j++;
+      i++;
 
       await Orders.updateOne({ d_id: user.d_id }, { $push: { orders: obj } }).catch((err) => console.log(err));
     }

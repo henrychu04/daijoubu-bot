@@ -187,7 +187,9 @@ exports.run = async (client, message, args) => {
             throw new Error('Too many parameters');
           }
 
-          [toReturn, returnedEnum] = await getOrders(user);
+          let tempOrders = {};
+
+          [toReturn, returnedEnum, tempOrders] = await getOrders(user);
 
           if (returnedEnum == response.SUCCESS) {
             toReturn = '```' + toReturn + '```';
@@ -199,7 +201,7 @@ exports.run = async (client, message, args) => {
           let confirmAll = false;
           let confirmMsg = null;
 
-          [returnedEnum, confirmAll, confirmMsg] = await confirm(client, loginToken, message);
+          [returnedEnum, confirmAll, confirmMsg] = await confirm(client, loginToken, message, user);
 
           if (returnedEnum == response.SUCCESS) {
             if (confirmAll) {
@@ -1326,7 +1328,7 @@ async function getOrders(user) {
   const userOrdersArray = userOrders[0].orders;
 
   if (userOrdersArray.length == 0) {
-    return ['', response.NO_ITEMS];
+    return ['', response.NO_ITEMS, null];
   }
 
   let returnString = 'Current Open Orders:\n';
@@ -1414,68 +1416,35 @@ async function getOrders(user) {
     returnString += receivedString + '\n';
   }
 
-  return [returnString, response.SUCCESS];
+  return [returnString, response.SUCCESS, userOrdersArray];
 }
 
-async function confirm(client, loginToken, message) {
+async function confirm(client, loginToken, message, user) {
+  let [orderString, getOrdersEnum, userOrdersArray] = await getOrders(user);
+
+  if (getOrdersEnum == response.NO_ITEMS) {
+    return [response.NO_ITEMS, null, null];
+  }
+
   let exit = false;
   let all = false;
   let valid = false;
   let nums = [];
   let orders = [];
-  let purchaseOrdersRes = 0;
-  let purchaseOrders = null;
-  let count = 0;
-
-  while (purchaseOrdersRes != 200) {
-    purchaseOrders = await fetch(
-      'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
-      {
-        headers: {
-          'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
-        },
-      }
-    ).then((res, err) => {
-      purchaseOrdersRes = res.status;
-
-      if (res.status == 200) {
-        return res.json();
-      } else if (res.status == 401) {
-        throw new Error('Login expired');
-      } else {
-        console.log('Res is', res.status);
-        console.trace();
-
-        if (err) {
-          throw new Error(err);
-        }
-      }
-    });
-
-    count++;
-
-    if (count == maxRetries) {
-      throw new Error('Max retries');
-    }
-  }
 
   let confirmString = '\tNeeds Confirmation:\n';
-  let confirmNum = 0;
 
-  if (purchaseOrders.purchase_orders) {
-    purchaseOrders.purchase_orders.forEach((order) => {
-      let date = new Date(order.take_action_by);
+  userOrdersArray.forEach((order) => {
+    let date = new Date(order.take_action_by);
 
-      if (order.status == 'NEEDS_CONFIRMATION') {
-        confirmString += `\t\t${confirmNum}. ${order.listing.product.name} - ${order.size} $${
-          order.listing.price_cents / 100
-        }\n\t\t\tOrder number: ${order.number}\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+    if (order.status == 'NEEDS_CONFIRMATION') {
+      confirmString += `\t\t${orders.length}. ${order.name} - ${order.size} $${
+        order.price / 100
+      }\n\t\t\tOrder number: ${order.number}\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
 
-        orders.push(order.number);
-      }
-    });
-  }
+      orders.push(order.number);
+    }
+  });
 
   if (orders.length == 0) {
     return [response.NO_ITEMS, null, null];
@@ -1534,12 +1503,12 @@ async function confirm(client, loginToken, message) {
 
   if (all) {
     for (let i = 0; i < orders.length; i++) {
-      await confirmation(client, loginToken, orders[i].number);
+      await confirmation(client, loginToken, orders[i]);
     }
   } else {
     if (valid) {
       for (let i = 0; i < nums.length; i++) {
-        await confirmation(client, loginToken, orders[nums[i]].number);
+        await confirmation(client, loginToken, orders[nums[i]]);
       }
     }
   }
