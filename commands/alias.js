@@ -2839,6 +2839,39 @@ async function cashOut(client, loginToken, user, message) {
   await message.channel.send('```' + `A security code has been sent to the phone number ending in ${phoneNum}` + '```');
   await message.channel.send('```' + `Enter the security code or 's' to send again` + '```');
 
+  count = 0;
+  let fee = null;
+  let feeRes = 0;
+
+  while (feeRes != 200) {
+    fee = await fetch(` https://sell-api.goat.com/api/v1/listing-actions/earnings?selling_price_cents=${crntAmount}`, {
+      headers: {
+        'user-agent': client.config.aliasHeader,
+      },
+    }).then((res, err) => {
+      if (res.status == 200) {
+        return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
+      } else {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  earningsString += `\nAmount after Cash Out Fee (2.9%): $${(crntAmount - fee.cash_out_fee_cents) / 100}`;
+
   let stopped = false;
   let exit = false;
   let input = '';
