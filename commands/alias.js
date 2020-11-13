@@ -3027,6 +3027,8 @@ function help() {
       'All the alias account commands\n\nAn alias account is required to use the commands. To gain access to an alias account, you must have a GOAT account with a seller score of 150 or greater. Each command will only work for the bound alias account. It is not possible to control the listings for another alias account.\n\n[Click here for more info](https://apps.apple.com/us/app/alias-sell-sneakers-apparel/id1467090341)\n\nIf no alias account is bound to the Discord account, DM \n``!login <email> <password>`` to the daijoubu bot to login.'
     )
     .addFields(
+      { name: `!alias <search parameters>`, value: `Returns information of a specified product` },
+      { name: '!alias consign <search parameters>', value: 'Checks the consignment prices of a specified product' },
       { name: `!alias list`, value: `Lists an item` },
       { name: '!alias listings', value: 'Returns all current listings' },
       { name: '!alias check', value: 'Checks if all listings match their current lowest ask' },
@@ -3034,7 +3036,11 @@ function help() {
       { name: '!alias edit', value: 'Edits the asking price for specified listings' },
       { name: '!alias delete', value: 'Deletes specified listings' },
       { name: '!alias orders', value: 'Returns all current orders' },
-      { name: '!alias confirm', value: 'Confirms specified orders' }
+      { name: '!alias confirm', value: 'Confirms specified orders' },
+      { name: '!alias earnings', value: 'Checks available earnings' },
+      { name: '!alias cashout', value: 'Cash out available earnings' },
+      { name: '!alias me', value: 'Information about your account' },
+      { name: '!alias settings', value: 'Current settings for your account' },
     );
 
   return helpEmbed;
