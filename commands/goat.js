@@ -27,6 +27,9 @@ exports.run = async (client, message, args) => {
       case 'Empty command':
         message.channel.send('```Command is missing parameters```');
         break;
+      case 'No data':
+        message.channel.send('```Matched product has no data```');
+        break;
       default:
         message.channel.send('```Unexpected Error```');
         break;
