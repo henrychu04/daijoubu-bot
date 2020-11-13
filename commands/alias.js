@@ -1892,7 +1892,7 @@ async function checkListParams(params) {
       bracketCount++;
       let crnt = params[i];
 
-      if (!crnt.includes('[') && !crnt.includes(']')) {
+      if (crnt[0] != '[' || crnt[crnt.length - 1] != ']') {
         return [false, response.NO_CHANGE, ''];
       }
 
@@ -2163,6 +2163,17 @@ async function doList(client, user, loginToken, message, searchProduct, sizingAr
       while (j < parseInt(amount)) {
         await listReq(client, loginToken, listing, user, rate, lowest);
         returnString += `\t\t${j}. size: ${listing.listing.sizeOption.name} - $${listing.listing.priceCents / 100}\n`;
+
+        if (rate != null) {
+          if (rate == 'live') {
+            rate = 'Live';
+          } else if (rate == 'manual') {
+            rate = 'Manual';
+          }
+
+          returnString += `\t\t\tUpdate Rate: ${rate}\n`;
+        }
+
         j++;
       }
 
@@ -3040,7 +3051,7 @@ function help() {
       { name: '!alias earnings', value: 'Checks available earnings' },
       { name: '!alias cashout', value: 'Cash out available earnings' },
       { name: '!alias me', value: 'Information about your account' },
-      { name: '!alias settings', value: 'Current settings for your account' },
+      { name: '!alias settings', value: 'Current settings for your account' }
     );
 
   return helpEmbed;
