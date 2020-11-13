@@ -1030,7 +1030,7 @@ async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
 
       let date = new Date(crnt.take_action_by);
 
-      newOrderString += `\t${i}. ${obj.name} - ${obj.size} $${obj.price_cents / 100}\n\t\tStatus: ${convertStatus(
+      newOrderString += `\t${i}. ${obj.name} - ${obj.size} $${obj.price / 100}\n\t\tStatus: ${convertStatus(
         obj.status
       )}\n\t\tTake action by: ${date.getMonth() + 1}/${date.getDate()}\n`;
 
