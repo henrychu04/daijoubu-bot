@@ -777,7 +777,7 @@ async function getListings(client, loginToken) {
     }
   }
 
-  for (let i = 1; i < listings.metadata.total_pages; i++) {
+  for (let i = 2; i < listings.metadata.total_pages; i++) {
     let temp = {};
     getStatus = 0;
     count = 0;
@@ -2004,7 +2004,7 @@ async function list(client, user, message, loginToken, sizingArray, query) {
   } else if (!stopped) {
     return [response.TIMEOUT, returnString, msg, lower];
   } else {
-    return [response.SUCCESS, returnString, msg, lower];
+    return [returnedEnum, returnString, msg, lower];
   }
 }
 
@@ -2145,7 +2145,7 @@ async function doList(client, user, loginToken, message, searchProduct, sizingAr
           listing.listing.priceCents = parseInt(price) * 100;
         }
 
-        if (lowest / 100 > listing.listing.priceCents) {
+        if (lowest > listing.listing.priceCents) {
           lower = true;
           detectedLower = true;
         }

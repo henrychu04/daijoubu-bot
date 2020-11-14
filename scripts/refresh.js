@@ -441,7 +441,7 @@ async function getListings(client, loginToken) {
     }
   }
 
-  for (let i = 1; i < listings.metadata.total_pages; i++) {
+  for (let i = 2; i < listings.metadata.total_pages; i++) {
     let temp = {};
     getStatus = 0;
     count = 0;
@@ -533,7 +533,7 @@ async function confirmOrders(client, user, refresh, webhook) {
       }
     }
 
-    for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
+    for (let i = 2; i < purchaseOrders.metadata.total_pages; i++) {
       let temp = {};
       getStatus = 0;
       count = 0;
@@ -954,7 +954,7 @@ async function getOrders(client, loginToken) {
     }
   }
 
-  for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
+  for (let i = 2; i < purchaseOrders.metadata.total_pages; i++) {
     let temp = {};
     getStatus = 0;
     count = 0;
