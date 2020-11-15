@@ -54,7 +54,7 @@ exports.run = async (client, message, args) => {
         }
 
         user = user[0];
-        loginToken = user.login;
+        loginToken = encryption.decrypt(user.login);
       }
 
       let toReturn = '';
@@ -750,7 +750,7 @@ async function getListings(client, loginToken) {
     listings = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1`, {
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
       getStatus = res.status;
@@ -785,7 +785,7 @@ async function getListings(client, loginToken) {
       temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i}`, {
         headers: {
           'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+          authorization: `Bearer ${loginToken}`,
         },
       }).then((res, err) => {
         getStatus = res.status;
@@ -848,7 +848,7 @@ async function updateListing(client, loginToken, obj) {
       method: 'PUT',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"listing":${JSON.stringify(obj)}}`,
     }).then((res, err) => {
@@ -1035,7 +1035,7 @@ async function deletion(client, loginToken, user, listingId) {
       method: 'PUT',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"id":"${listingId}"}`,
     }).then((res, err) => {
@@ -1069,7 +1069,7 @@ async function deletion(client, loginToken, user, listingId) {
       method: 'PUT',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"id":"${listingId}"}`,
     }).then((res, err) => {
@@ -1160,7 +1160,7 @@ async function editListing(client, loginToken, user, message) {
     getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input]}`, {
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
       getJSONRes = res.status;
@@ -1246,7 +1246,7 @@ async function editListing(client, loginToken, user, message) {
       method: 'PUT',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `${JSON.stringify(getJSON)}`,
     }).then((res) => {
@@ -1524,7 +1524,7 @@ async function confirmation(client, loginToken, number) {
       method: 'PUT',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"number":"${number}"}`,
     }).then((res, err) => {
@@ -1559,7 +1559,7 @@ async function confirmation(client, loginToken, number) {
       method: 'PUT',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"number":"${number}"}`,
     }).then((res, err) => {
@@ -2053,7 +2053,7 @@ async function doList(client, user, loginToken, message, searchProduct, sizingAr
       method: 'POST',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"id":"${slug}"}`,
     }).then((res, err) => {
@@ -2253,7 +2253,7 @@ async function listReq(client, loginToken, listing, user, rate, lowest) {
       method: 'POST',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: JSON.stringify(listing),
     }).then((res, err) => {
@@ -2288,7 +2288,7 @@ async function listReq(client, loginToken, listing, user, rate, lowest) {
       method: 'PUT',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"id":"${list.listing.id}"}`,
     }).then((res, err) => {
@@ -2336,7 +2336,7 @@ async function me(client, loginToken) {
       method: 'POST',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: '{}',
     }).then((res, err) => {
@@ -2372,7 +2372,7 @@ async function me(client, loginToken) {
       method: 'GET',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
       purchaseOrdersCountRes = res.status;
@@ -2407,7 +2407,7 @@ async function me(client, loginToken) {
       method: 'GET',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
       listingValuesRes = res.status;
@@ -2442,7 +2442,7 @@ async function me(client, loginToken) {
       method: 'GET',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
       purchaseOrdersRes = res.status;
@@ -2477,7 +2477,7 @@ async function me(client, loginToken) {
       method: 'GET',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
       earningsRes = res.status;
@@ -2736,7 +2736,7 @@ async function cashOut(client, loginToken, user, message) {
         method: 'POST',
         headers: {
           'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+          authorization: `Bearer ${loginToken}`,
         },
         body: `{}`,
       }).then((res, err) => {
@@ -2769,7 +2769,7 @@ async function cashOut(client, loginToken, user, message) {
       method: 'POST',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"oneTimePassword":"${num}"}`,
     }).then((res, err) => {
@@ -2811,7 +2811,7 @@ async function cashOut(client, loginToken, user, message) {
       method: 'POST',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: '{}',
     }).then((res, err) => {
@@ -2985,7 +2985,7 @@ async function cashOut(client, loginToken, user, message) {
       method: 'POST',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"cashOutCents":"${input}"}`,
     }).then((res, err) => {

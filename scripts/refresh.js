@@ -9,8 +9,8 @@ const Orders = require('../models/orders');
 
 const maxRetries = 3;
 
-module.exports = async function refresh(client, loginToken, user) {
-  if (!loginToken) {
+module.exports = async function refresh(client, loginTokenParam, user) {
+  if (!loginTokenParam) {
     const users = await Users.find();
     let allListings = new Map();
 
@@ -18,6 +18,8 @@ module.exports = async function refresh(client, loginToken, user) {
       const date = new Date();
 
       let user = users[i];
+      let loginToken = encryption.decrypt(user.login);
+      let d_id = user.d_id;
 
       let webhook = null;
 
@@ -29,39 +31,41 @@ module.exports = async function refresh(client, loginToken, user) {
       }
 
       try {
+        // console.time(d_id);
         if (user.settings.orderRefresh == 'live') {
-          await confirmOrders(client, user, user.settings.orderRefresh, webhook);
+          await confirmOrders(client, loginToken, d_id, user.settings.orderRefresh, webhook);
         } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 5 && date.getMinutes() == 1) {
-          await confirmOrders(client, user, user.settings.orderRefresh, webhook);
+          await confirmOrders(client, loginToken, d_id, user.settings.orderRefresh, webhook);
         }
 
-        const userListings = await Listings.find({ d_id: user.d_id });
+        const userListings = await Listings.find({ d_id: d_id });
         const userListingsArray = userListings[0].listings;
 
-        let aliasListings = await getListings(client, user.login);
+        let aliasListings = await getListings(client, loginToken);
 
         await addListing(user, aliasListings, userListingsArray);
-        await deleteListing(user, aliasListings, userListingsArray);
+        await deleteListing(d_id, aliasListings, userListingsArray);
         await syncListingPrice(aliasListings, userListingsArray);
-        allListings = await updateLowest(client, user, allListings, webhook, userListingsArray);
+        allListings = await updateLowest(client, loginToken, d_id, allListings, webhook, userListingsArray);
 
-        const userOrders = await Orders.find({ d_id: user.d_id });
+        const userOrders = await Orders.find({ d_id: d_id });
         const userOrdersArray = userOrders[0].orders;
 
-        let aliasOrders = await getOrders(client, user.login);
+        let aliasOrders = await getOrders(client, loginToken);
 
-        await addOrder(client, user, aliasOrders, webhook, userOrdersArray);
-        await deleteOrder(user, aliasOrders, userOrdersArray);
-        await syncOrders(client, user, aliasOrders, webhook, userOrdersArray);
+        await addOrder(client, d_id, aliasOrders, webhook, userOrdersArray);
+        await deleteOrder(d_id, aliasOrders, userOrdersArray);
+        await syncOrders(client, d_id, aliasOrders, webhook, userOrdersArray);
 
-        await earnings(client, user, webhook);
+        await earnings(client, loginToken, user, webhook);
+        // console.timeEnd(d_id);
       } catch (err) {
         console.log(err);
 
         Sentry.captureException(err, (scope) => {
           scope.clear();
           scope.setUser({
-            id: user.d_id,
+            id: d_id,
           });
           return scope;
         });
@@ -71,11 +75,11 @@ module.exports = async function refresh(client, loginToken, user) {
     }
   } else {
     try {
-      let aliasListings = await getListings(client, loginToken);
+      let aliasListings = await getListings(client, loginTokenParam);
 
-      await addListing(user, aliasListings);
-      await deleteListing(user, aliasListings);
-      await syncListingPrice(user, aliasListings);
+      await addListing(user, aliasListings, userListingsArray);
+      await deleteListing(d_id, aliasListings, userListingsArray);
+      await syncListingPrice(aliasListings, userListingsArray);
     } catch (err) {
       console.log(err);
 
@@ -92,7 +96,7 @@ module.exports = async function refresh(client, loginToken, user) {
   }
 };
 
-async function updateLowest(client, user, allListings, webhook, userListingsArray) {
+async function updateLowest(client, loginToken, d_id, allListings, webhook, userListingsArray) {
   try {
     let liveString = 'Listings Updated:\n';
     let live = 0;
@@ -108,7 +112,7 @@ async function updateLowest(client, user, allListings, webhook, userListingsArra
             let lowest = parseInt(size.lowest_price_cents);
 
             if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
-              await updateListing(client, user, userListingsArray[i].id, lowest);
+              await updateListing(client, loginToken, userListingsArray[i].id, lowest);
 
               liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
                 userListingsArray[i].price / 100
@@ -176,7 +180,7 @@ async function updateLowest(client, user, allListings, webhook, userListingsArra
             let lowest = parseInt(size.lowest_price_cents);
 
             if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
-              await updateListing(client, user, userListingsArray[i].id, lowest);
+              await updateListing(client, loginToken, userListingsArray[i].id, lowest);
 
               liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
                 userListingsArray[i].price / 100
@@ -221,7 +225,7 @@ async function updateLowest(client, user, allListings, webhook, userListingsArra
             })
             .then(() => {
               success = true;
-              console.log(`User: ${user.d_id}\nSuccessfully updated live alias listings\n`);
+              console.log(`User: ${d_id}\nSuccessfully updated live alias listings\n`);
             })
             .catch((err) => {
               if (err.message == 'Unknown Webhook') {
@@ -256,7 +260,7 @@ async function updateLowest(client, user, allListings, webhook, userListingsArra
             })
             .then(() => {
               success = true;
-              console.log(`User: ${user.d_id}\nSuccessfully updated manual alias listings\n`);
+              console.log(`User: ${d_id}\nSuccessfully updated manual alias listings\n`);
             })
             .catch((err) => {
               if (err.message == 'Unknown Webhook') {
@@ -283,13 +287,14 @@ async function updateLowest(client, user, allListings, webhook, userListingsArra
   }
 }
 
-async function updateListing(client, user, id, lowest) {
-  let listings = await getListings(client, user.login);
+async function updateListing(client, loginToken, id, lowest) {
+  let listings = await getListings(client, loginToken);
   let obj = {};
 
   for (let i = 0; i < listings.listing.length; i++) {
     if (listings.listing[i].id == id) {
       obj = listings.listing[i];
+      break;
     }
   }
 
@@ -303,7 +308,7 @@ async function updateListing(client, user, id, lowest) {
       method: 'PUT',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(user.login)}`,
+        authorization: `Bearer ${loginToken}`,
       },
       body: `{"listing":${JSON.stringify(obj)}}`,
     })
@@ -383,7 +388,7 @@ async function addListing(user, aliasListings, userListingsArray) {
   }
 }
 
-async function deleteListing(user, aliasListings, userListingsArray) {
+async function deleteListing(d_id, aliasListings, userListingsArray) {
   for (let i = 0; i < userListingsArray.length; i++) {
     let crnt = userListingsArray[i];
     let deleted = true;
@@ -400,9 +405,7 @@ async function deleteListing(user, aliasListings, userListingsArray) {
       continue;
     }
 
-    await Listings.updateOne({ d_id: user.d_id }, { $pull: { listings: { id: crnt.id } } }).catch((err) =>
-      console.log(err)
-    );
+    await Listings.updateOne({ d_id: d_id }, { $pull: { listings: { id: crnt.id } } }).catch((err) => console.log(err));
   }
 }
 
@@ -415,7 +418,7 @@ async function getListings(client, loginToken) {
     listings = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=1`, {
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+        authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
       getStatus = res.status;
@@ -450,7 +453,7 @@ async function getListings(client, loginToken) {
       temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i}`, {
         headers: {
           'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+          authorization: `Bearer ${loginToken}`,
         },
       }).then((res, err) => {
         getStatus = res.status;
@@ -484,7 +487,7 @@ async function getListings(client, loginToken) {
   return listings;
 }
 
-async function confirmOrders(client, user, refresh, webhook) {
+async function confirmOrders(client, loginToken, d_id, refresh, webhook) {
   let confirmed = 0;
   let number = 0;
   let returnString = '';
@@ -506,7 +509,7 @@ async function confirmOrders(client, user, refresh, webhook) {
         {
           headers: {
             'user-agent': client.config.aliasHeader,
-            authorization: `Bearer ${encryption.decrypt(user.login)}`,
+            authorization: `Bearer ${loginToken}`,
           },
         }
       ).then((res, err) => {
@@ -542,7 +545,7 @@ async function confirmOrders(client, user, refresh, webhook) {
         temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
           headers: {
             'user-agent': client.config.aliasHeader,
-            authorization: `Bearer ${encryption.decrypt(user.login)}`,
+            authorization: `Bearer ${loginToken}`,
           },
         }).then((res, err) => {
           getStatus = res.status;
@@ -590,7 +593,7 @@ async function confirmOrders(client, user, refresh, webhook) {
             method: 'PUT',
             headers: {
               'user-agent': client.config.aliasHeader,
-              authorization: `Bearer ${encryption.decrypt(user.login)}`,
+              authorization: `Bearer ${loginToken}`,
             },
             body: `{"number":"${number}"}`,
           }).then((res, err) => {
@@ -623,7 +626,7 @@ async function confirmOrders(client, user, refresh, webhook) {
             method: 'PUT',
             headers: {
               'user-agent': client.config.aliasHeader,
-              authorization: `Bearer ${encryption.decrypt(user.login)}`,
+              authorization: `Bearer ${loginToken}`,
             },
             body: `{"number":"${number}"}`,
           }).then((res, err) => {
@@ -675,7 +678,7 @@ async function confirmOrders(client, user, refresh, webhook) {
                 })
                 .then(() => {
                   success = true;
-                  console.log(`User: ${user.d_id}\nSuccessfully confirmed alias orders\n`);
+                  console.log(`User: ${d_id}\nSuccessfully confirmed alias orders\n`);
                 })
                 .catch((err) => {
                   if (err.message == 'Unknown Webhook') {
@@ -708,7 +711,7 @@ async function confirmOrders(client, user, refresh, webhook) {
               })
               .then(() => {
                 success = true;
-                console.log(`User: ${user.d_id}\nSuccessfully confirmed alias orders\n`);
+                console.log(`User: ${d_id}\nSuccessfully confirmed alias orders\n`);
               })
               .catch((err) => {
                 if (err.message == 'Unknown Webhook') {
@@ -742,7 +745,7 @@ async function confirmOrders(client, user, refresh, webhook) {
               })
               .then(() => {
                 success = true;
-                console.log(`User: ${user.d_id}\nSuccessfully checked alias orders\n`);
+                console.log(`User: ${d_id}\nSuccessfully checked alias orders\n`);
               })
               .catch((err) => {
                 if (err.message == 'Unknown Webhook') {
@@ -831,7 +834,7 @@ async function confirmOrders(client, user, refresh, webhook) {
   }
 }
 
-async function earnings(client, user, webhook) {
+async function earnings(client, loginToken, user, webhook) {
   let earningsRes = 0;
   let earnings = null;
   let count = 0;
@@ -841,7 +844,7 @@ async function earnings(client, user, webhook) {
       method: 'GET',
       headers: {
         'user-agent': client.config.aliasHeader,
-        authorization: `Bearer ${encryption.decrypt(user.login)}`,
+        authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
       earningsRes = res.status;
@@ -927,7 +930,7 @@ async function getOrders(client, loginToken) {
       {
         headers: {
           'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+          authorization: `Bearer ${loginToken}`,
         },
       }
     ).then((res, err) => {
@@ -963,7 +966,7 @@ async function getOrders(client, loginToken) {
       temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
         headers: {
           'user-agent': client.config.aliasHeader,
-          authorization: `Bearer ${encryption.decrypt(loginToken)}`,
+          authorization: `Bearer ${loginToken}`,
         },
       }).then((res, err) => {
         getStatus = res.status;
@@ -997,7 +1000,7 @@ async function getOrders(client, loginToken) {
   return purchaseOrders;
 }
 
-async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
+async function addOrder(client, d_id, aliasOrders, webhook, userOrdersArray) {
   let added = false;
   let i = 0;
   let newOrderString = 'New Open Order(s):\n';
@@ -1018,25 +1021,25 @@ async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
         added = true;
       }
 
+      let date = new Date(crnt.take_action_by);
+
       let obj = {
         number: crnt.number,
         status: crnt.status,
-        take_action_by: crnt.take_action_by,
+        take_action_by: `${date.getMonth() + 1}/${date.getDate()}`,
         size: parseFloat(crnt.listing.size),
         price: parseInt(crnt.listing.price_cents),
         name: crnt.listing.product.name,
         tracking: '',
       };
 
-      let date = new Date(crnt.take_action_by);
-
       newOrderString += `\t${i}. ${obj.name} - ${obj.size} $${obj.price / 100}\n\t\tStatus: ${convertStatus(
         obj.status
-      )}\n\t\tTake action by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      )}\n\t\tTake action by: ${obj.take_action_by}\n`;
 
       i++;
 
-      await Orders.updateOne({ d_id: user.d_id }, { $push: { orders: obj } }).catch((err) => console.log(err));
+      await Orders.updateOne({ d_id: d_id }, { $push: { orders: obj } }).catch((err) => console.log(err));
     }
   }
 
@@ -1053,7 +1056,7 @@ async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
           })
           .then(() => {
             success = true;
-            console.log(`User: ${user.d_id}\nNew order added - webhook successfully sent\n`);
+            console.log(`User: ${d_id}\nNew order added - webhook successfully sent\n`);
           })
           .catch((err) => {
             if (err.message == 'Unknown Webhook') {
@@ -1075,7 +1078,7 @@ async function addOrder(client, user, aliasOrders, webhook, userOrdersArray) {
   }
 }
 
-async function deleteOrder(user, aliasOrders, userOrdersArray) {
+async function deleteOrder(d_id, aliasOrders, userOrdersArray) {
   for (let i = 0; i < userOrdersArray.length; i++) {
     let crnt = userOrdersArray[i];
     let deleted = true;
@@ -1092,13 +1095,13 @@ async function deleteOrder(user, aliasOrders, userOrdersArray) {
       continue;
     }
 
-    await Orders.updateOne({ d_id: user.d_id }, { $pull: { orders: { number: crnt.number } } }).catch((err) =>
+    await Orders.updateOne({ d_id: d_id }, { $pull: { orders: { number: crnt.number } } }).catch((err) =>
       console.log(err)
     );
   }
 }
 
-async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
+async function syncOrders(client, d_id, aliasOrders, webhook, userOrdersArray) {
   let changed = false;
   let changedString = 'Updated Order(s):\n';
   let k = 0;
@@ -1112,7 +1115,6 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
           let statusChange = false;
           let dateChange = false;
           let oldStatus = '';
-          let oldDate = '';
 
           if (crnt.status != aliasOrders.purchase_orders[j].status) {
             changed = true;
@@ -1121,17 +1123,15 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
             crnt.status = aliasOrders.purchase_orders[j].status;
           }
 
-          if (crnt.take_action_by != aliasOrders.purchase_orders[j].take_action_by) {
+          let oldParsedDate = new Date(aliasOrders.purchase_orders[j].take_action_by);
+
+          if (crnt.take_action_by != `${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()}`) {
             changed = true;
             dateChange = true;
-            oldDate = crnt.take_action_by;
-            crnt.take_action_by = aliasOrders.purchase_orders[j].take_action_by;
+            crnt.take_action_by = `${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()}`;
           }
 
           if (statusChange && dateChange) {
-            let oldParsedDate = new Date(oldDate);
-            let newParsedDate = new Date(crnt.take_action_by);
-
             if (crnt.status == 'SHIPPED') {
               crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
 
@@ -1143,13 +1143,13 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
                 oldStatus
               )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
                 oldParsedDate.getMonth() + 1
-              }/${oldParsedDate.getDate()} => ${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}\n`;
+              }/${oldParsedDate.getDate()} => ${crnt.take_action_by}\n`;
             } else if (crnt.status == 'NEEDS_SHIPPING') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
               )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
                 oldParsedDate.getMonth() + 1
-              }/${oldParsedDate.getDate()} => ${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}\n`;
+              }/${oldParsedDate.getDate()} => ${crnt.take_action_by}\n`;
             } else {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
@@ -1157,8 +1157,6 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
             }
             k++;
           } else if (statusChange) {
-            let date = new Date(crnt.take_action_by);
-
             if (crnt.status == 'SHIPPED') {
               crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
 
@@ -1168,11 +1166,11 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
             } else if (crnt.status == 'NEEDS_CONFIRMATION') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${crnt.take_action_by}\n`;
             } else if (crnt.status == 'NEEDS_SHIPPING') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${crnt.take_action_by}\n`;
             } else {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
@@ -1180,9 +1178,6 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
             }
             k++;
           } else if (dateChange) {
-            let oldParsedDate = new Date(oldDate);
-            let newParsedDate = new Date(crnt.take_action_by);
-
             if (crnt.status == 'SHIPPED') {
               crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
 
@@ -1193,14 +1188,14 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 crnt.status
               )}\n\t\tTake action by: ${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()} => ${
-                newParsedDate.getMonth() + 1
-              }/${newParsedDate.getDate()}\n`;
+                crnt.take_action_by
+              }\n`;
             } else if (crnt.status == 'NEEDS_SHIPPING') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 crnt.status
               )}\n\t\tTake action by: ${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()} => ${
-                newParsedDate.getMonth() + 1
-              }/${newParsedDate.getDate()}\n`;
+                crnt.take_action_by
+              }\n`;
             } else {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 crnt.status
@@ -1238,7 +1233,7 @@ async function syncOrders(client, user, aliasOrders, webhook, userOrdersArray) {
           })
           .then(() => {
             success = true;
-            console.log(`User: ${user.d_id}\nOrder change detected - webhook successfully sent\n`);
+            console.log(`User: ${d_id}\nOrder change detected - webhook successfully sent\n`);
           })
           .catch((err) => {
             if (err.message == 'Unknown Webhook') {
