@@ -62,11 +62,10 @@ exports.run = async (client, message, args) => {
 
       switch (command) {
         case 'check':
-          let checkListingObj = [];
           let userListingsCheckArray = [];
 
           if (args.length < 2) {
-            [toReturn, returnedEnum, checkListingObj, userListingsCheckArray] = await check(client, loginToken, user);
+            [toReturn, returnedEnum, userListingsCheckArray] = await check(user);
           } else {
             throw new Error('Too many parameters');
           }
@@ -614,19 +613,12 @@ async function aliasSearch(client, query) {
   return embed;
 }
 
-async function check(client, loginToken, user) {
-  let listings = await getListings(client, loginToken);
+async function check(user) {
   const userListings = await Listings.find({ d_id: user.d_id });
   const userListingsArray = userListings[0].listings;
 
-  let listingObj = [];
-
-  for (let i = 0; i < listings.listing.length; i++) {
-    listingObj = await checkListings(listings.listing[i], listingObj);
-  }
-
   if (userListingsArray.length == 0) {
-    return ['', response.NO_ITEMS, null, null];
+    return ['', response.NO_ITEMS, null];
   }
 
   let newLowestAsksString = 'Current Listings With a Lower Ask:';
@@ -645,9 +637,9 @@ async function check(client, loginToken, user) {
   });
 
   if (i > 0) {
-    return [newLowestAsksString, response.SUCCESS, listingObj, userListingsCheckArray];
+    return [newLowestAsksString, response.SUCCESS, userListingsCheckArray];
   } else {
-    return ['', response.NO_CHANGE, null, null];
+    return ['', response.NO_CHANGE, null];
   }
 }
 
@@ -657,8 +649,15 @@ async function update(client, loginToken, message, user) {
   let valid = false;
   let exit = false;
   let stopped = false;
+  let listings = await getListings(client, loginToken);
 
-  let [listingString, listingEnum, listingObj, userListingsCheckArray] = await check(client, loginToken, user);
+  let listingObj = [];
+
+  for (let i = 0; i < listings.listing.length; i++) {
+    listingObj = await checkListings(listings.listing[i], listingObj);
+  }
+
+  let [listingString, listingEnum, userListingsCheckArray] = await check(user);
 
   if (listingEnum == response.SUCCESS) {
     await message.channel.send('```' + listingString + '```');
