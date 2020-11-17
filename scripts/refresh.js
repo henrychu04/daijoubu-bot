@@ -75,10 +75,13 @@ module.exports = async function refresh(client, loginTokenParam, user) {
     }
   } else {
     try {
+      const userListings = await Listings.find({ d_id: user.d_id });
+      const userListingsArray = userListings[0].listings;
+
       let aliasListings = await getListings(client, loginTokenParam);
 
       await addListing(user, aliasListings, userListingsArray);
-      await deleteListing(d_id, aliasListings, userListingsArray);
+      await deleteListing(user.d_id, aliasListings, userListingsArray);
       await syncListingPrice(aliasListings, userListingsArray);
     } catch (err) {
       console.log(err);
@@ -444,13 +447,13 @@ async function getListings(client, loginToken) {
     }
   }
 
-  for (let i = 2; i < listings.metadata.total_pages; i++) {
+  for (let i = 1; i < listings.metadata.total_pages; i++) {
     let temp = {};
     getStatus = 0;
     count = 0;
 
     while (getStatus != 200) {
-      temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i}`, {
+      temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i + 1}`, {
         headers: {
           'user-agent': client.config.aliasHeader,
           authorization: `Bearer ${loginToken}`,
@@ -480,7 +483,7 @@ async function getListings(client, loginToken) {
     }
 
     for (let j = 0; j < temp.listing.length; j++) {
-      listings.listing.push(temp.listing[i]);
+      listings.listing.push(temp.listing[j]);
     }
   }
 
@@ -957,13 +960,13 @@ async function getOrders(client, loginToken) {
     }
   }
 
-  for (let i = 2; i < purchaseOrders.metadata.total_pages; i++) {
+  for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
     let temp = {};
     getStatus = 0;
     count = 0;
 
     while (getStatus != 200) {
-      temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
+      temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i + 1}`, {
         headers: {
           'user-agent': client.config.aliasHeader,
           authorization: `Bearer ${loginToken}`,
@@ -993,7 +996,7 @@ async function getOrders(client, loginToken) {
     }
 
     for (let j = 0; j < temp.listing.length; j++) {
-      purchaseOrders.listing.push(temp.listing[i]);
+      purchaseOrders.listing.push(temp.listing[j]);
     }
   }
 

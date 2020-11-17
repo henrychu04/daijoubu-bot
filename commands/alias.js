@@ -63,15 +63,25 @@ exports.run = async (client, message, args) => {
       switch (command) {
         case 'check':
           let userListingsCheckArray = [];
+          let checkArray = [];
 
           if (args.length < 2) {
-            [toReturn, returnedEnum, userListingsCheckArray] = await check(user);
+            [checkArray, returnedEnum, userListingsCheckArray] = await check(user);
           } else {
             throw new Error('Too many parameters');
           }
 
           if (returnedEnum == response.SUCCESS) {
-            toReturn = '```' + toReturn + '```';
+            for (let i = 0; i < checkArray.length; i++) {
+              if (i == 0) {
+                let initialString = 'Current Listings With a Lower Ask:';
+                initialString += checkArray[i];
+                await message.channel.send('```' + initialString + '```');
+              } else {
+                await message.channel.send('```' + checkArray[i] + '```');
+              }
+            }
+            console.log('!alias check completed\n');
           } else if (returnedEnum == response.NO_CHANGE) {
             toReturn = '```All listing(s) match their lowest asks```';
           } else if (returnedEnum == response.NO_ITEMS) {
@@ -621,23 +631,35 @@ async function check(user) {
     return ['', response.NO_ITEMS, null];
   }
 
-  let newLowestAsksString = 'Current Listings With a Lower Ask:';
-  let i = 0;
+  let newLowestAsksArray = [];
+  let i = 0,
+    j = 0;
   let userListingsCheckArray = [];
 
-  userListingsArray.forEach((obj) => {
-    if (obj.price > obj.lowest) {
-      newLowestAsksString += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} $${obj.price / 100} => $${
-        obj.lowest / 100
-      }\n`;
-
-      userListingsCheckArray.push(obj);
-      i++;
+  for (i = 0; i < userListingsArray.length; i++) {
+    if (i % 15 == 0 && i != 0) {
+      j++;
     }
-  });
+
+    let obj = userListingsArray[i];
+
+    if (obj.price > obj.lowest) {
+      userListingsCheckArray.push(obj);
+
+      if (newLowestAsksArray[j] == undefined) {
+        newLowestAsksArray[j] = `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} $${obj.price / 100} => $${
+          obj.lowest / 100
+        }\n`;
+      } else {
+        newLowestAsksArray[j] += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} $${obj.price / 100} => $${
+          obj.lowest / 100
+        }\n`;
+      }
+    }
+  }
 
   if (i > 0) {
-    return [newLowestAsksString, response.SUCCESS, userListingsCheckArray];
+    return [newLowestAsksArray, response.SUCCESS, userListingsCheckArray];
   } else {
     return ['', response.NO_CHANGE, null];
   }
@@ -657,10 +679,18 @@ async function update(client, loginToken, message, user) {
     listingObj = await checkListings(listings.listing[i], listingObj);
   }
 
-  let [listingString, listingEnum, userListingsCheckArray] = await check(user);
+  let [checkArray, listingEnum, userListingsCheckArray] = await check(user);
 
   if (listingEnum == response.SUCCESS) {
-    await message.channel.send('```' + listingString + '```');
+    for (let i = 0; i < checkArray.length; i++) {
+      if (i == 0) {
+        let initialString = 'Current Listings With a Lower Ask:';
+        initialString += checkArray[i];
+        await message.channel.send('```' + initialString + '```');
+      } else {
+        await message.channel.send('```' + checkArray[i] + '```');
+      }
+    }
   } else if (listingEnum == response.NO_CHANGE) {
     return [response.NO_CHANGE, all, null];
   } else if (listingEnum == response.NO_ITEMS) {
@@ -776,13 +806,13 @@ async function getListings(client, loginToken) {
     }
   }
 
-  for (let i = 2; i < listings.metadata.total_pages; i++) {
+  for (let i = 1; i < listings.metadata.total_pages; i++) {
     let temp = {};
     getStatus = 0;
     count = 0;
 
     while (getStatus != 200) {
-      temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i}`, {
+      temp = await fetch(`https://sell-api.goat.com/api/v1/listings?filter=1&includeMetadata=1&page=${i + 1}`, {
         headers: {
           'user-agent': client.config.aliasHeader,
           authorization: `Bearer ${loginToken}`,
@@ -812,7 +842,7 @@ async function getListings(client, loginToken) {
     }
 
     for (let j = 0; j < temp.listing.length; j++) {
-      listings.listing.push(temp.listing[i]);
+      listings.listing.push(temp.listing[j]);
     }
   }
 
@@ -856,7 +886,7 @@ async function updateListing(client, loginToken, obj) {
         throw new Error('Login expired');
       } else if (res.status == 404) {
         throw new Error('Not exist');
-      } else {
+      } else if (res.status != 200) {
         console.log('Res is', res.status);
         console.trace();
 
@@ -1106,10 +1136,18 @@ async function deletion(client, loginToken, user, listingId) {
 }
 
 async function editListing(client, loginToken, user, message) {
-  let [listingString, listingEnum, listingIds] = await allListings(user);
+  let [listings, listingEnum, listingIds] = await allListings(user);
 
   if (listingEnum == response.SUCCESS) {
-    await message.channel.send('```' + listingString + '```');
+    for (let i = 0; i < listings.length; i++) {
+      if (i == 0) {
+        let initialString = 'Current Listings:';
+        initialString += listings[i];
+        await message.channel.send('```' + initialString + '```');
+      } else {
+        await message.channel.send('```' + listings[i] + '```');
+      }
+    }
   } else {
     return response.NO_ITEMS;
   }
@@ -1748,10 +1786,18 @@ async function editDefaultListingRate(message, user) {
 }
 
 async function editSpecifiedListingRate(message, user) {
-  let [listingString, listingEnum, listingIds] = await allListings(user);
+  let [listings, listingEnum, listingIds] = await allListings(user);
 
   if (listingEnum == response.SUCCESS) {
-    await message.channel.send('```' + listingString + '```');
+    for (let i = 0; i < listings.length; i++) {
+      if (i == 0) {
+        let initialString = 'Current Listings:';
+        initialString += listings[i];
+        await message.channel.send('```' + initialString + '```');
+      } else {
+        await message.channel.send('```' + listings[i] + '```');
+      }
+    }
   } else {
     return response.NO_ITEMS;
   }
@@ -2791,7 +2837,7 @@ async function cashOut(client, loginToken, user, message) {
 
     if (otpRes == 200) {
       return response.SUCCESS;
-    } else {
+    } else if (res.status == 400) {
       return response.ERROR;
     }
   };
