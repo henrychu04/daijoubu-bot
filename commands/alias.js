@@ -1469,15 +1469,15 @@ async function confirm(client, loginToken, message, user) {
   let nums = [];
   let orders = [];
 
-  let confirmString = '\tNeeds Confirmation:\n';
+  let confirmString = 'Needs Confirmation:\n';
 
   userOrdersArray.forEach((order) => {
     let date = new Date(order.take_action_by);
 
     if (order.status == 'NEEDS_CONFIRMATION') {
-      confirmString += `\t\t${orders.length}. ${order.name} - ${order.size} $${
+      confirmString += `\t${orders.length}. ${order.name} - ${order.size} $${
         order.price / 100
-      }\n\t\t\tOrder number: ${order.number}\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      }\n\t\tOrder number: ${order.number}\n\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
 
       orders.push(order.number);
     }
