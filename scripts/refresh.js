@@ -1126,12 +1126,14 @@ async function syncOrders(client, d_id, aliasOrders, webhook, userOrdersArray) {
             crnt.status = aliasOrders.purchase_orders[j].status;
           }
 
-          let oldParsedDate = new Date(aliasOrders.purchase_orders[j].take_action_by);
+          let newParsedDate = new Date(aliasOrders.purchase_orders[j].take_action_by);
+          let oldDate = '';
 
-          if (crnt.take_action_by != `${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()}`) {
+          if (crnt.take_action_by != `${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`) {
             changed = true;
             dateChange = true;
-            crnt.take_action_by = `${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()}`;
+            oldDate = crnt.take_action_by;
+            crnt.take_action_by = `${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`;
           }
 
           if (statusChange && dateChange) {
@@ -1144,15 +1146,11 @@ async function syncOrders(client, d_id, aliasOrders, webhook, userOrdersArray) {
             } else if (crnt.status == 'NEEDS_CONFIRMATION') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
-                oldParsedDate.getMonth() + 1
-              }/${oldParsedDate.getDate()} => ${crnt.take_action_by}\n`;
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${oldDate} => ${crnt.take_action_by}\n`;
             } else if (crnt.status == 'NEEDS_SHIPPING') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${
-                oldParsedDate.getMonth() + 1
-              }/${oldParsedDate.getDate()} => ${crnt.take_action_by}\n`;
+              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${oldDate} => ${crnt.take_action_by}\n`;
             } else {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 oldStatus
@@ -1190,15 +1188,11 @@ async function syncOrders(client, d_id, aliasOrders, webhook, userOrdersArray) {
             } else if (crnt.status == 'NEEDS_CONFIRMATION') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 crnt.status
-              )}\n\t\tTake action by: ${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()} => ${
-                crnt.take_action_by
-              }\n`;
+              )}\n\t\tTake action by: ${oldDate} => ${crnt.take_action_by}\n`;
             } else if (crnt.status == 'NEEDS_SHIPPING') {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 crnt.status
-              )}\n\t\tTake action by: ${oldParsedDate.getMonth() + 1}/${oldParsedDate.getDate()} => ${
-                crnt.take_action_by
-              }\n`;
+              )}\n\t\tTake action by: ${oldDate} => ${crnt.take_action_by}\n`;
             } else {
               changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
                 crnt.status
