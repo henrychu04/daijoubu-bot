@@ -223,7 +223,7 @@ exports.run = async (client, message, args) => {
                 .then(console.log(`${message} completed\n`));
             }
           } else if (returnedEnum == response.NO_ITEMS) {
-            toReturn = '```No open order(s) currently on account```';
+            toReturn = '```Currently no order(s) to confirm on account```';
           } else if (returnedEnum == response.NO_CHANGE) {
             toReturn = '```Currently all open order(s) are confirmed```';
           } else if (returnedEnum == response.EXIT) {
