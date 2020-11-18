@@ -310,6 +310,8 @@ exports.run = async (client, message, args) => {
           let amount = 0;
 
           [toReturn, amount] = await earnings(user);
+
+          toReturn = '```' + toReturn + '```';
           break;
         case 'cashout':
           if (args.length > 1) {
@@ -2769,7 +2771,7 @@ async function earnings(user) {
   let crntEarnings = '$' + user.cashoutAmount / 100;
   let earningsString = 'Current Available Earnings: ' + crntEarnings;
 
-  return ['```' + earningsString + '```', user.cashoutAmount];
+  return [earningsString, user.cashoutAmount];
 }
 
 async function cashOut(client, loginToken, user, message) {
@@ -2949,6 +2951,9 @@ async function cashOut(client, loginToken, user, message) {
       console.log('Canceled\n');
     } else if (input == 's') {
       await sendOtp();
+      await message.channel.send(
+        '```' + `Another security code has been sent to the phone number ending in ${phoneNum}` + '```'
+      );
     } else if (!isNaN(input)) {
       if (input.length == 6) {
         let verifyEnum = await verifyOtp(input);
@@ -2978,7 +2983,8 @@ async function cashOut(client, loginToken, user, message) {
   exit = false;
   input = '';
 
-  await message.channel.send(earningsString);
+  await message.channel.send('```' + earningsString + '```');
+
   await message.channel.send('```' + `Enter 'all' or amount to cash out` + '```');
 
   const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
