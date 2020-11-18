@@ -117,7 +117,7 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
             if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
               await updateListing(client, loginToken, userListingsArray[i].id, lowest);
 
-              liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+              liveString += `\t${live}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
                 userListingsArray[i].price / 100
               }\n\t\t$${userListingsArray[i].price / 100} => $${lowest / 100}\n`;
               live++;
@@ -130,7 +130,7 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
 
             if (lowest != userListingsArray[i].lowest) {
               if (userListingsArray[i].setting == 'manual') {
-                manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+                manualString += `\t${manual}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
                   userListingsArray[i].price / 100
                 }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
                 manual++;
@@ -185,7 +185,7 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
             if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
               await updateListing(client, loginToken, userListingsArray[i].id, lowest);
 
-              liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+              liveString += `\t${live}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
                 userListingsArray[i].price / 100
               }\n\t\t$${userListingsArray[i].price / 100} => $${lowest / 100}\n`;
               live++;
@@ -198,7 +198,7 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
 
             if (lowest != userListingsArray[i].lowest) {
               if (userListingsArray[i].setting == 'manual') {
-                manualString += `\t${manual}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
+                manualString += `\t${manual}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
                   userListingsArray[i].price / 100
                 }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
                 manual++;
