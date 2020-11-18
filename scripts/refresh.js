@@ -119,7 +119,7 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
 
               liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
                 userListingsArray[i].price / 100
-              }\n\t\t$${userListingsArray[i].price} => $${lowest / 100}\n`;
+              }\n\t\t$${userListingsArray[i].price / 100} => $${lowest / 100}\n`;
               live++;
 
               await Listings.updateOne(
@@ -187,7 +187,7 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
 
               liveString += `\t${live}. ${userListingsArray[i].name} size: ${userListingsArray[i].size} $${
                 userListingsArray[i].price / 100
-              }\n\t\t$${userListingsArray[i].price} => $${lowest / 100}\n`;
+              }\n\t\t$${userListingsArray[i].price / 100} => $${lowest / 100}\n`;
               live++;
 
               await Listings.updateOne(
