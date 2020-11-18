@@ -1475,9 +1475,9 @@ async function confirm(client, loginToken, message, user) {
     let date = new Date(order.take_action_by);
 
     if (order.status == 'NEEDS_CONFIRMATION') {
-      confirmString += `\t${orders.length}. ${order.name} - ${order.size} $${
-        order.price / 100
-      }\n\t\tOrder number: ${order.number}\n\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      confirmString += `\t${orders.length}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${
+        order.number
+      }\n\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
 
       orders.push(order.number);
     }
@@ -2906,6 +2906,8 @@ async function cashOut(client, loginToken, user, message) {
         authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
+      feeRes = res.status;
+
       if (res.status == 200) {
         return res.json();
       } else if (res.status == 401) {
