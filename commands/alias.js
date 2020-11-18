@@ -2903,6 +2903,7 @@ async function cashOut(client, loginToken, user, message) {
     fee = await fetch(` https://sell-api.goat.com/api/v1/listing-actions/earnings?selling_price_cents=${crntAmount}`, {
       headers: {
         'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${loginToken}`,
       },
     }).then((res, err) => {
       if (res.status == 200) {
