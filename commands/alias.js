@@ -2902,11 +2902,13 @@ async function cashOut(client, loginToken, user, message) {
   let feeRes = 0;
 
   while (feeRes != 200) {
-    fee = await fetch(` https://sell-api.goat.com/api/v1/listing-actions/earnings?selling_price_cents=${crntAmount}`, {
+    fee = await fetch(`https://sell-api.goat.com/api/v1/users/cashout-breakdown`, {
+      method: 'POST',
       headers: {
         'user-agent': client.config.aliasHeader,
         authorization: `Bearer ${loginToken}`,
       },
+      body: `{"cashoutAmountCents":"${crntAmount}"}`,
     }).then((res, err) => {
       feeRes = res.status;
 
@@ -2931,7 +2933,7 @@ async function cashOut(client, loginToken, user, message) {
     }
   }
 
-  earningsString += `\nAmount after Cash Out Fee (2.9%): $${(crntAmount - fee.cash_out_fee_cents) / 100}`;
+  earningsString += `\nAmount after Cash Out Fee (2.9%): $${fee.calculated_cashout_cents / 100}`;
 
   let stopped = false;
   let exit = false;
@@ -2984,7 +2986,6 @@ async function cashOut(client, loginToken, user, message) {
   input = '';
 
   await message.channel.send('```' + earningsString + '```');
-
   await message.channel.send('```' + `Enter 'all' or amount to cash out` + '```');
 
   const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {

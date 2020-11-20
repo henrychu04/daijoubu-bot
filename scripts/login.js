@@ -27,29 +27,34 @@ async function loggingIn() {
       let count = 0;
 
       while (goatRes != 200) {
-        let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
-          method: 'POST',
-          headers: {
-            'user-agent': config.aliasHeader,
-          },
-          body: `{"grantType":"password","username":"${users[i].email}","password":"${encryption.decrypt(
-            users[i].pw
-          )}"}`,
-        }).then((res) => {
-          goatRes = res.status;
-          return res.json();
-        });
+        try {
+          let loginRes = await fetch('https://sell-api.goat.com/api/v1/unstable/users/login', {
+            method: 'POST',
+            headers: {
+              'user-agent': config.aliasHeader,
+            },
+            body: `{"grantType":"password","username":"${users[i].email}","password":"${encryption.decrypt(
+              users[i].pw
+            )}"}`,
+          }).then((res) => {
+            goatRes = res.status;
 
-        let loginToken = encryption.encrypt(loginRes.auth_token.access_token);
+            return res.json();
+          });
 
-        await Users.updateOne({ _id: users[i]._id }, { login: loginToken }).catch((err) => {
-          throw new Error(err);
-        });
+          let loginToken = encryption.encrypt(loginRes.auth_token.access_token);
 
-        count++;
+          await Users.updateOne({ _id: users[i]._id }, { login: loginToken }).catch((err) => {
+            throw new Error(err);
+          });
 
-        if (count == maxRetries) {
-          throw new Error('Invalid login');
+          count++;
+
+          if (count == maxRetries) {
+            throw new Error('Invalid login');
+          }
+        } catch (err) {
+          console.log(err);
         }
       }
     }
