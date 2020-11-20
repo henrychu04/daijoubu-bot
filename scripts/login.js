@@ -62,7 +62,7 @@ async function loggingIn() {
           count++;
 
           if (count == maxRetries) {
-            throw new Error('Invalid login');
+            throw new Error('Max retries');
           }
         } catch (err) {
           console.log(err);
