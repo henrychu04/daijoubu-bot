@@ -36,10 +36,21 @@ async function loggingIn() {
             body: `{"grantType":"password","username":"${users[i].email}","password":"${encryption.decrypt(
               users[i].pw
             )}"}`,
-          }).then((res) => {
+          }).then((res, err) => {
             goatRes = res.status;
 
-            return res.json();
+            if (res.status == 200) {
+              return res.json();
+            } else if (res.status == 401) {
+              throw new Error('Login expired');
+            } else {
+              console.log('Res is', res.status);
+              console.trace();
+
+              if (err) {
+                throw new Error(err);
+              }
+            }
           });
 
           let loginToken = encryption.encrypt(loginRes.auth_token.access_token);
