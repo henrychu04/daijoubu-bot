@@ -1873,9 +1873,7 @@ async function editSpecifiedListingRate(message, user) {
       exit = true;
       console.log('Canceled');
     } else if (input == 'live' || input == 'manual') {
-      console.log('here');
       editMsg = await msg.channel.send('```' + 'Editing ...' + '```');
-      console.log('here2');
       collector2.stop();
       stopped = true;
     } else {

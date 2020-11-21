@@ -539,13 +539,13 @@ async function confirmOrders(client, loginToken, d_id, refresh, webhook) {
       }
     }
 
-    for (let i = 2; i < purchaseOrders.metadata.total_pages; i++) {
+    for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
       let temp = {};
       getStatus = 0;
       count = 0;
 
       while (getStatus != 200) {
-        temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i}`, {
+        temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i + 1}`, {
           headers: {
             'user-agent': client.config.aliasHeader,
             authorization: `Bearer ${loginToken}`,
