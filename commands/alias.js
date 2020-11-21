@@ -239,7 +239,7 @@ exports.run = async (client, message, args) => {
             throw new Error('Too many parameters');
           } else if (args[1] && args[1].toLowerCase() == 'edit') {
             edit = true;
-          } else if (args[1] && args[1].toLowerCase() != 'edit') {
+          } else {
             throw new Error('Incorrect format');
           }
 
@@ -1384,6 +1384,8 @@ async function getOrders(user) {
   let receivedNum = 0;
   let droppedString = '\tDropped Off:\n';
   let droppedNum = 0;
+  let issuesString = '\tHas Issues:\n';
+  let issuesNum = 0;
   let newString = '';
   let i = 0;
 
@@ -1420,16 +1422,17 @@ async function getOrders(user) {
         order.number
       }\n`;
       receivedNum++;
+    } else if (order.status == 'HAS_ISSUES') {
+      issuesString += `\t\t${issuesNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+        order.number
+      }\n`;
+      issuesNum++;
     } else {
       newString += `\t${i}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${order.number}\n`;
       i++;
       console.log(`\nNew order status is '${order.status}'\n`);
     }
   });
-
-  if (i != 0) {
-    returnString += newString + '\n';
-  }
 
   if (reviewNum != 0) {
     returnString += reviewString + '\n';
@@ -1453,6 +1456,14 @@ async function getOrders(user) {
 
   if (receivedNum != 0) {
     returnString += receivedString + '\n';
+  }
+
+  if (issuesNum != 0) {
+    returnString += issuesString + '\n';
+  }
+
+  if (i != 0) {
+    returnString += newString + '\n';
   }
 
   return [returnString, response.SUCCESS, userOrdersArray];
@@ -1815,8 +1826,8 @@ async function editSpecifiedListingRate(message, user) {
     time: 30000,
   });
 
-  for await (const message of collector1) {
-    nums = message.content.toLowerCase();
+  for await (const msg of collector1) {
+    nums = msg.content.toLowerCase();
     let split = nums.split(' ');
 
     if (nums == 'n') {
@@ -1833,7 +1844,7 @@ async function editSpecifiedListingRate(message, user) {
       collector1.stop();
       stopped = true;
     } else {
-      message.channel.send('```' + `Invalid format\nEnter valid number(s)` + '```');
+      msg.channel.send('```' + `Invalid format\nEnter valid number(s)` + '```');
     }
   }
 
@@ -1847,13 +1858,14 @@ async function editSpecifiedListingRate(message, user) {
 
   let input = '';
   stopped = false;
+  let editMsg = null;
 
   const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
   });
 
-  for await (const message of collector2) {
-    input = message.content.toLowerCase();
+  for await (const msg of collector2) {
+    input = msg.content.toLowerCase();
 
     if (input == 'n') {
       collector2.stop();
@@ -1861,10 +1873,13 @@ async function editSpecifiedListingRate(message, user) {
       exit = true;
       console.log('Canceled');
     } else if (input == 'live' || input == 'manual') {
+      console.log('here');
+      editMsg = await msg.channel.send('```' + 'Editing ...' + '```');
+      console.log('here2');
       collector2.stop();
       stopped = true;
     } else {
-      message.channel.send('```' + `Invalid format\nEnter 'live' or 'manual` + '```');
+      await msg.channel.send('```' + `Invalid format\nEnter 'live' or 'manual` + '```');
     }
   }
 
@@ -1873,8 +1888,6 @@ async function editSpecifiedListingRate(message, user) {
   } else if (!stopped) {
     return response.TIMEOUT;
   }
-
-  let msg = await message.channel.send('```' + 'Editing ...' + '```');
 
   let i = 0;
 
@@ -1888,7 +1901,7 @@ async function editSpecifiedListingRate(message, user) {
     }
 
     if (i == listingIds.length) {
-      await msg.edit('```' + 'Listing update rate(s) updated successfully' + '```');
+      await editMsg.edit('```' + 'Listing update rate(s) updated successfully' + '```');
       console.log('Listing refresh rate(s) successfully updated\n');
     } else {
       throw new Error('Error editing listing update rate');
@@ -1903,7 +1916,7 @@ async function editSpecifiedListingRate(message, user) {
     }
 
     if (i == nums.length) {
-      await msg.edit('```' + 'Listing update rate(s) updated successfully' + '```');
+      await editMsg.edit('```' + 'Listing update rate(s) updated successfully' + '```');
       console.log('Listing refresh rate(s) successfully updated\n');
     } else {
       throw new Error('Error editing listing update rate');

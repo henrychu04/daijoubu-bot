@@ -1265,6 +1265,8 @@ function convertStatus(status) {
     return 'Dropped Off';
   } else if (status == 'RECEIVED') {
     return 'Received';
+  } else if (status == 'HAS_ISSUES') {
+    return 'Has Issues';
   } else {
     return status;
   }
