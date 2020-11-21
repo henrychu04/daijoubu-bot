@@ -144,11 +144,11 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
           }
         }
       } else {
-        let pageDataRes = false;
+        let pageDataRes = 0;
         let pageData = null;
         let count = 0;
 
-        while (!pageDataRes) {
+        while (pageDataRes != 200) {
           pageData = await fetch(
             `https://sell-api.goat.com/api/v1/analytics/products/${userListingsArray[i].slug}/availability?box_condition=1&shoe_condition=1`,
             {
@@ -159,6 +159,8 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
 
             if (res.status == 200) {
               return res.json();
+            } else if (res.status == 404) {
+              throw new Error('Not exist');
             } else {
               console.log('Res is', res.status);
               console.trace();
@@ -314,26 +316,22 @@ async function updateListing(client, loginToken, id, lowest) {
         authorization: `Bearer ${loginToken}`,
       },
       body: `{"listing":${JSON.stringify(obj)}}`,
-    })
-      .then((res, err) => {
-        if (res.status == 401) {
-          throw new Error('Login expired');
-        } else if (res.status == 404) {
-          throw new Error('Not exist');
-        } else if (res.status != 200) {
-          console.log('Res is', res.status);
-          console.trace();
+    }).then((res, err) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else if (res.status != 200) {
+        console.log('Res is', res.status);
+        console.trace();
 
-          if (err) {
-            console.log(err);
-          }
+        if (err) {
+          console.log(err);
         }
+      }
 
-        return res.status;
-      })
-      .catch((err) => {
-        throw new Error(err);
-      });
+      return res.status;
+    });
 
     count++;
 
@@ -502,82 +500,7 @@ async function confirmOrders(client, loginToken, d_id, refresh, webhook) {
     let date = `${month}/${day}`;
 
     let orders = [];
-    let getStatus = 0;
-    let purchaseOrders = {};
-    let count = 0;
-
-    while (getStatus != 200) {
-      purchaseOrders = await fetch(
-        'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
-        {
-          headers: {
-            'user-agent': client.config.aliasHeader,
-            authorization: `Bearer ${loginToken}`,
-          },
-        }
-      ).then((res, err) => {
-        getStatus = res.status;
-
-        if (res.status == 200) {
-          return res.json();
-        } else if (res.status == 401) {
-          throw new Error('Login expired');
-        } else {
-          console.log('Res is', res.status);
-          console.trace();
-
-          if (err) {
-            console.log(err);
-          }
-        }
-      });
-
-      count++;
-
-      if (count == maxRetries) {
-        throw new Error('Max retries');
-      }
-    }
-
-    for (let i = 1; i < purchaseOrders.metadata.total_pages; i++) {
-      let temp = {};
-      getStatus = 0;
-      count = 0;
-
-      while (getStatus != 200) {
-        temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i + 1}`, {
-          headers: {
-            'user-agent': client.config.aliasHeader,
-            authorization: `Bearer ${loginToken}`,
-          },
-        }).then((res, err) => {
-          getStatus = res.status;
-
-          if (res.status == 200) {
-            return res.json();
-          } else if (res.status == 401) {
-            throw new Error('Login expired');
-          } else {
-            console.log('Res is', res.status);
-            console.trace();
-
-            if (err) {
-              console.log(err);
-            }
-          }
-        });
-
-        count++;
-
-        if (count == maxRetries) {
-          throw new Error('Max retries');
-        }
-      }
-
-      for (let j = 0; j < temp.listing.length; j++) {
-        purchaseOrders.listing.push(temp.listing[i]);
-      }
-    }
+    let purchaseOrders = await getOrders(client, loginToken);
 
     if (purchaseOrders.purchase_orders) {
       purchaseOrders.purchase_orders.forEach((order) => {
@@ -785,7 +708,7 @@ async function confirmOrders(client, loginToken, d_id, refresh, webhook) {
                 avatarURL: client.config.aliasPicture,
               })
               .then(() => {
-                sucess = true;
+                success = true;
               })
               .catch((err) => {
                 if (err.message == 'Unknown Webhook') {
@@ -813,7 +736,7 @@ async function confirmOrders(client, loginToken, d_id, refresh, webhook) {
                 avatarURL: client.config.aliasPicture,
               })
               .then(() => {
-                sucess = true;
+                success = true;
               })
               .catch((err) => {
                 if (err.message == 'Unknown Webhook') {
@@ -854,6 +777,8 @@ async function earnings(client, loginToken, user, webhook) {
 
       if (res.status == 200) {
         return res.json();
+      } else if (res.status == 401) {
+        throw new Error('Login expired');
       } else {
         console.log('Res is', res.status);
         console.trace();
@@ -883,13 +808,13 @@ async function earnings(client, loginToken, user, webhook) {
 
         while (!success) {
           await webhook
-            .send('```' + `Amount available for cashout: $${crntEarnings / 100}` + '```', {
+            .send('```' + `Amount available for cash out: $${crntEarnings / 100}` + '```', {
               username: 'Earnings',
               avatarURL: client.config.aliasPicture,
             })
             .then(() => {
               success = true;
-              console.log(`User: ${user.d_id}\nNew cashout amount detected - webhook successfully sent\n`);
+              console.log(`User: ${user.d_id}\nNew cash out amount detected - webhook successfully sent\n`);
             })
             .catch((err) => {
               if (err.message == 'Unknown Webhook') {
@@ -995,8 +920,8 @@ async function getOrders(client, loginToken) {
       }
     }
 
-    for (let j = 0; j < temp.listing.length; j++) {
-      purchaseOrders.listing.push(temp.listing[j]);
+    for (let j = 0; j < temp.purchase_orders.length; j++) {
+      purchaseOrders.purchase_orders.push(temp.purchase_orders[j]);
     }
   }
 
