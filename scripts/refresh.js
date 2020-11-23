@@ -856,6 +856,7 @@ async function getOrders(client, loginToken) {
     purchaseOrders = await fetch(
       'https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=1',
       {
+        method: 'GET',
         headers: {
           'user-agent': client.config.aliasHeader,
           authorization: `Bearer ${loginToken}`,
@@ -892,6 +893,7 @@ async function getOrders(client, loginToken) {
 
     while (getStatus != 200) {
       temp = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders?filter=10&includeMetadata=1&page=${i + 1}`, {
+        method: 'GET',
         headers: {
           'user-agent': client.config.aliasHeader,
           authorization: `Bearer ${loginToken}`,
