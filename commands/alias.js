@@ -3087,7 +3087,7 @@ async function cashOut(client, loginToken, user, message) {
 
   await Users.updateOne({ _id: user._id }, { $set: { cashoutAmount: parseInt(newAmount) } }, async (err) => {
     if (!err) {
-      console.log('Cashout amount updated successfully\n');
+      console.log('Cash out amount updated successfully');
     }
   }).catch((err) => {
     throw new Error(err);
