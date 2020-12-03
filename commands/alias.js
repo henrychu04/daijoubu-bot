@@ -2011,7 +2011,7 @@ async function checkListParams(params) {
 
 async function list(client, user, message, loginToken, sizingArray, query) {
   let searchProduct = await aliasSearch(client, query).catch((err) => {
-    throw new Error(err);
+    throw new Error(err.message);
   });
 
   await message.channel.send(searchProduct);
