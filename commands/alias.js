@@ -26,7 +26,7 @@ exports.run = async (client, message, args) => {
       throw new Error('Empty command');
     }
 
-    const query = message.content.slice(6);
+    const query = message.content.slice(7);
     const command = args[0].toLowerCase();
     let loginToken = '';
     const id = message.author.id;
@@ -256,7 +256,7 @@ exports.run = async (client, message, args) => {
           }
           break;
         case 'list':
-          let params = message.content.slice(11).toLowerCase().split(' ');
+          let params = message.content.slice(12).toLowerCase().split(' ');
 
           let valid = false;
           let sizingArray = [];
@@ -2000,7 +2000,7 @@ async function checkListParams(params) {
     }
   }
 
-  query = query.substring(0, query.length + 1);
+  query = query.substring(0, query.length - 1);
 
   if (bracketCount == 0) {
     return [false, response.NO_CHANGE, [], ''];
