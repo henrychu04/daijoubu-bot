@@ -11,12 +11,12 @@ let client = new Discord.Client();
 const config = require('./config.json');
 client.config = config;
 
-let mongoConnnected = false;
+let mongoConnected = false;
 
-while (!mongoConnnected) {
+while (!mongoConnected) {
   mongoose
     .connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then((mongoConnnected = true))
+    .then((mongoConnected = true))
     .then(console.log('Connected to MongoDB'))
     .catch((err) => {
       throw new Error(err);

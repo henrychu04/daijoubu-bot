@@ -6,7 +6,7 @@ exports.run = async (client, message, args) => {
   try {
     let command = message.content.slice(10);
 
-    if (isNaN(command)) {
+    if (command && isNaN(command) && command.toLowerCase() != 'num') {
       throw new Error('Enter num');
     }
 
