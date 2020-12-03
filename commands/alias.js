@@ -2000,7 +2000,7 @@ async function checkListParams(params) {
     }
   }
 
-  query = query.substring(0, query.length);
+  query = query.substring(0, query.length + 1);
 
   if (bracketCount == 0) {
     return [false, response.NO_CHANGE, [], ''];
