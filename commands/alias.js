@@ -325,7 +325,8 @@ exports.run = async (client, message, args) => {
 
           if (returnedEnum == response.SUCCESS) {
             await cashOutMsg.edit('```' + 'Cash out successful' + '```');
-            toReturn = '```' + `Current Available Earnings: $${newAmount / 100}` + '```';
+            toReturn =
+              '```' + `Current Available Earnings: $${Money.fromDecimal(parseInt(newAmount / 100), 'USD')}` + '```';
           } else if (returnedEnum == response.EXIT) {
             toReturn = '```Canceled```';
           } else if (returnedEnum == response.TIMEOUT) {
@@ -2779,7 +2780,8 @@ async function consign(client, query) {
 }
 
 async function earnings(user) {
-  let crntEarnings = '$' + user.cashoutAmount / 100;
+  let newMoney = Money.fromDecimal(parseFloat(user.cashoutAmount / 100), 'USD');
+  let crntEarnings = '$' + newMoney;
   let earningsString = 'Current Available Earnings: ' + crntEarnings;
 
   return [earningsString, user.cashoutAmount];
@@ -2944,7 +2946,10 @@ async function cashOut(client, loginToken, user, message) {
     }
   }
 
-  earningsString += `\nAmount after Cash Out Fee (2.9%): $${fee.calculated_cashout_cents / 100}`;
+  earningsString += `\nAmount after Cash Out Fee (2.9%): $${Money.fromDecimal(
+    parseFloat(fee.calculated_cashout_cents / 100),
+    'USD'
+  )}`;
 
   let stopped = false;
   let exit = false;
