@@ -72,6 +72,7 @@ exports.run = async (client, message, args) => {
           }
 
           if (returnedEnum == response.SUCCESS) {
+            console.log(checkArray);
             for (let i = 0; i < checkArray.length; i++) {
               if (i == 0) {
                 let initialString = 'Current Listings With a Lower Ask:';
@@ -634,8 +635,8 @@ async function check(user) {
   }
 
   let newLowestAsksArray = [];
-  let i = 0,
-    j = 0;
+  let i = 0;
+  let j = 0;
   let userListingsCheckArray = [];
 
   for (i = 0; i < userListingsArray.length; i++) {
@@ -660,7 +661,7 @@ async function check(user) {
     }
   }
 
-  if (i > 0) {
+  if (userListingsCheckArray.length != 0) {
     return [newLowestAsksArray, response.SUCCESS, userListingsCheckArray];
   } else {
     return ['', response.NO_CHANGE, null];
