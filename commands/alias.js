@@ -72,7 +72,6 @@ exports.run = async (client, message, args) => {
           }
 
           if (returnedEnum == response.SUCCESS) {
-            console.log(checkArray);
             for (let i = 0; i < checkArray.length; i++) {
               if (i == 0) {
                 let initialString = 'Current Listings With a Lower Ask:';
