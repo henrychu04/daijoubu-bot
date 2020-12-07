@@ -635,11 +635,11 @@ async function check(user) {
   }
 
   let newLowestAsksArray = [];
-  let i = 0;
   let j = 0;
   let userListingsCheckArray = [];
+  let num = 0;
 
-  for (i = 0; i < userListingsArray.length; i++) {
+  for (let i = 0; i < userListingsArray.length; i++) {
     if (i % 15 == 0 && i != 0) {
       j++;
     }
@@ -650,14 +650,16 @@ async function check(user) {
       userListingsCheckArray.push(obj);
 
       if (newLowestAsksArray[j] == undefined) {
-        newLowestAsksArray[j] = `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} $${obj.price / 100} => $${
+        newLowestAsksArray[j] = `\n\t${num}. ${obj.name}\n\t\tsize: ${obj.size} $${obj.price / 100} => $${
           obj.lowest / 100
         }\n`;
       } else {
-        newLowestAsksArray[j] += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} $${obj.price / 100} => $${
+        newLowestAsksArray[j] += `\n\t${num}. ${obj.name}\n\t\tsize: ${obj.size} $${obj.price / 100} => $${
           obj.lowest / 100
         }\n`;
       }
+
+      num++;
     }
   }
 
