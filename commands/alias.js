@@ -298,7 +298,7 @@ exports.run = async (client, message, args) => {
           toReturn = await me(client, loginToken);
           break;
         case 'consign':
-          let searchQuery = query.slice(9);
+          let searchQuery = query.slice(8);
 
           if (searchQuery.length == 0) {
             throw new Error('Empty command');
