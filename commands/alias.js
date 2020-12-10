@@ -196,10 +196,9 @@ exports.run = async (client, message, args) => {
             throw new Error('Too many parameters');
           }
 
-          let tempOrders = {};
           let orderArray = [];
 
-          [returnedEnum, tempOrders, orderArray] = await getOrders(user);
+          [returnedEnum, orderArray] = await getOrders(user);
 
           if (returnedEnum == response.SUCCESS) {
             let orderReturnString = 'Current Open Orders:\n';
@@ -1518,11 +1517,11 @@ async function getOrders(user) {
     }
   });
 
-  return [response.SUCCESS, userOrdersArray, objArray];
+  return [response.SUCCESS, objArray];
 }
 
 async function confirm(client, loginToken, message, user) {
-  let [getOrdersEnum, userOrdersArray] = await getOrders(user);
+  let [getOrdersEnum, orderObjArray] = await getOrders(user);
 
   if (getOrdersEnum == response.NO_ITEMS) {
     return [response.NO_ITEMS, null, null];
@@ -1537,24 +1536,22 @@ async function confirm(client, loginToken, message, user) {
   let confirmString = 'Needs Confirmation:\n';
   let i = 0;
 
-  userOrdersArray.forEach(async (order) => {
-    let date = new Date(order.take_action_by);
+  orderObjArray.forEach(async (type) => {
+    if (type.name == 'Needs Confirmation') {
+      for (let j = 0; j < type.value.length; j++) {
+        confirmString += type.value[j];
 
-    if (order.status == 'NEEDS_CONFIRMATION') {
-      confirmString += `\t${orders.length}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${
-        order.number
-      }\n\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+        i++;
 
-      i++;
+        if (i == 15) {
+          await message.channel.send('```' + confirmString + '```');
 
-      if (i == 15) {
-        await message.channel.send('```' + confirmString + '```');
+          confirmString = '';
+          i = 0;
+        }
 
-        confirmString = '';
-        i = 0;
+        orders.push(order.number);
       }
-
-      orders.push(order.number);
     }
   });
 
