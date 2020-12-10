@@ -197,11 +197,36 @@ exports.run = async (client, message, args) => {
           }
 
           let tempOrders = {};
+          let orderArray = [];
 
-          [toReturn, returnedEnum, tempOrders] = await getOrders(user);
+          [returnedEnum, tempOrders, orderArray] = await getOrders(user);
 
           if (returnedEnum == response.SUCCESS) {
-            toReturn = '```' + toReturn + '```';
+            let orderReturnString = 'Current Open Orders:\n';
+            let orderCounter = 0;
+
+            for (type of orderArray) {
+              if (type.value.length != 0) {
+                orderReturnString += '\t' + type.name + '\n';
+
+                for (order of type.value) {
+                  orderReturnString += order;
+
+                  orderCounter++;
+
+                  if (orderCounter == 15) {
+                    await message.channel.send('```' + orderReturnString + '```');
+
+                    orderReturnString = '';
+                    orderCounter = 0;
+                  }
+                }
+
+                orderReturnString += '\n';
+              }
+            }
+
+            toReturn = '```' + orderReturnString + '```';
           } else if (returnedEnum == response.NO_ITEMS) {
             toReturn = '```Account currently has no open orders```';
           }
@@ -334,6 +359,12 @@ exports.run = async (client, message, args) => {
           } else if (returnedEnum == response.NO_CHANGE) {
             toReturn = '```No earnings available for cash out```';
           }
+          break;
+        case 'cancel':
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
+
           break;
         case 'help':
           if (args.length > 1) {
@@ -1373,107 +1404,125 @@ async function getOrders(user) {
     return ['', response.NO_ITEMS, null];
   }
 
-  let returnString = 'Current Open Orders:\n';
+  let objArray = [
+    { name: 'In Review', value: [] },
+    { name: 'Needs Confirmation', value: [] },
+    { name: 'Needs Shipping', value: [] },
+    { name: 'Shipped', value: [] },
+    { name: 'Received', value: [] },
+    { name: 'Dropped Off', value: [] },
+    { name: 'Has Issues', value: [] },
+    { name: 'New', value: [] },
+  ];
 
-  let reviewString = '\tIn Review:\n';
   let reviewNum = 0;
-  let confirmString = '\tNeeds Confirmation:\n';
   let confirmNum = 0;
-  let needShipString = '\tNeeds Shipping:\n';
   let needShipNum = 0;
-  let shippedString = '\tShipped:\n';
   let shippedNum = 0;
-  let receivedString = '\tReceived:\n';
   let receivedNum = 0;
-  let droppedString = '\tDropped Off:\n';
   let droppedNum = 0;
-  let issuesString = '\tHas Issues:\n';
   let issuesNum = 0;
-  let newString = '';
   let i = 0;
 
   userOrdersArray.forEach((order) => {
     let date = new Date(order.take_action_by);
 
     if (order.status == 'IN_REVIEW') {
-      reviewString += `\t\t${reviewNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
-        order.number
-      }\n`;
+      for (obj of objArray) {
+        if (obj.name == 'In Review') {
+          obj.value.push(
+            `\t\t${reviewNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+              order.number
+            }\n`
+          );
+        }
+      }
+
       reviewNum++;
     } else if (order.status == 'NEEDS_CONFIRMATION') {
-      confirmString += `\t\t${confirmNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
-        order.number
-      }\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      for (obj of objArray) {
+        if (obj.name == 'Needs Confirmation') {
+          obj.value.push(
+            `\t\t${confirmNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+              order.number
+            }\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`
+          );
+        }
+      }
       confirmNum++;
     } else if (order.status == 'NEEDS_SHIPPING') {
-      needShipString += `\t\t${needShipNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
-        order.number
-      }\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+      for (obj of objArray) {
+        if (obj.name == 'Needs Shipping') {
+          obj.value.push(
+            `\t\t${needShipNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+              order.number
+            }\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`
+          );
+        }
+      }
       needShipNum++;
     } else if (order.status == 'SHIPPED') {
-      shippedString += `\t\t${shippedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
-        order.number
-      }\n\t\t\tUPS tracking number: ${order.tracking}\n`;
+      for (obj of objArray) {
+        if (obj.name == 'Shipped') {
+          obj.value.push(
+            `\t\t${shippedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+              order.number
+            }\n\t\t\tUPS tracking number: ${order.tracking}\n`
+          );
+        }
+      }
       shippedNum++;
     } else if (order.status == 'DROPPED_OFF') {
-      droppedString += `\t\t${droppedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
-        order.number
-      }\n`;
+      for (obj of objArray) {
+        if (obj.name == 'Dropped Off') {
+          obj.value.push(
+            `\t\t${droppedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+              order.number
+            }\n`
+          );
+        }
+      }
       droppedNum++;
     } else if (order.status == 'RECEIVED') {
-      receivedString += `\t\t${receivedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
-        order.number
-      }\n`;
+      for (obj of objArray) {
+        if (obj.name == 'Received') {
+          obj.value.push(
+            `\t\t${receivedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+              order.number
+            }\n`
+          );
+        }
+      }
       receivedNum++;
     } else if (order.status == 'HAS_ISSUES') {
-      issuesString += `\t\t${issuesNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
-        order.number
-      }\n`;
+      for (obj of objArray) {
+        if (obj.name == 'Has Issues') {
+          obj.value.push(
+            `\t\t${issuesNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+              order.number
+            }\n`
+          );
+        }
+      }
       issuesNum++;
     } else {
-      newString += `\t${i}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${order.number}\n`;
+      for (obj of objArray) {
+        if (obj.name == 'New') {
+          obj.value.push(
+            `\t${i}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${order.number}\n`
+          );
+        }
+      }
       i++;
       console.log(`\nNew order status is '${order.status}'\n`);
     }
   });
 
-  if (reviewNum != 0) {
-    returnString += reviewString + '\n';
-  }
-
-  if (confirmNum != 0) {
-    returnString += confirmString + '\n';
-  }
-
-  if (needShipNum != 0) {
-    returnString += needShipString + '\n';
-  }
-
-  if (droppedNum != 0) {
-    returnString += droppedString + '\n';
-  }
-
-  if (shippedNum != 0) {
-    returnString += shippedString + '\n';
-  }
-
-  if (receivedNum != 0) {
-    returnString += receivedString + '\n';
-  }
-
-  if (issuesNum != 0) {
-    returnString += issuesString + '\n';
-  }
-
-  if (i != 0) {
-    returnString += newString + '\n';
-  }
-
-  return [returnString, response.SUCCESS, userOrdersArray];
+  return [response.SUCCESS, userOrdersArray, objArray];
 }
 
 async function confirm(client, loginToken, message, user) {
-  let [orderString, getOrdersEnum, userOrdersArray] = await getOrders(user);
+  let [getOrdersEnum, userOrdersArray] = await getOrders(user);
 
   if (getOrdersEnum == response.NO_ITEMS) {
     return [response.NO_ITEMS, null, null];
@@ -1486,14 +1535,24 @@ async function confirm(client, loginToken, message, user) {
   let orders = [];
 
   let confirmString = 'Needs Confirmation:\n';
+  let i = 0;
 
-  userOrdersArray.forEach((order) => {
+  userOrdersArray.forEach(async (order) => {
     let date = new Date(order.take_action_by);
 
     if (order.status == 'NEEDS_CONFIRMATION') {
       confirmString += `\t${orders.length}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${
         order.number
       }\n\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`;
+
+      i++;
+
+      if (i == 15) {
+        await message.channel.send('```' + confirmString + '```');
+
+        confirmString = '';
+        i = 0;
+      }
 
       orders.push(order.number);
     }
@@ -3101,6 +3160,15 @@ async function cashOut(client, loginToken, user, message) {
   });
 
   return [response.SUCCESS, newAmount, msg];
+}
+
+async function cancelSearch(client, loginToken, user, message) {
+  let [returnString, returnedEnum, userOrdersArray] = await getOrders(user);
+
+  // https://sell-api.goat.com/api/v1/purchase-orders/181618719/cancel
+  // put
+  // {"number":"181618719"}
+  // require bearer token
 }
 
 function help() {
