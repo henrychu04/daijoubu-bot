@@ -1536,7 +1536,7 @@ async function confirm(client, loginToken, message, user) {
   let i = 0;
 
   orderObjArray.forEach(async (type) => {
-    if (type.name == 'Needs Confirmation') {
+    if (type.name == 'Needs Confirmation:') {
       for (let j = 0; j < type.value.length; j++) {
         confirmString += type.value[j];
 
