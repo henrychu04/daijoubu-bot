@@ -808,10 +808,17 @@ async function earnings(client, loginToken, user, webhook) {
 
         while (!success) {
           await webhook
-            .send('```' + `Amount available for cash out: $${crntEarnings / 100}` + '```', {
-              username: 'Earnings',
-              avatarURL: client.config.aliasPicture,
-            })
+            .send(
+              '```' +
+                `Amount available for cash out: $${(crntEarnings / 100).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}` +
+                '```',
+              {
+                username: 'Earnings',
+                avatarURL: client.config.aliasPicture,
+              }
+            )
             .then(() => {
               success = true;
               console.log(`User: ${user.d_id}\nNew cash out amount detected - webhook successfully sent\n`);
