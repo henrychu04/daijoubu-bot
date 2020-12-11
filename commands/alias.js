@@ -1404,14 +1404,14 @@ async function getOrders(user) {
   }
 
   let objArray = [
-    { name: 'In Review', value: [] },
-    { name: 'Needs Confirmation', value: [] },
-    { name: 'Needs Shipping', value: [] },
-    { name: 'Shipped', value: [] },
-    { name: 'Received', value: [] },
-    { name: 'Dropped Off', value: [] },
-    { name: 'Has Issues', value: [] },
-    { name: 'New', value: [] },
+    { name: 'In Review:', value: [] },
+    { name: 'Needs Confirmation:', value: [] },
+    { name: 'Needs Shipping:', value: [] },
+    { name: 'Shipped:', value: [] },
+    { name: 'Received:', value: [] },
+    { name: 'Dropped Off:', value: [] },
+    { name: 'Has Issues:', value: [] },
+    { name: 'Open:', value: [] },
   ];
 
   let reviewNum = 0;
@@ -1428,7 +1428,7 @@ async function getOrders(user) {
 
     if (order.status == 'IN_REVIEW') {
       for (obj of objArray) {
-        if (obj.name == 'In Review') {
+        if (obj.name == 'In Review:') {
           obj.value.push(
             `\t\t${reviewNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
@@ -1436,11 +1436,10 @@ async function getOrders(user) {
           );
         }
       }
-
       reviewNum++;
     } else if (order.status == 'NEEDS_CONFIRMATION') {
       for (obj of objArray) {
-        if (obj.name == 'Needs Confirmation') {
+        if (obj.name == 'Needs Confirmation:') {
           obj.value.push(
             `\t\t${confirmNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
@@ -1451,7 +1450,7 @@ async function getOrders(user) {
       confirmNum++;
     } else if (order.status == 'NEEDS_SHIPPING') {
       for (obj of objArray) {
-        if (obj.name == 'Needs Shipping') {
+        if (obj.name == 'Needs Shipping:') {
           obj.value.push(
             `\t\t${needShipNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
@@ -1462,7 +1461,7 @@ async function getOrders(user) {
       needShipNum++;
     } else if (order.status == 'SHIPPED') {
       for (obj of objArray) {
-        if (obj.name == 'Shipped') {
+        if (obj.name == 'Shipped:') {
           obj.value.push(
             `\t\t${shippedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
@@ -1473,7 +1472,7 @@ async function getOrders(user) {
       shippedNum++;
     } else if (order.status == 'DROPPED_OFF') {
       for (obj of objArray) {
-        if (obj.name == 'Dropped Off') {
+        if (obj.name == 'Dropped Off:') {
           obj.value.push(
             `\t\t${droppedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
@@ -1484,7 +1483,7 @@ async function getOrders(user) {
       droppedNum++;
     } else if (order.status == 'RECEIVED') {
       for (obj of objArray) {
-        if (obj.name == 'Received') {
+        if (obj.name == 'Received:') {
           obj.value.push(
             `\t\t${receivedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
@@ -1495,7 +1494,7 @@ async function getOrders(user) {
       receivedNum++;
     } else if (order.status == 'HAS_ISSUES') {
       for (obj of objArray) {
-        if (obj.name == 'Has Issues') {
+        if (obj.name == 'Has Issues:') {
           obj.value.push(
             `\t\t${issuesNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
@@ -1506,7 +1505,7 @@ async function getOrders(user) {
       issuesNum++;
     } else {
       for (obj of objArray) {
-        if (obj.name == 'New') {
+        if (obj.name == 'Open:') {
           obj.value.push(
             `\t${i}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${order.number}\n`
           );
