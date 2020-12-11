@@ -350,7 +350,11 @@ exports.run = async (client, message, args) => {
           if (returnedEnum == response.SUCCESS) {
             await cashOutMsg.edit('```' + 'Cash out successful' + '```');
             toReturn =
-              '```' + `Current Available Earnings: $${Money.fromDecimal(parseInt(newAmount / 100), 'USD')}` + '```';
+              '```' +
+              `Current Available Earnings: $${(newAmount / 100).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}` +
+              '```';
           } else if (returnedEnum == response.EXIT) {
             toReturn = '```Canceled```';
           } else if (returnedEnum == response.TIMEOUT) {
@@ -2837,7 +2841,7 @@ async function consign(client, query) {
 }
 
 async function earnings(user) {
-  let newMoney = Money.fromDecimal(parseFloat(user.cashoutAmount / 100), 'USD');
+  let newMoney = (user.cashoutAmount / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
   let crntEarnings = '$' + newMoney;
   let earningsString = 'Current Available Earnings: ' + crntEarnings;
 
@@ -2909,7 +2913,7 @@ async function cashOut(client, loginToken, user, message) {
 
     if (otpRes == 200) {
       return response.SUCCESS;
-    } else if (res.status == 400) {
+    } else if (otpRes.status == 400) {
       return response.ERROR;
     }
   };
@@ -3003,10 +3007,9 @@ async function cashOut(client, loginToken, user, message) {
     }
   }
 
-  earningsString += `\nAmount after Cash Out Fee (2.9%): $${Money.fromDecimal(
-    parseFloat(fee.calculated_cashout_cents / 100),
-    'USD'
-  )}`;
+  earningsString += `\nAmount after Cash Out Fee (2.9%): $${(
+    fee.calculated_cashout_cents / 100
+  ).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
   let stopped = false;
   let exit = false;
