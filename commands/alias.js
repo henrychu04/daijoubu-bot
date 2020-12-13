@@ -45,7 +45,8 @@ exports.run = async (client, message, args) => {
         command == 'list' ||
         command == 'me' ||
         command == 'earnings' ||
-        command == 'cashout'
+        command == 'cashout' ||
+        command == 'cancel'
       ) {
         user = await Users.find({ d_id: id });
 
@@ -1018,16 +1019,13 @@ async function allListings(user) {
 }
 
 async function deleteSearch(client, loginToken, message, user) {
-  const userListings = await Listings.find({ d_id: user.d_id });
-  const userListingsArray = userListings[0].listings;
-
   let all = false;
   let valid = true;
   let nums = [];
   let exit = false;
   let stopped = false;
 
-  let [listings, returnedEnum, []] = await allListings(user);
+  let [listings, returnedEnum, listingIds] = await allListings(user);
 
   if (returnedEnum == response.SUCCESS) {
     for (let i = 0; i < listings.length; i++) {
@@ -1066,7 +1064,7 @@ async function deleteSearch(client, loginToken, message, user) {
         valid = true;
 
         for (let i = 0; i < nums.length; i++) {
-          if (parseInt(nums[i]) >= userListingsArray.length) {
+          if (parseInt(nums[i]) >= listingIds.length) {
             valid = false;
             message.channel.send('```' + 'One or more entered listing numbers do not exist' + '```');
             break;
@@ -1094,13 +1092,13 @@ async function deleteSearch(client, loginToken, message, user) {
   let deleteEnum = null;
 
   if (all) {
-    for (let i = 0; i < userListingsArray.length; i++) {
-      deleteEnum = await deletion(client, loginToken, user, userListingsArray[i].id);
+    for (let i = 0; i < listingIds.length; i++) {
+      deleteEnum = await deletion(client, loginToken, user, listingIds[i]);
     }
   } else {
     if (valid) {
       for (let i = 0; i < nums.length; i++) {
-        deleteEnum = await deletion(client, loginToken, user, userListingsArray[parseInt(nums[i])].id);
+        deleteEnum = await deletion(client, loginToken, user, listingIds[parseInt(nums[i])]);
       }
     }
   }
@@ -3267,7 +3265,7 @@ async function cancel(client, loginToken, user, message) {
       }
     }
 
-    await messsage.channel.send('```' + orderReturnString + '```');
+    await message.channel.send('```' + orderReturnString + '```');
   } else if (returnedEnum == response.NO_ITEMS) {
     return [response.NO_ITEMS, null];
   }
@@ -3275,7 +3273,7 @@ async function cancel(client, loginToken, user, message) {
   await message.channel.send(
     '```' + `Only 'Needs Shipping' orders may be canceled\nConfirm orders before canceling` + '```'
   );
-  await message.channel.send('```' + `Enter order number(s) to cancel\nEnter 'n' to cancel` + '```');
+  await message.channel.send('```' + `Enter one order number to cancel\nEnter 'n' to cancel` + '```');
 
   let stopped = false;
   let nums = [];
@@ -3293,15 +3291,13 @@ async function cancel(client, loginToken, user, message) {
       stopped = true;
       exit = true;
       console.log('Canceled\n');
-    } else if (checkNumParams(nums) && nums[0].toLowerCase() != 'all') {
+    } else if (checkNumParams(nums) && nums[0].toLowerCase() != 'all' && nums.length == 1) {
       valid = true;
 
-      for (let i = 0; i < nums.length; i++) {
-        if (parseInt(nums[i]) >= orderNumArray.length) {
-          valid = false;
-          message.channel.send('```' + 'One or more entered order number(s) do not exist' + '```');
-          break;
-        }
+      if (parseInt(nums[0]) >= orderNumArray.length) {
+        valid = false;
+        message.channel.send('```' + 'Entered order number does not exist' + '```');
+        break;
       }
 
       if (valid) {
@@ -3309,7 +3305,7 @@ async function cancel(client, loginToken, user, message) {
         stopped = true;
       }
     } else {
-      message.channel.send('```' + `Invalid format\nEnter 'all' or listing number(s)` + '```');
+      message.channel.send('```' + `Invalid format\nEnter one order number` + '```');
     }
   }
 
@@ -3317,24 +3313,17 @@ async function cancel(client, loginToken, user, message) {
     return [response.EXIT, null];
   } else if (!stopped) {
     return [response.TIMEOUT, null];
+  } else if (!valid) {
+    return [response.ERROR, null];
   }
 
   let msg = await message.channel.send('```Canceling ... ```');
 
-  let deleteEnum = null;
+  let deleteEnum = await cancelation(client, loginToken, orderNumArray[nums[i]]);
 
-  if (valid) {
-    for (let i = 0; i < nums.length; i++) {
-      deleteEnum = await cancelation(client, loginToken, orderNumArray[nums[i]]);
-
-      await Orders.updateOne(
-        { d_id: user.d_id },
-        { $pull: { orders: { number: orderNumArray[nums[i]] } } }
-      ).catch((err) => console.log(err));
-    }
-  } else {
-    return [response.ERROR, null];
-  }
+  await Orders.updateOne({ d_id: user.d_id }, { $pull: { orders: { number: orderNumArray[nums[i]] } } }).catch((err) =>
+    console.log(err)
+  );
 
   if (deleteEnum == response.SUCCESS) {
     return [response.SUCCESS, msg];
