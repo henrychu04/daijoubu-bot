@@ -846,7 +846,7 @@ async function earnings(client, loginToken, user, webhook) {
   if (crntEarnings != user.cashoutAmount) {
     await Users.updateOne({ _id: user._id }, { $set: { cashoutAmount: crntEarnings } }, async (err) => {
       if (!err) {
-        console.log(`User: ${user._id}\nCash out database amount updated successfully\n`);
+        console.log(`User: ${user.d_id}\nCash out database amount updated successfully\n`);
       }
     }).catch((err) => {
       throw new Error(err);
