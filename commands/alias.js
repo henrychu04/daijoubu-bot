@@ -129,8 +129,9 @@ exports.run = async (client, message, args) => {
 
           let placeholder = [];
           let listingArray = [];
+          let userListingsArrayPlaceholder = [];
 
-          [listingArray, returnedEnum, placeholder] = await allListings(user);
+          [listingArray, returnedEnum, placeholder, userListingsArrayPlaceholder] = await allListings(user);
 
           if (returnedEnum == response.SUCCESS) {
             for (let i = 0; i < listingArray.length; i++) {
@@ -178,16 +179,21 @@ exports.run = async (client, message, args) => {
           }
           break;
         case 'edit':
-          let editMsg = null;
-
           if (args.length > 1) {
             throw new Error('Too many parameters');
           }
 
-          [returnedEnum, editMsg] = await editListing(client, loginToken, user, message);
+          let editMsg = null;
+          let editOthers = false;
+
+          [returnedEnum, editMsg, editOthers] = await editListing(client, loginToken, user, message);
 
           if (returnedEnum == response.SUCCESS) {
-            await editMsg.edit('```Listing edited successfully```').then(console.log(`${message} completed\n`));
+            if (editOthers) {
+              await editMsg.edit('```All listings edited successfully```').then(console.log(`${message} completed\n`));
+            } else {
+              await editMsg.edit('```Listing edited successfully```').then(console.log(`${message} completed\n`));
+            }
             await refresh(client, loginToken, user);
           } else if (returnedEnum == response.EXIT) {
             toReturn = '```Canceled```';
@@ -1015,7 +1021,7 @@ async function allListings(user) {
     }
   }
 
-  return [listingArray, response.SUCCESS, listingIds];
+  return [listingArray, response.SUCCESS, listingIds, userListingsArray];
 }
 
 async function deleteSearch(client, loginToken, message, user) {
@@ -1025,7 +1031,7 @@ async function deleteSearch(client, loginToken, message, user) {
   let exit = false;
   let stopped = false;
 
-  let [listings, returnedEnum, listingIds] = await allListings(user);
+  let [listings, returnedEnum, listingIds, userListingsArray] = await allListings(user);
 
   if (returnedEnum == response.SUCCESS) {
     for (let i = 0; i < listings.length; i++) {
@@ -1211,7 +1217,9 @@ async function deletion(client, loginToken, user, listingId) {
 }
 
 async function editListing(client, loginToken, user, message) {
-  let [listings, listingEnum, listingIds] = await allListings(user);
+  let getAllListings = await getListings(client, loginToken);
+
+  let [listings, listingEnum, listingIds, userListingsArray] = await allListings(user);
 
   if (listingEnum == response.SUCCESS) {
     for (let i = 0; i < listings.length; i++) {
@@ -1224,7 +1232,7 @@ async function editListing(client, loginToken, user, message) {
       }
     }
   } else {
-    return response.NO_ITEMS;
+    return [response.NO_ITEMS, null, null];
   }
 
   let exit = false;
@@ -1258,9 +1266,9 @@ async function editListing(client, loginToken, user, message) {
   }
 
   if (exit) {
-    return [response.EXIT, null];
+    return [response.EXIT, null, null];
   } else if (!stopped) {
-    return [response.TIMEOUT, null];
+    return [response.TIMEOUT, null, null];
   }
 
   await message.channel.send('```' + `Enter new price or 'lowest'\nEnter 'n' to cancel` + '```');
@@ -1270,7 +1278,7 @@ async function editListing(client, loginToken, user, message) {
   let count = 0;
 
   while (getJSONRes != 200) {
-    getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input]}`, {
+    getJSON = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[parseInt(input)]}`, {
       headers: {
         'user-agent': client.config.aliasHeader,
         authorization: `Bearer ${loginToken}`,
@@ -1298,6 +1306,18 @@ async function editListing(client, loginToken, user, message) {
 
     if (count == maxRetries) {
       throw new Error('Max retries');
+    }
+  }
+
+  let matchedArray = [];
+
+  for (listing of getAllListings.listing) {
+    if (
+      listing.product.name == getJSON.listing.product.name &&
+      parseFloat(listing.size_option.value) == parseFloat(getJSON.listing.size_option.value) &&
+      listing.id != getJSON.listing.id
+    ) {
+      matchedArray.push(listing);
     }
   }
 
@@ -1342,25 +1362,74 @@ async function editListing(client, loginToken, user, message) {
   }
 
   if (exit) {
-    return [response.EXIT, null];
+    return [response.EXIT, null, null];
   } else if (!stopped) {
-    return [response.TIMEOUT, null];
+    return [response.TIMEOUT, null, null];
+  }
+
+  let editOthers = false;
+  stopped = false;
+
+  if (matchedArray.length != 0) {
+    await message.channel.send(
+      '```' +
+        `${matchedArray.length} listings match the specified listing name and size, would you like to edit all matched listing prices as well?\nEnter 'y' or 'n'` +
+        '```'
+    );
+
+    const collector3 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+      time: 30000,
+    });
+
+    for await (const message of collector3) {
+      let input = message.content.toLowerCase();
+
+      if (input == 'y' || input == 'n') {
+        if (input == 'n') {
+          collector3.stop();
+        } else {
+          collector3.stop();
+          editOthers = true;
+        }
+        stopped = true;
+      } else {
+        await message.channel.send('```' + `Enter either 'y' or 'n'` + '```');
+      }
+    }
+
+    if (!stopped) {
+      return [response.TIMEOUT, null, null];
+    }
   }
 
   const msg = await message.channel.send('```Editing ...```');
 
+  let editEnum = null;
+
   getJSON.listing.price_cents = (parseInt(price) * 100).toString();
 
-  let editEnum = await editReq(client, loginToken, listingIds[input].id);
+  editEnum = await editReq(client, loginToken, listingIds[input].id, getJSON);
+
+  if (editOthers) {
+    for (crnt of matchedArray) {
+      crnt.price_cents = (parseInt(price) * 100).toString();
+
+      crnt = {
+        listing: crnt,
+      };
+
+      editEnum = await editReq(client, loginToken, crnt.id, crnt);
+    }
+  }
 
   if (editEnum == response.SUCCESS) {
-    return [response.SUCCESS, msg];
+    return [response.SUCCESS, msg, editOthers];
   } else {
-    return [response.ERROR, null];
+    return [response.ERROR, null, null];
   }
 }
 
-async function editReq(client, loginToken, id) {
+async function editReq(client, loginToken, id, getJSON) {
   let editRes = 0;
   let count = 0;
 
@@ -1932,7 +2001,7 @@ async function editDefaultListingRate(message, user) {
 }
 
 async function editSpecifiedListingRate(message, user) {
-  let [listings, listingEnum, listingIds] = await allListings(user);
+  let [listings, listingEnum, listingIds, userListingsArray] = await allListings(user);
 
   if (listingEnum == response.SUCCESS) {
     for (let i = 0; i < listings.length; i++) {
