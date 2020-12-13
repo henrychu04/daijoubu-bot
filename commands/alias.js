@@ -117,6 +117,8 @@ exports.run = async (client, message, args) => {
             toReturn = '```Canceled```';
           } else if (returnedEnum == response.TIMEOUT) {
             toReturn = '```Command timed out```';
+          } else if (returnedEnum == response.ERROR) {
+            throw new Error();
           }
           break;
         case 'listings':
@@ -143,7 +145,6 @@ exports.run = async (client, message, args) => {
           } else if (returnedEnum == response.NO_ITEMS) {
             toReturn = '```Account currently has no items listed```';
           }
-
           break;
         case 'delete':
           if (args.length > 1) {
@@ -171,6 +172,8 @@ exports.run = async (client, message, args) => {
             toReturn = '```Canceled```';
           } else if (returnedEnum == response.TIMEOUT) {
             toReturn = '```Command timed out```';
+          } else if (returnedEnum == response.ERROR) {
+            throw new Error();
           }
           break;
         case 'edit':
@@ -189,6 +192,8 @@ exports.run = async (client, message, args) => {
             toReturn = '```Canceled```';
           } else if (returnedEnum == response.TIMEOUT) {
             toReturn = '```Command timed out```';
+          } else if (returnedEnum == response.ERROR) {
+            throw new Error();
           }
           break;
         case 'orders':
@@ -209,7 +214,7 @@ exports.run = async (client, message, args) => {
                 orderReturnString += '\t' + type.name + '\n';
 
                 for (order of type.value) {
-                  orderReturnString += order;
+                  orderReturnString += order.string;
 
                   orderCounter++;
 
@@ -231,6 +236,10 @@ exports.run = async (client, message, args) => {
           }
           break;
         case 'confirm':
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
+
           let confirmAll = false;
           let confirmMsg = null;
 
@@ -254,6 +263,8 @@ exports.run = async (client, message, args) => {
             toReturn = '```Canceled```';
           } else if (returnedEnum == response.TIMEOUT) {
             toReturn = '```Command timed out```';
+          } else if (returnedEnum == response.ERROR) {
+            throw new Error();
           }
           break;
         case 'settings':
@@ -374,6 +385,29 @@ exports.run = async (client, message, args) => {
             throw new Error('Too many parameters');
           } else {
             toReturn = help();
+          }
+          break;
+        case 'cancel':
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
+
+          let cancelMsg = null;
+
+          [returnedEnum, cancelMsg] = await cancel(client, loginToken, message, user);
+
+          if (returnedEnum == response.SUCCESS) {
+            await cancelMsg
+              .edit('```Specified orders(s) canceled successfully```')
+              .then(console.log(`${message} completed\n`));
+          } else if (returnedEnum == response.NO_ITEMS) {
+            toReturn = '```Currently no order(s) to cancel on account```';
+          } else if (returnedEnum == response.EXIT) {
+            toReturn = '```Canceled```';
+          } else if (returnedEnum == response.TIMEOUT) {
+            toReturn = '```Command timed out```';
+          } else if (returnedEnum == response.ERROR) {
+            throw new Error();
           }
           break;
         default:
@@ -807,6 +841,8 @@ async function update(client, loginToken, message, user) {
 
   if (updateRes == 200) {
     return [response.SUCCESS, all, msg];
+  } else {
+    return [response.ERROR, null, null];
   }
 }
 
@@ -1055,22 +1091,24 @@ async function deleteSearch(client, loginToken, message, user) {
 
   const msg = await message.channel.send('```' + `Deleting ...` + '```');
 
-  let deleteRes = null;
+  let deleteEnum = null;
 
   if (all) {
     for (let i = 0; i < userListingsArray.length; i++) {
-      deleteRes = await deletion(client, loginToken, user, userListingsArray[i].id);
+      deleteEnum = await deletion(client, loginToken, user, userListingsArray[i].id);
     }
   } else {
     if (valid) {
       for (let i = 0; i < nums.length; i++) {
-        deleteRes = await deletion(client, loginToken, user, userListingsArray[parseInt(nums[i])].id);
+        deleteEnum = await deletion(client, loginToken, user, userListingsArray[parseInt(nums[i])].id);
       }
     }
   }
 
-  if (deleteRes == response.SUCCESS) {
+  if (deleteEnum == response.SUCCESS) {
     return [response.SUCCESS, all, msg];
+  } else {
+    return [response.ERROR, null, null];
   }
 }
 
@@ -1315,11 +1353,21 @@ async function editListing(client, loginToken, user, message) {
 
   getJSON.listing.price_cents = (parseInt(price) * 100).toString();
 
+  let editEnum = await editReq(client, loginToken, listingIds[input].id);
+
+  if (editEnum == response.SUCCESS) {
+    return [response.SUCCESS, msg];
+  } else {
+    return [response.ERROR, null];
+  }
+}
+
+async function editReq(client, loginToken, id) {
   let editRes = 0;
-  count = 0;
+  let count = 0;
 
   while (editRes != 200) {
-    editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${listingIds[input].id}`, {
+    editRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${id}`, {
       method: 'PUT',
       headers: {
         'user-agent': client.config.aliasHeader,
@@ -1350,7 +1398,11 @@ async function editListing(client, loginToken, user, message) {
     }
   }
 
-  return [response.SUCCESS, msg];
+  if (editRes == 200) {
+    return response.SUCCESS;
+  } else {
+    return response.ERROR;
+  }
 }
 
 async function confirmEdit(lowest, price, message) {
@@ -1366,19 +1418,24 @@ async function confirmEdit(lowest, price, message) {
     time: 10000,
   });
 
+  let stopped = false;
+
   for await (const message of collector) {
     let input = message.content.toLowerCase();
 
     if (input == 'y') {
       collector.stop();
+      stopped = true;
       confirm = true;
     } else if (input == 'n') {
       collector.stop();
       price = -1;
+      stopped = true;
       confirm = true;
       console.log('Canceled\n');
     } else if (!isNaN(input)) {
       collector.stop();
+      stopped = true;
       price = input;
       confirm = false;
     } else {
@@ -1386,11 +1443,11 @@ async function confirmEdit(lowest, price, message) {
     }
   }
 
-  collector.on('end', async (collected) => {
+  if (!stopped) {
     console.log('Timed out\n');
     confirm = true;
     price = -2;
-  });
+  }
 
   if (confirm) {
     return [confirm, price];
@@ -1433,86 +1490,94 @@ async function getOrders(user) {
     if (order.status == 'IN_REVIEW') {
       for (obj of objArray) {
         if (obj.name == 'In Review:') {
-          obj.value.push(
-            `\t\t${reviewNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+          obj.value.push({
+            number: order.number,
+            string: `\t\t${reviewNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
-            }\n`
-          );
+            }\n`,
+          });
         }
       }
       reviewNum++;
     } else if (order.status == 'NEEDS_CONFIRMATION') {
       for (obj of objArray) {
         if (obj.name == 'Needs Confirmation:') {
-          obj.value.push(
-            `\t\t${confirmNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+          obj.value.push({
+            number: order.number,
+            string: `\t\t${confirmNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
-            }\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`
-          );
+            }\n\t\t\tConfirm by: ${date.getMonth() + 1}/${date.getDate()}\n`,
+          });
         }
       }
       confirmNum++;
     } else if (order.status == 'NEEDS_SHIPPING') {
       for (obj of objArray) {
         if (obj.name == 'Needs Shipping:') {
-          obj.value.push(
-            `\t\t${needShipNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+          obj.value.push({
+            number: order.number,
+            string: `\t\t${needShipNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
-            }\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`
-          );
+            }\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`,
+          });
         }
       }
       needShipNum++;
     } else if (order.status == 'SHIPPED') {
       for (obj of objArray) {
         if (obj.name == 'Shipped:') {
-          obj.value.push(
-            `\t\t${shippedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+          obj.value.push({
+            number: order.number,
+            string: `\t\t${shippedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
-            }\n\t\t\tUPS tracking number: ${order.tracking}\n`
-          );
+            }\n\t\t\tUPS tracking number: ${order.tracking}\n`,
+          });
         }
       }
       shippedNum++;
     } else if (order.status == 'DROPPED_OFF') {
       for (obj of objArray) {
         if (obj.name == 'Dropped Off:') {
-          obj.value.push(
-            `\t\t${droppedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+          obj.value.push({
+            number: order.number,
+            string: `\t\t${droppedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
-            }\n`
-          );
+            }\n`,
+          });
         }
       }
       droppedNum++;
     } else if (order.status == 'RECEIVED') {
       for (obj of objArray) {
         if (obj.name == 'Received:') {
-          obj.value.push(
-            `\t\t${receivedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+          obj.value.push({
+            number: order.number,
+            string: `\t\t${receivedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
-            }\n`
-          );
+            }\n`,
+          });
         }
       }
       receivedNum++;
     } else if (order.status == 'HAS_ISSUES') {
       for (obj of objArray) {
         if (obj.name == 'Has Issues:') {
-          obj.value.push(
-            `\t\t${issuesNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
+          obj.value.push({
+            number: order.number,
+            string: `\t\t${issuesNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
               order.number
-            }\n`
-          );
+            }\n`,
+          });
         }
       }
       issuesNum++;
     } else {
       for (obj of objArray) {
         if (obj.name == 'Open:') {
-          obj.value.push(
-            `\t${i}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${order.number}\n`
-          );
+          obj.value.push({
+            number: order.number,
+            string: `\t${i}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${order.number}\n`,
+          });
         }
       }
       i++;
@@ -1542,7 +1607,7 @@ async function confirm(client, loginToken, message, user) {
   orderObjArray.forEach(async (type) => {
     if (type.name == 'Needs Confirmation:') {
       for (let j = 0; j < type.value.length; j++) {
-        confirmString += type.value[j];
+        confirmString += type.value[j].string;
 
         i++;
 
@@ -1553,7 +1618,7 @@ async function confirm(client, loginToken, message, user) {
           i = 0;
         }
 
-        orders.push(order.number);
+        orders.push(type.value[j].number);
       }
     }
   });
@@ -1613,19 +1678,25 @@ async function confirm(client, loginToken, message, user) {
 
   let msg = await message.channel.send('```Confirming ... ```');
 
+  let confirmEnum = null;
+
   if (all) {
     for (let i = 0; i < orders.length; i++) {
-      await confirmation(client, loginToken, orders[i]);
+      confirmEnum = await confirmation(client, loginToken, orders[i]);
     }
   } else {
     if (valid) {
       for (let i = 0; i < nums.length; i++) {
-        await confirmation(client, loginToken, orders[nums[i]]);
+        confirmEnum = await confirmation(client, loginToken, orders[nums[i]]);
       }
     }
   }
 
-  return [response.SUCCESS, all, msg];
+  if (confirmEnum == response.SUCCESS) {
+    return [response.SUCCESS, all, msg];
+  } else {
+    return [response.ERROR, null, null];
+  }
 }
 
 async function confirmation(client, loginToken, number) {
@@ -1701,6 +1772,8 @@ async function confirmation(client, loginToken, number) {
 
   if (confirmation == 200 && shipping == 200) {
     return response.SUCCESS;
+  } else {
+    return response.ERROR;
   }
 }
 
@@ -3161,13 +3234,156 @@ async function cashOut(client, loginToken, user, message) {
   return [response.SUCCESS, newAmount, msg];
 }
 
-async function cancelSearch(client, loginToken, user, message) {
-  let [returnString, returnedEnum, userOrdersArray] = await getOrders(user);
+async function cancel(client, loginToken, user, message) {
+  let [returnedEnum, orderArray] = await getOrders(user);
+  let orderNumArray = [];
 
-  // https://sell-api.goat.com/api/v1/purchase-orders/181618719/cancel
-  // put
-  // {"number":"181618719"}
-  // require bearer token
+  if (returnedEnum == response.SUCCESS) {
+    let orderReturnString = 'Current Cancelable Orders:\n';
+    let orderCounter = 0;
+
+    for (type of orderArray) {
+      if (type.name == 'Needs Shipping:') {
+        if (type.value.length != 0) {
+          orderReturnString += '\t' + type.name + '\n';
+
+          for (order of type.value) {
+            orderReturnString += order.string;
+            orderNumArray.push(order.number);
+
+            orderCounter++;
+
+            if (orderCounter == 15) {
+              await message.channel.send('```' + orderReturnString + '```');
+
+              orderReturnString = '';
+              orderCounter = 0;
+            }
+          }
+
+          orderReturnString += '\n';
+        }
+        break;
+      }
+    }
+
+    await messsage.channel.send('```' + orderReturnString + '```');
+  } else if (returnedEnum == response.NO_ITEMS) {
+    return [response.NO_ITEMS, null];
+  }
+
+  await message.channel.send(
+    '```' + `Only 'Needs Shipping' orders may be canceled\nConfirm orders before canceling` + '```'
+  );
+  await message.channel.send('```' + `Enter order number(s) to cancel\nEnter 'n' to cancel` + '```');
+
+  let stopped = false;
+  let nums = [];
+  let valid = false;
+
+  const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector) {
+    nums = message.content.split(' ');
+
+    if (message.content.toLowerCase() == 'n') {
+      collector.stop();
+      stopped = true;
+      exit = true;
+      console.log('Canceled\n');
+    } else if (checkNumParams(nums) && nums[0].toLowerCase() != 'all') {
+      valid = true;
+
+      for (let i = 0; i < nums.length; i++) {
+        if (parseInt(nums[i]) >= orderNumArray.length) {
+          valid = false;
+          message.channel.send('```' + 'One or more entered order number(s) do not exist' + '```');
+          break;
+        }
+      }
+
+      if (valid) {
+        collector.stop();
+        stopped = true;
+      }
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter 'all' or listing number(s)` + '```');
+    }
+  }
+
+  if (exit) {
+    return [response.EXIT, null];
+  } else if (!stopped) {
+    return [response.TIMEOUT, null];
+  }
+
+  let msg = await message.channel.send('```Canceling ... ```');
+
+  let deleteEnum = null;
+
+  if (valid) {
+    for (let i = 0; i < nums.length; i++) {
+      deleteEnum = await cancelation(client, loginToken, orderNumArray[nums[i]]);
+
+      await Orders.updateOne(
+        { d_id: user.d_id },
+        { $pull: { orders: { number: orderNumArray[nums[i]] } } }
+      ).catch((err) => console.log(err));
+    }
+  } else {
+    return [response.ERROR, null];
+  }
+
+  if (deleteEnum == response.SUCCESS) {
+    return [response.SUCCESS, msg];
+  } else {
+    return [response.ERROR, null];
+  }
+}
+
+async function cancelation(client, loginToken, number) {
+  let confirmation = 0;
+  let count = 0;
+
+  while (confirmation != 200) {
+    confirmation = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/cancel`, {
+      method: 'PUT',
+      headers: {
+        'user-agent': client.config.aliasHeader,
+        authorization: `Bearer ${loginToken}`,
+      },
+      body: `{"number":"${number}"}`,
+    }).then((res, err) => {
+      if (res.status == 401) {
+        throw new Error('Login expired');
+      } else if (res.status == 404) {
+        throw new Error('Not exist');
+      } else if (res.status != 200) {
+        console.log('Res is', res.status);
+        console.trace();
+
+        if (err) {
+          throw new Error(err);
+        }
+      }
+
+      return res.status;
+    });
+
+    count++;
+
+    if (count == maxRetries) {
+      throw new Error('Max retries');
+    }
+  }
+
+  if (confirmation == 200) {
+    return response.SUCCESS;
+  } else {
+    return response.ERROR;
+  }
 }
 
 function help() {
