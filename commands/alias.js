@@ -129,9 +129,8 @@ exports.run = async (client, message, args) => {
 
           let placeholder = [];
           let listingArray = [];
-          let userListingsArrayPlaceholder = [];
 
-          [listingArray, returnedEnum, placeholder, userListingsArrayPlaceholder] = await allListings(user);
+          [listingArray, returnedEnum, placeholder] = await allListings(user);
 
           if (returnedEnum == response.SUCCESS) {
             for (let i = 0; i < listingArray.length; i++) {
@@ -1021,7 +1020,7 @@ async function allListings(user) {
     }
   }
 
-  return [listingArray, response.SUCCESS, listingIds, userListingsArray];
+  return [listingArray, response.SUCCESS, listingIds];
 }
 
 async function deleteSearch(client, loginToken, message, user) {
@@ -1031,7 +1030,7 @@ async function deleteSearch(client, loginToken, message, user) {
   let exit = false;
   let stopped = false;
 
-  let [listings, returnedEnum, listingIds, userListingsArray] = await allListings(user);
+  let [listings, returnedEnum, listingIds] = await allListings(user);
 
   if (returnedEnum == response.SUCCESS) {
     for (let i = 0; i < listings.length; i++) {
@@ -1219,7 +1218,7 @@ async function deletion(client, loginToken, user, listingId) {
 async function editListing(client, loginToken, user, message) {
   let getAllListings = await getListings(client, loginToken);
 
-  let [listings, listingEnum, listingIds, userListingsArray] = await allListings(user);
+  let [listings, listingEnum, listingIds] = await allListings(user);
 
   if (listingEnum == response.SUCCESS) {
     for (let i = 0; i < listings.length; i++) {
@@ -1373,7 +1372,7 @@ async function editListing(client, loginToken, user, message) {
   if (matchedArray.length != 0) {
     await message.channel.send(
       '```' +
-        `${matchedArray.length} listings match the specified listing name and size, would you like to edit all matched listing prices as well?\nEnter 'y' or 'n'` +
+        `${matchedArray.length} listing(s) match the specified listing name and size, would you like to edit all matched listing prices?\nEnter 'y' or 'n'` +
         '```'
     );
 
@@ -2001,7 +2000,7 @@ async function editDefaultListingRate(message, user) {
 }
 
 async function editSpecifiedListingRate(message, user) {
-  let [listings, listingEnum, listingIds, userListingsArray] = await allListings(user);
+  let [listings, listingEnum, listingIds] = await allListings(user);
 
   if (listingEnum == response.SUCCESS) {
     for (let i = 0; i < listings.length; i++) {
