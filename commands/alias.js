@@ -1372,7 +1372,7 @@ async function editListing(client, loginToken, user, message) {
   if (matchedArray.length != 0) {
     await message.channel.send(
       '```' +
-        `${matchedArray.length} listing(s) match the specified listing name and size, would you like to edit all matched listing prices?\nEnter 'y' or 'n'` +
+        `${matchedArray.length} listing(s) match the specified listing name and size:\n\t${matchedArray[0].product.name} size ${matchedArray[0].size_option.value}\n\nWould you like to edit all matched listing prices?\n\nEnter 'y' or 'n'` +
         '```'
     );
 
