@@ -40,6 +40,7 @@ exports.run = async (client, message, args) => {
             settings: {
               orderRefresh: 'daily',
               adjustListing: 'manual',
+              maxAdjust: 5,
             },
           });
 

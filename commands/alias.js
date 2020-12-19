@@ -280,7 +280,7 @@ exports.run = async (client, message, args) => {
             throw new Error('Too many parameters');
           } else if (args[1] && args[1].toLowerCase() == 'edit') {
             edit = true;
-          } else {
+          } else if (args.length != 1) {
             throw new Error('Incorrect format');
           }
 
@@ -1855,6 +1855,10 @@ async function settings(message, user, edit) {
       {
         name: 'Default Listing Update Rate:',
         value: user.settings.adjustListing == 'live' ? 'Live' : 'Manual',
+      },
+      {
+        name: 'Max price adjustment range for live listings:',
+        value: user.settings.maxAdjust,
       }
     );
 
@@ -1870,7 +1874,7 @@ async function settings(message, user, edit) {
 
     await message.channel.send(
       '```' +
-        `0. Order confirmation refresh rate\n1. Default listing update rate\n2. Specified listing update rate\n\nEnter '0', '1', or '2' to edit\nEnter 'n' to cancel` +
+        `0. Order confirmation refresh rate\n1. Default listing update rate\n2. Max price adjustment range for live listings\n3. Specified listing update rate\n\nEnter '0', '1', '2', '3' to edit\nEnter 'n' to cancel` +
         '```'
     );
 
@@ -1892,6 +1896,10 @@ async function settings(message, user, edit) {
       } else if (input == 2) {
         collector.stop();
         stopped = true;
+        returnedEnum = await editMaxRange(message, user);
+      } else if (input == 3) {
+        collector.stop();
+        stopped = true;
         returnedEnum = await editSpecifiedListingRate(message, user);
       } else if (input == 'n') {
         collector.stop();
@@ -1911,13 +1919,59 @@ async function settings(message, user, edit) {
   }
 }
 
-async function editOrderRate(message, user) {
+async function editMaxRange(message, user) {
+  await message.channel.send(
+    '```' +
+      `Editing max price adjustment range for live listings\n\tEnter new number value\n\tEnter 'n' to cancel` +
+      '```'
+  );
+
   let exit = false;
   let stopped = false;
 
+  const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector) {
+    let input = message.content.toLowerCase();
+
+    if (!isNaN(input)) {
+      await Users.updateOne({ _id: user._id }, { $set: { 'settings.maxAdjust': input } }, async (err) => {
+        if (!err) {
+          await message.channel.send('```Max price adjustment range for live listings edited successfully```');
+          collector.stop();
+          stopped = true;
+          console.log('!alias settings edit completed\n');
+        }
+      }).catch((err) => {
+        throw new Error(err);
+      });
+    } else if (input == 'n') {
+      collector.stop();
+      stopped = true;
+      exit = true;
+    } else {
+      await message.channel.send('```' + `Enter valid number` + '```');
+    }
+  }
+
+  if (exit) {
+    return response.EXIT;
+  } else if (!stopped) {
+    return response.TIMEOUT;
+  } else {
+    return response.SUCCESS;
+  }
+}
+
+async function editOrderRate(message, user) {
   await message.channel.send(
     '```' + `Editing order confirmation refresh rate\n\tEnter 'live' or 'daily'\n\tEnter 'n' to cancel` + '```'
   );
+
+  let exit = false;
+  let stopped = false;
 
   const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
     time: 30000,

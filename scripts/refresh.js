@@ -20,6 +20,7 @@ module.exports = async function refresh(client, loginTokenParam, user) {
       let user = users[i];
       let loginToken = encryption.decrypt(user.login);
       let d_id = user.d_id;
+      let maxAdjust = user.settings.maxAdjust;
 
       let webhook = null;
 
@@ -46,7 +47,7 @@ module.exports = async function refresh(client, loginTokenParam, user) {
         await addListing(user, aliasListings, userListingsArray);
         await deleteListing(d_id, aliasListings, userListingsArray);
         await syncListingPrice(aliasListings, userListingsArray);
-        allListings = await updateLowest(client, loginToken, d_id, allListings, webhook, userListingsArray);
+        allListings = await updateLowest(client, loginToken, d_id, allListings, webhook, userListingsArray, maxAdjust);
 
         const userOrders = await Orders.find({ d_id: d_id });
         const userOrdersArray = userOrders[0].orders;
@@ -99,10 +100,12 @@ module.exports = async function refresh(client, loginTokenParam, user) {
   }
 };
 
-async function updateLowest(client, loginToken, d_id, allListings, webhook, userListingsArray) {
+async function updateLowest(client, loginToken, d_id, allListings, webhook, userListingsArray, maxAdjust) {
   try {
     let liveString = 'Listings Updated:\n';
     let live = 0;
+    let unadjustedLiveString = `Live Listings Not Updated\nNew lowest ask out of range of '${maxAdjust}' - user defined Max price adjustment range\n`;
+    let unadjustedLive = 0;
     let manualString = 'Listings With a New Lowest Ask:\n';
     let manual = 0;
 
@@ -115,17 +118,24 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
             let lowest = parseInt(size.lowest_price_cents);
 
             if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
-              await updateListing(client, loginToken, userListingsArray[i].id, lowest);
+              if (parseInt(userListingsArray[i].price) - parseInt(lowest) <= maxAdjust * 100) {
+                await updateListing(client, loginToken, userListingsArray[i].id, lowest);
 
-              liveString += `\t${live}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
-                userListingsArray[i].price / 100
-              }\n\t\t$${userListingsArray[i].price / 100} => $${lowest / 100}\n`;
-              live++;
+                liveString += `\t${live}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
+                  userListingsArray[i].price / 100
+                }\n\t\t$${userListingsArray[i].price / 100} => $${lowest / 100}\n`;
+                live++;
 
-              await Listings.updateOne(
-                { 'listings.id': userListingsArray[i].id },
-                { $set: { 'listings.$.price': lowest } }
-              ).catch((err) => console.log(err));
+                await Listings.updateOne(
+                  { 'listings.id': userListingsArray[i].id },
+                  { $set: { 'listings.$.price': lowest } }
+                ).catch((err) => console.log(err));
+              } else {
+                unadjustedLiveString += `\t${unadjustedLive}. ${userListingsArray[i].name} - ${
+                  userListingsArray[i].size
+                } $${userListingsArray[i].price / 100}\n\t\tNew lowest ask: $${lowest / 100}\n`;
+                unadjustedLive++;
+              }
             }
 
             if (lowest != userListingsArray[i].lowest) {
@@ -185,17 +195,24 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
             let lowest = parseInt(size.lowest_price_cents);
 
             if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
-              await updateListing(client, loginToken, userListingsArray[i].id, lowest);
+              if (parseInt(userListingsArray[i].price) - parseInt(lowest) <= maxAdjust * 100) {
+                await updateListing(client, loginToken, userListingsArray[i].id, lowest);
 
-              liveString += `\t${live}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
-                userListingsArray[i].price / 100
-              }\n\t\t$${userListingsArray[i].price / 100} => $${lowest / 100}\n`;
-              live++;
+                liveString += `\t${live}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
+                  userListingsArray[i].price / 100
+                }\n\t\t$${userListingsArray[i].price / 100} => $${lowest / 100}\n`;
+                live++;
 
-              await Listings.updateOne(
-                { 'listings.id': userListingsArray[i].id },
-                { $set: { 'listings.$.price': lowest } }
-              ).catch((err) => console.log(err));
+                await Listings.updateOne(
+                  { 'listings.id': userListingsArray[i].id },
+                  { $set: { 'listings.$.price': lowest } }
+                ).catch((err) => console.log(err));
+              } else {
+                unadjustedLiveString += `\t${unadjustedLive}. ${userListingsArray[i].name} - ${
+                  userListingsArray[i].size
+                } $${userListingsArray[i].price / 100}\n\t\tNew lowest ask: $${lowest / 100}\n`;
+                unadjustedLive++;
+              }
             }
 
             if (lowest != userListingsArray[i].lowest) {
@@ -231,6 +248,41 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
             .then(() => {
               success = true;
               console.log(`User: ${d_id}\nSuccessfully updated live alias listings\n`);
+            })
+            .catch((err) => {
+              if (err.message == 'Unknown Webhook') {
+                throw new Error('Unknown webhook');
+              } else if (err.message == 'Invalid Webhook Token') {
+                throw new Error('Invalid webhook token');
+              } else {
+                throw new Error(err);
+              }
+            });
+
+          count++;
+
+          if (count == maxRetries) {
+            throw new Error('Max retries');
+          }
+        }
+      }
+    }
+
+    if (unadjustedLive > 0) {
+      let success = false;
+
+      if (webhook != null) {
+        let count = 0;
+
+        while (!success) {
+          await webhook
+            .send('```' + unadjustedLiveString + '```', {
+              username: 'Listing Updates',
+              avatarURL: client.config.aliasPicture,
+            })
+            .then(() => {
+              success = true;
+              console.log(`User: ${d_id}\nSuccessfully updated live alias listings not adjusted\n`);
             })
             .catch((err) => {
               if (err.message == 'Unknown Webhook') {
