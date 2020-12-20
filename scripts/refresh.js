@@ -21,6 +21,7 @@ module.exports = async function refresh(client, loginTokenParam, user) {
       let loginToken = encryption.decrypt(user.login);
       let d_id = user.d_id;
       let maxAdjust = user.settings.maxAdjust;
+      let manualNotif = user.settings.manualNotif;
 
       let webhook = null;
 
@@ -47,7 +48,16 @@ module.exports = async function refresh(client, loginTokenParam, user) {
         await addListing(user, aliasListings, userListingsArray);
         await deleteListing(d_id, aliasListings, userListingsArray);
         await syncListingPrice(aliasListings, userListingsArray);
-        allListings = await updateLowest(client, loginToken, d_id, allListings, webhook, userListingsArray, maxAdjust);
+        allListings = await updateLowest(
+          client,
+          loginToken,
+          d_id,
+          allListings,
+          webhook,
+          userListingsArray,
+          maxAdjust,
+          manualNotif
+        );
 
         const userOrders = await Orders.find({ d_id: d_id });
         const userOrdersArray = userOrders[0].orders;
@@ -100,7 +110,7 @@ module.exports = async function refresh(client, loginTokenParam, user) {
   }
 };
 
-async function updateLowest(client, loginToken, d_id, allListings, webhook, userListingsArray, maxAdjust) {
+async function updateLowest(client, loginToken, d_id, allListings, webhook, userListingsArray, maxAdjust, manualNotif) {
   try {
     let liveString = 'Listings Updated:\n';
     let live = 0;
@@ -303,7 +313,7 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
       }
     }
 
-    if (manual > 0) {
+    if (manual > 0 && manualNotif) {
       let success = false;
 
       if (webhook != null) {

@@ -10,7 +10,8 @@ const userScehma = mongoose.Schema({
   settings: {
     orderRefresh: String,
     adjustListing: String,
-    maxAdjust: Number
+    maxAdjust: Number,
+    manualNotif: Boolean,
   },
 });
 

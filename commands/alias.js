@@ -1859,6 +1859,10 @@ async function settings(message, user, edit) {
       {
         name: 'Max price adjustment range for live listings:',
         value: user.settings.maxAdjust,
+      },
+      {
+        name: 'Manual Listing Notifications:',
+        value: user.settings.manualNotif ? 'On' : 'Off',
       }
     );
 
@@ -1874,7 +1878,7 @@ async function settings(message, user, edit) {
 
     await message.channel.send(
       '```' +
-        `0. Order confirmation refresh rate\n1. Default listing update rate\n2. Max price adjustment range for live listings\n3. Specified listing update rate\n\nEnter '0', '1', '2', '3' to edit\nEnter 'n' to cancel` +
+        `0. Order confirmation refresh rate\n1. Default listing update rate\n2. Max price adjustment range for live listings\n3. Specified listing update rate\n4. Manual Listing Notifications\n\nEnter '0', '1', '2', '3' to edit\nEnter 'n' to cancel` +
         '```'
     );
 
@@ -1901,6 +1905,10 @@ async function settings(message, user, edit) {
         collector.stop();
         stopped = true;
         returnedEnum = await editSpecifiedListingRate(message, user);
+      } else if (input == 4) {
+        collector.stop();
+        stopped = true;
+        returnedEnum = await editManualNotif(message, user);
       } else if (input == 'n') {
         collector.stop();
         stopped = true;
@@ -1916,6 +1924,61 @@ async function settings(message, user, edit) {
     } else {
       return ['', returnedEnum];
     }
+  }
+}
+
+async function editManualNotif(message, user) {
+  await message.channel.send(
+    '```' + `Editing Manual Listing Notifications\n\tEnter 'on' or 'off'\n\tEnter 'n' to cancel` + '```'
+  );
+
+  let exit = false;
+  let stopped = false;
+
+  const collector = new Discord.MessageCollector(message.channel, (m) => m.author.id === message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector) {
+    let input = message.content.toLowerCase();
+
+    if (input == 'on') {
+      await Users.updateOne({ _id: user._id }, { $set: { 'settings.manualNotif': true } }, async (err) => {
+        if (!err) {
+          await message.channel.send('```Manual Listing Notifications edited successfully```');
+          collector.stop();
+          stopped = true;
+          console.log('!alias settings edit completed\n');
+        }
+      }).catch((err) => {
+        throw new Error(err);
+      });
+    } else if (input == 'off') {
+      await Users.updateOne({ _id: user._id }, { $set: { 'settings.manualNotif': false } }, async (err) => {
+        if (!err) {
+          await message.channel.send('```Manual Listing Notifications edited successfully```');
+          collector.stop();
+          stopped = true;
+          console.log('!alias settings edit completed\n');
+        }
+      }).catch((err) => {
+        throw new Error(err);
+      });
+    } else if (input == 'n') {
+      collector.stop();
+      stopped = true;
+      exit = true;
+    } else {
+      await message.channel.send('```' + `Invalid input enter 'on' or 'off'\nEnter 'n' to cancel` + '```');
+    }
+  }
+
+  if (exit) {
+    return response.EXIT;
+  } else if (!stopped) {
+    return response.TIMEOUT;
+  } else {
+    return response.SUCCESS;
   }
 }
 

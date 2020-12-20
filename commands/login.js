@@ -41,6 +41,7 @@ exports.run = async (client, message, args) => {
               orderRefresh: 'daily',
               adjustListing: 'manual',
               maxAdjust: 5,
+              manualNotif: true,
             },
           });
 
