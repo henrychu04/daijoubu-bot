@@ -45,7 +45,7 @@ exports.run = async (client, message, args) => {
     let SKU = 'N/A';
     let season = 'N/A';
     let colorway = 'N/A';
-    let price = 'NA';
+    let price = 'N/A';
     let date = 'N/A';
     let parsedDate = 'N/A';
 
