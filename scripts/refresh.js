@@ -114,7 +114,7 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
   try {
     let liveString = 'Listings Updated:\n';
     let live = 0;
-    let unadjustedLiveString = `Live Listings Not Updated\nNew lowest ask out of range of '${maxAdjust}' - user defined Max price adjustment range\n`;
+    let unadjustedLiveString = `Live Listings Not Updated:\nNew lowest ask out of range of '${maxAdjust}' - user defined Max price adjustment range\n`;
     let unadjustedLive = 0;
     let manualString = 'Listings With a New Lowest Ask:\n';
     let manual = 0;
@@ -126,6 +126,23 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
         for (size of existing.availability) {
           if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
             let lowest = parseInt(size.lowest_price_cents);
+            let changed = false;
+
+            if (lowest != userListingsArray[i].lowest) {
+              if (userListingsArray[i].setting == 'manual') {
+                manualString += `\t${manual}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
+                  userListingsArray[i].price / 100
+                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
+                manual++;
+              }
+
+              await Listings.updateOne(
+                { 'listings.id': userListingsArray[i].id },
+                { $set: { 'listings.$.lowest': lowest } }
+              ).catch((err) => console.log(err));
+
+              changed = true;
+            }
 
             if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
               if (parseInt(userListingsArray[i].price) - parseInt(lowest) <= maxAdjust * 100) {
@@ -141,25 +158,13 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
                   { $set: { 'listings.$.price': lowest } }
                 ).catch((err) => console.log(err));
               } else {
-                unadjustedLiveString += `\t${unadjustedLive}. ${userListingsArray[i].name} - ${
-                  userListingsArray[i].size
-                } $${userListingsArray[i].price / 100}\n\t\tNew lowest ask: $${lowest / 100}\n`;
-                unadjustedLive++;
+                if (changed) {
+                  unadjustedLiveString += `\t${unadjustedLive}. ${userListingsArray[i].name} - ${
+                    userListingsArray[i].size
+                  } $${userListingsArray[i].price / 100}\n\t\tNew lowest ask: $${lowest / 100}\n`;
+                  unadjustedLive++;
+                }
               }
-            }
-
-            if (lowest != userListingsArray[i].lowest) {
-              if (userListingsArray[i].setting == 'manual') {
-                manualString += `\t${manual}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
-                  userListingsArray[i].price / 100
-                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
-                manual++;
-              }
-
-              await Listings.updateOne(
-                { 'listings.id': userListingsArray[i].id },
-                { $set: { 'listings.$.lowest': lowest } }
-              ).catch((err) => console.log(err));
             }
           }
         }
@@ -203,6 +208,23 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
         for (size of pageData.availability) {
           if (size.size == userListingsArray[i].size && size.lowest_price_cents) {
             let lowest = parseInt(size.lowest_price_cents);
+            let changed = false;
+
+            if (lowest != userListingsArray[i].lowest) {
+              if (userListingsArray[i].setting == 'manual') {
+                manualString += `\t${manual}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
+                  userListingsArray[i].price / 100
+                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
+                manual++;
+              }
+
+              await Listings.updateOne(
+                { 'listings.id': userListingsArray[i].id },
+                { $set: { 'listings.$.lowest': lowest } }
+              ).catch((err) => console.log(err));
+
+              changed = true;
+            }
 
             if (userListingsArray[i].setting == 'live' && lowest != userListingsArray[i].price) {
               if (parseInt(userListingsArray[i].price) - parseInt(lowest) <= maxAdjust * 100) {
@@ -218,25 +240,13 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
                   { $set: { 'listings.$.price': lowest } }
                 ).catch((err) => console.log(err));
               } else {
-                unadjustedLiveString += `\t${unadjustedLive}. ${userListingsArray[i].name} - ${
-                  userListingsArray[i].size
-                } $${userListingsArray[i].price / 100}\n\t\tNew lowest ask: $${lowest / 100}\n`;
-                unadjustedLive++;
+                if (changed) {
+                  unadjustedLiveString += `\t${unadjustedLive}. ${userListingsArray[i].name} - ${
+                    userListingsArray[i].size
+                  } $${userListingsArray[i].price / 100}\n\t\tNew lowest ask: $${lowest / 100}\n`;
+                  unadjustedLive++;
+                }
               }
-            }
-
-            if (lowest != userListingsArray[i].lowest) {
-              if (userListingsArray[i].setting == 'manual') {
-                manualString += `\t${manual}. ${userListingsArray[i].name} - ${userListingsArray[i].size} $${
-                  userListingsArray[i].price / 100
-                }\n\t\t$${userListingsArray[i].lowest / 100} => $${lowest / 100}\n`;
-                manual++;
-              }
-
-              await Listings.updateOne(
-                { 'listings.id': userListingsArray[i].id },
-                { $set: { 'listings.$.lowest': lowest } }
-              ).catch((err) => console.log(err));
             }
           }
         }
