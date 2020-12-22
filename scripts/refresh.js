@@ -114,7 +114,7 @@ async function updateLowest(client, loginToken, d_id, allListings, webhook, user
   try {
     let liveString = 'Listings Updated:\n';
     let live = 0;
-    let unadjustedLiveString = `Live Listings Not Updated:\nNew lowest ask out of range of '${maxAdjust}' - user defined Max price adjustment range\n`;
+    let unadjustedLiveString = `Live Listings Not Updated:\nNew lowest ask out of range of Max Price Adjustment Range - '${maxAdjust}'\n`;
     let unadjustedLive = 0;
     let manualString = 'Listings With a New Lowest Ask:\n';
     let manual = 0;
