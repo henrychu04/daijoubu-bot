@@ -1544,6 +1544,7 @@ async function getOrders(user) {
 
   let reviewNum = 0;
   let confirmNum = 0;
+  let needShipMethodNum = 0;
   let needShipNum = 0;
   let shippedNum = 0;
   let receivedNum = 0;
