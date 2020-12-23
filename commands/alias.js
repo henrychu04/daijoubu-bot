@@ -46,7 +46,8 @@ exports.run = async (client, message, args) => {
         command == 'me' ||
         command == 'earnings' ||
         command == 'cashout' ||
-        command == 'cancel'
+        command == 'cancel' ||
+        command == 'generate'
       ) {
         user = await Users.find({ d_id: id });
 
@@ -262,9 +263,41 @@ exports.run = async (client, message, args) => {
                 .then(console.log(`${message} completed\n`));
             }
           } else if (returnedEnum == response.NO_ITEMS) {
-            toReturn = '```Currently no order(s) to confirm on account```';
+            toReturn = '```Currently no order(s) on account```';
           } else if (returnedEnum == response.NO_CHANGE) {
             toReturn = '```Currently all open order(s) are confirmed```';
+          } else if (returnedEnum == response.EXIT) {
+            toReturn = '```Canceled```';
+          } else if (returnedEnum == response.TIMEOUT) {
+            toReturn = '```Command timed out```';
+          } else if (returnedEnum == response.ERROR) {
+            throw new Error();
+          }
+          break;
+        case 'generate':
+          if (args.length > 1) {
+            throw new Error('Too many parameters');
+          }
+
+          let generateAll = false;
+          let generateMsg = null;
+
+          [returnedEnum, generateAll, generateMsg] = await generate(client, loginToken, message, user);
+
+          if (returnedEnum == response.SUCCESS) {
+            if (generateAll) {
+              await generateMsg
+                .edit('```All label(s) generated successfully```')
+                .then(console.log(`${message} completed\n`));
+            } else {
+              await generateMsg
+                .edit('```Specified label(s) generated successfully```')
+                .then(console.log(`${message} completed\n`));
+            }
+          } else if (returnedEnum == response.NO_ITEMS) {
+            toReturn = '```Currently no order(s) on account```';
+          } else if (returnedEnum == response.NO_CHANGE) {
+            toReturn = '```Currently no order(s) need a shipping label to generate```';
           } else if (returnedEnum == response.EXIT) {
             toReturn = '```Canceled```';
           } else if (returnedEnum == response.TIMEOUT) {
@@ -330,7 +363,7 @@ exports.run = async (client, message, args) => {
           } else if (returnedEnum == response.EXIT) {
             toReturn = '```Canceled```';
           } else if (returnedEnum == response.NO_CHANGE) {
-            toReturn = '```No new item(s) listed```';
+            toReturn = '```No new items listed```';
           } else if (returnedEnum == response.TIMEOUT) {
             toReturn = '```Command timed out```';
           }
@@ -792,8 +825,8 @@ async function update(client, loginToken, message, user) {
       console.log('Canceled\n');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
-        all = true;
         collector.stop();
+        all = true;
         stopped = true;
       } else {
         valid = true;
@@ -1063,15 +1096,15 @@ async function deleteSearch(client, loginToken, message, user) {
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         collector.stop();
-        stopped = true;
         all = true;
+        stopped = true;
       } else {
         valid = true;
 
         for (let i = 0; i < nums.length; i++) {
           if (parseInt(nums[i]) >= listingIds.length) {
             valid = false;
-            message.channel.send('```' + 'One or more entered listing numbers do not exist' + '```');
+            message.channel.send('```' + 'One or more entered listing number(s) do not exist' + '```');
             break;
           }
         }
@@ -1726,8 +1759,8 @@ async function confirm(client, loginToken, message, user) {
       console.log('Canceled\n');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
-        all = true;
         collector.stop();
+        all = true;
         stopped = true;
       } else {
         valid = true;
@@ -1746,7 +1779,7 @@ async function confirm(client, loginToken, message, user) {
         }
       }
     } else {
-      message.channel.send('```' + `Invalid format\nEnter 'all' or listing number(s)` + '```');
+      message.channel.send('```' + `Invalid format\nEnter 'all' or order number(s)` + '```');
     }
   }
 
@@ -1763,11 +1796,126 @@ async function confirm(client, loginToken, message, user) {
   if (all) {
     for (let i = 0; i < orders.length; i++) {
       confirmEnum = await confirmation(client, loginToken, orders[i]);
+      confirmEnum = await generation(client, loginToken, orders[i]);
     }
   } else {
     if (valid) {
       for (let i = 0; i < nums.length; i++) {
         confirmEnum = await confirmation(client, loginToken, orders[nums[i]]);
+        confirmEnum = await generation(client, loginToken, orders[nums[i]]);
+      }
+    }
+  }
+
+  if (confirmEnum == response.SUCCESS) {
+    return [response.SUCCESS, all, msg];
+  } else {
+    return [response.ERROR, null, null];
+  }
+}
+
+async function generate(client, loginToken, message, user) {
+  let [getOrdersEnum, orderObjArray] = await getOrders(user);
+
+  if (getOrdersEnum == response.NO_ITEMS) {
+    return [response.NO_ITEMS, null, null];
+  }
+
+  let exit = false;
+  let all = false;
+  let valid = false;
+  let nums = [];
+  let orders = [];
+
+  let confirmString = 'Needs Shipping Method:\n';
+  let i = 0;
+
+  orderObjArray.forEach(async (type) => {
+    if (type.name == 'Needs Shipping Method:') {
+      for (let j = 0; j < type.value.length; j++) {
+        confirmString += type.value[j].string;
+
+        i++;
+
+        if (i == 15) {
+          await message.channel.send('```' + confirmString + '```');
+
+          confirmString = '';
+          i = 0;
+        }
+
+        orders.push(type.value[j].number);
+      }
+    }
+  });
+
+  if (orders.length == 0) {
+    return [response.NO_ITEMS, null, null];
+  }
+
+  await message.channel.send('```' + confirmString + '```');
+  await message.channel.send(
+    '```' + `Enter 'all' or order number(s) to generate a shipping label\nEnter 'n' to cancel` + '```'
+  );
+
+  let stopped = false;
+
+  const collector = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+    time: 30000,
+  });
+
+  for await (const message of collector) {
+    nums = message.content.split(' ');
+
+    if (message.content.toLowerCase() == 'n') {
+      collector.stop();
+      stopped = true;
+      exit = true;
+      console.log('Canceled\n');
+    } else if (checkNumParams(nums)) {
+      if (nums[0].toLowerCase() == 'all') {
+        collector.stop();
+        all = true;
+        stopped = true;
+      } else {
+        valid = true;
+
+        for (let i = 0; i < nums.length; i++) {
+          if (parseInt(nums[i]) >= orders.length) {
+            valid = false;
+            message.channel.send('```' + 'One or more entered order number(s) do not exist' + '```');
+            break;
+          }
+        }
+
+        if (valid) {
+          collector.stop();
+          stopped = true;
+        }
+      }
+    } else {
+      message.channel.send('```' + `Invalid format\nEnter 'all' or order number(s)` + '```');
+    }
+  }
+
+  if (exit) {
+    return [response.EXIT, null, null];
+  } else if (!stopped) {
+    return [response.TIMEOUT, null, null];
+  }
+
+  let msg = await message.channel.send('```Generating ... ```');
+
+  let confirmEnum = null;
+
+  if (all) {
+    for (let i = 0; i < orders.length; i++) {
+      confirmEnum = await generation(client, loginToken, orders[i]);
+    }
+  } else {
+    if (valid) {
+      for (let i = 0; i < nums.length; i++) {
+        confirmEnum = await generation(client, loginToken, orders[nums[i]]);
       }
     }
   }
@@ -1815,8 +1963,16 @@ async function confirmation(client, loginToken, number) {
     }
   }
 
+  if (confirmation == 200) {
+    return response.SUCCESS;
+  } else {
+    return response.ERROR;
+  }
+}
+
+async function generation(client, loginToken, number) {
   let shipping = 0;
-  count = 0;
+  let count = 0;
 
   while (shipping != 200) {
     shipping = await fetch(`https://sell-api.goat.com/api/v1/purchase-orders/${number}/generate-shipping-label`, {
@@ -1850,7 +2006,7 @@ async function confirmation(client, loginToken, number) {
     }
   }
 
-  if (confirmation == 200 && shipping == 200) {
+  if (shipping == 200) {
     return response.SUCCESS;
   } else {
     return response.ERROR;
