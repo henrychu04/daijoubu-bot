@@ -1533,6 +1533,7 @@ async function getOrders(user) {
   let objArray = [
     { name: 'In Review:', value: [] },
     { name: 'Needs Confirmation:', value: [] },
+    { name: 'Needs Shipping Method:', value: [] },
     { name: 'Needs Shipping:', value: [] },
     { name: 'Shipped:', value: [] },
     { name: 'Received:', value: [] },
@@ -1577,6 +1578,18 @@ async function getOrders(user) {
         }
       }
       confirmNum++;
+    } else if (order.status == 'NEEDS_SHIPPING_METHOD') {
+      for (obj of objArray) {
+        if (obj.name == 'Needs Shipping Method:') {
+          obj.value.push({
+            number: order.number,
+            string: `\t\t${needShipMethodNum}. ${order.name} - ${order.size} $${
+              order.price / 100
+            }\n\t\t\tOrder number: ${order.number}\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`,
+          });
+        }
+      }
+      needShipMethodNum++;
     } else if (order.status == 'NEEDS_SHIPPING') {
       for (obj of objArray) {
         if (obj.name == 'Needs Shipping:') {

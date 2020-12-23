@@ -1263,6 +1263,8 @@ function convertStatus(status) {
     return 'In Review';
   } else if (status == 'NEEDS_CONFIRMATION') {
     return 'Needs Confirmation';
+  } else if (status == 'NEEDS_SHIPPING_METHOD') {
+    return 'Needs Shipping Method';
   } else if (status == 'NEEDS_SHIPPING') {
     return 'Needs Shipping';
   } else if (status == 'SHIPPED') {
