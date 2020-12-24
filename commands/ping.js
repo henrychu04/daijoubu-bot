@@ -4,5 +4,6 @@ exports.run = (client, message, args) => {
     .then((sent) => {
       sent.edit(`Pong! Took ${sent.createdTimestamp - message.createdTimestamp}ms`);
     })
+    .then(console.log('!ping completed\n'))
     .catch(console.error);
 };
