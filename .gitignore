@@ -4,3 +4,5 @@ daijoubu.code-workspace
 /commands/track.js
 .env
 notes.txt
+/stockx-api
+test.js
