@@ -221,7 +221,7 @@ exports.run = async (client, message, args) => {
                 orderReturnString += '\t' + type.name + '\n';
 
                 for (order of type.value) {
-                  orderReturnString += order.string;
+                  orderReturnString += order.string + '\n';
 
                   orderCounter++;
 
@@ -232,8 +232,6 @@ exports.run = async (client, message, args) => {
                     orderCounter = 0;
                   }
                 }
-
-                orderReturnString += '\n';
               }
             }
 
@@ -1720,7 +1718,7 @@ async function confirm(client, loginToken, message, user) {
   orderObjArray.forEach(async (type) => {
     if (type.name == 'Needs Confirmation:') {
       for (let j = 0; j < type.value.length; j++) {
-        confirmString += type.value[j].string;
+        confirmString += type.value[j].string + '\n';
 
         i++;
 
@@ -1833,7 +1831,7 @@ async function generate(client, loginToken, message, user) {
   orderObjArray.forEach(async (type) => {
     if (type.name == 'Needs Shipping Method:') {
       for (let j = 0; j < type.value.length; j++) {
-        confirmString += type.value[j].string;
+        confirmString += type.value[j].string + '\n';
 
         i++;
 
