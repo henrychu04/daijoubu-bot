@@ -3746,6 +3746,8 @@ function help() {
       { name: '!alias delete', value: 'Deletes specified listings' },
       { name: '!alias orders', value: 'Returns all current orders' },
       { name: '!alias confirm', value: 'Confirms specified orders' },
+      { name: '!alias generate', value: 'Generates a shipping label for specified orders' },
+      { name: '!alias cancel', value: 'Cancels specified orders' },
       { name: '!alias earnings', value: 'Checks available earnings' },
       { name: '!alias cashout', value: 'Cash out available earnings' },
       { name: '!alias me', value: 'Information about your account' },
