@@ -35,7 +35,7 @@ exports.run = async (client, message, args) => {
     try {
       if (
         command == 'check' ||
-        command == 'update' ||
+        command == 'match' ||
         command == 'listings' ||
         command == 'delete' ||
         command == 'edit' ||
@@ -90,7 +90,7 @@ exports.run = async (client, message, args) => {
             toReturn = '```Account currently has no items listed```';
           }
           break;
-        case 'update':
+        case 'match':
           let updateAll = false;
           let updateMsg = null;
 
@@ -98,7 +98,7 @@ exports.run = async (client, message, args) => {
             throw new Error('Too many parameters');
           }
 
-          [returnedEnum, updateAll, updateMsg] = await update(client, loginToken, message, user);
+          [returnedEnum, updateAll, updateMsg] = await match(client, loginToken, message, user);
 
           if (returnedEnum == response.SUCCESS) {
             if (updateAll) {
@@ -775,7 +775,7 @@ async function check(user) {
   }
 }
 
-async function update(client, loginToken, message, user) {
+async function match(client, loginToken, message, user) {
   let nums = [];
   let all = false;
   let valid = false;
@@ -3741,7 +3741,7 @@ function help() {
       { name: `!alias list`, value: `Lists an item` },
       { name: '!alias listings', value: 'Returns all current listings' },
       { name: '!alias check', value: 'Checks if all listings match their current lowest ask' },
-      { name: '!alias update', value: 'Updates specified listings to their current lowest ask' },
+      { name: '!alias match', value: 'Matches specified listings to their current lowest ask' },
       { name: '!alias edit', value: 'Edits the asking price for specified listings' },
       { name: '!alias delete', value: 'Deletes specified listings' },
       { name: '!alias orders', value: 'Returns all current orders' },
