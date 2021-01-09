@@ -820,7 +820,7 @@ async function match(client, loginToken, message, user) {
       collector.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled\n');
+      console.log('Canceled');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         collector.stop();
@@ -1090,7 +1090,7 @@ async function deleteSearch(client, loginToken, message, user) {
       collector.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled\n');
+      console.log('Canceled');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         collector.stop();
@@ -1529,7 +1529,7 @@ async function confirmEdit(lowest, price, message) {
       price = -1;
       stopped = true;
       confirm = true;
-      console.log('Canceled\n');
+      console.log('Canceled');
     } else if (!isNaN(input)) {
       collector.stop();
       stopped = true;
@@ -1754,7 +1754,7 @@ async function confirm(client, loginToken, message, user) {
       collector.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled\n');
+      console.log('Canceled');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         collector.stop();
@@ -1869,7 +1869,7 @@ async function generate(client, loginToken, message, user) {
       collector.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled\n');
+      console.log('Canceled');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         collector.stop();
@@ -2522,7 +2522,7 @@ async function list(client, user, message, loginToken, sizingArray, query) {
       if (input == 'n') {
         collector.stop();
         stopped = true;
-        console.log('Canceled\n');
+        console.log('Canceled');
         exit = true;
       } else {
         collector.stop();
@@ -3450,7 +3450,7 @@ async function cashOut(client, loginToken, user, message) {
       collector1.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled\n');
+      console.log('Canceled');
     } else if (input == 's') {
       await sendOtp();
       await message.channel.send(
@@ -3499,7 +3499,7 @@ async function cashOut(client, loginToken, user, message) {
       collector2.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled\n');
+      console.log('Canceled');
     } else if (!isNaN(input)) {
       if (input > crntAmount / 100) {
         message.channel.send(
@@ -3643,7 +3643,7 @@ async function cancel(client, loginToken, user, message) {
       collector.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled\n');
+      console.log('Canceled');
     } else if (checkNumParams(nums) && nums[0].toLowerCase() != 'all' && nums.length == 1) {
       valid = true;
 
