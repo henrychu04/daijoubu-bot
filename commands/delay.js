@@ -1,68 +1,37 @@
 const Discord = require('discord.js');
 
 exports.run = async (client, message, args) => {
-  try {
-    let command = message.content.slice(7);
+  if (args.length == 0) {
+    return message.channel.send('```Command is missing parameters```');
+  }
 
-    if (command.length == 0) {
-      throw new Error('Empty command');
-    }
+  let numTasks = args[0];
+  let numProxies = args[1];
 
-    let command_split = command.split(/\s+/);
-    let task_num = command_split[0];
-    let proxy_num = command_split[1];
+  if (numTasks.length != 0 && numProxies.length != 0 && !isNaN(numTasks) && !isNaN(numProxies)) {
+    let delay1 = Math.round((numTasks * 3600) / numProxies);
+    let delay2 = Math.round((numTasks * 4500) / numProxies);
+    let delay3 = Math.round((numTasks * 5500) / numProxies);
 
-    if (task_num.length != 0 && proxy_num.length != 0 && !isNaN(task_num) && !isNaN(proxy_num)) {
-      let delay1 = Math.round((task_num * 3600) / proxy_num);
-      let delay2 = Math.round((task_num * 4500) / proxy_num);
-      let delay3 = Math.round((task_num * 5500) / proxy_num);
+    const embed1 = new Discord.MessageEmbed()
+      .setColor(16777214)
+      .setTitle(delay1)
+      .setDescription(`Suggested delay for ${numTasks} tasks and ${numProxies} proxies based on a 3600 delay`);
 
-      const embed1 = new Discord.MessageEmbed()
-        .setColor(16777214)
-        .setTitle(delay1)
-        .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies based on a 3600 delay`);
+    const embed2 = new Discord.MessageEmbed()
+      .setColor(16777214)
+      .setTitle(delay2)
+      .setDescription(`Suggested delay for ${numTasks} tasks and ${numProxies} proxies based on a 4500 delay`);
 
-      const embed2 = new Discord.MessageEmbed()
-        .setColor(16777214)
-        .setTitle(delay2)
-        .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies based on a 4500 delay`);
+    const embed3 = new Discord.MessageEmbed()
+      .setColor(16777214)
+      .setTitle(delay3)
+      .setDescription(`Suggested delay for ${numTasks} tasks and ${numProxies} proxies based on a 5500 delay`);
 
-      const embed3 = new Discord.MessageEmbed()
-        .setColor(16777214)
-        .setTitle(delay3)
-        .setDescription(`Suggested delay for ${task_num} tasks and ${proxy_num} proxies based on a 5500 delay`);
-
-      await message.channel.send(embed1).catch((err) => {
-        console.log(err);
-        throw new Error('Unable to send embed1');
-      });
-
-      await message.channel.send(embed2).catch((err) => {
-        console.log(err);
-        throw new Error('Unable to send embed1');
-      });
-
-      await message.channel
-        .send(embed3)
-        .then(console.log(`${message} completed\n`))
-        .catch((err) => {
-          console.log(err);
-          throw new Error('Unable to send embed2');
-        });
-    } else {
-      throw new Error('Incorrect format');
-    }
-  } catch (err) {
-    console.log(err);
-
-    if (err.message == 'Empty command') {
-      message.channel.send('```Command is missing valid entries```');
-    } else if (err.message == 'Incorrect format') {
-      message.channel.send('```Incorrect Format\n!delay <number of tasks> <number of proxies>```');
-    } else if (err.message == 'Unable to send embed') {
-      message.channel.send('```Unexpected Error```');
-    } else {
-      message.channel.send('```Unexpected Error```');
-    }
+    await message.channel.send(embed1);
+    await message.channel.send(embed2);
+    await message.channel.send(embed3).then(console.log(`${message.content} completed\n`));
+  } else {
+    return message.channel.send('```Incorrect Format\n!delay <number of tasks> <number of proxies>```');
   }
 };

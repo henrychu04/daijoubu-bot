@@ -1,5 +1,4 @@
 const fetch = require('node-fetch');
-const Sentry = require('@sentry/node');
 const encryption = require('../scripts/encryption');
 
 const Users = require('../models/users');
@@ -32,11 +31,15 @@ exports.run = async (client, message, args) => {
         if (exist.length == 0) {
           const newLogin = new Users({
             d_id: id,
-            email: email,
-            pw: encryption.encrypt(pw),
-            login: encryption.encrypt(loginRes.auth_token.access_token),
+            aliasEmail: email,
+            aliasPW: encryption.encrypt(pw),
+            aliasLogin: encryption.encrypt(loginRes.auth_token.access_token),
+            goatEmail: '',
+            goatPW: '',
+            goatLogin: '',
             webhook: '',
-            cashoutAmount: 0,
+            aliasCashoutAmount: 0,
+            goatCashoutAmount: 0,
             settings: {
               orderRefresh: 'daily',
               adjustListing: 'manual',
@@ -47,7 +50,8 @@ exports.run = async (client, message, args) => {
 
           const newListings = new Listings({
             d_id: id,
-            listings: [],
+            aliasListings: [],
+            goatListings: [],
           });
 
           await newLogin
@@ -92,7 +96,6 @@ exports.run = async (client, message, args) => {
     }
   } catch (err) {
     console.log(err);
-    Sentry.captureException(err);
 
     if (err.message == 'Invalid login') {
       message.channel.send('```Unable to login to alias\nIncorrect email and / or password```');

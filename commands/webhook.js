@@ -1,63 +1,119 @@
 const Discord = require('discord.js');
 
-const Users = require('../models/users');
+const Users = require('../models/users.js');
 
 exports.run = async (client, message, args) => {
-  try {
-    const id = message.author.id;
-    let user = await Users.find({ d_id: id });
-    let webhook = null;
+  if (args.length != 1) {
+    console.log();
+    return message.channel.send('```Incorrect format\nEnter !webhook <webhook> to setup webhook```');
+  }
 
-    if (user.length == 0) {
-      throw new Error('Not logged in');
-    } else {
-      user = user[0];
+  const id = message.author.id;
+  let users = await Users.find({ d_id: id });
+  let user = null;
+  let webhook = null;
+
+  if (users.length == 0) {
+    const newLogin = new Users({
+      d_id: id,
+      aliasEmail: '',
+      aliasPW: '',
+      aliasLogin: '',
+      goatEmail: '',
+      goatPW: '',
+      goatLogin: '',
+      webhook: '',
+      aliasCashoutAmount: 0,
+      goatCashoutAmount: 0,
+      settings: {
+        orderRefresh: 'daily',
+        adjustListing: 'manual',
+        maxAdjust: 5,
+        manualNotif: true,
+      },
+    });
+
+    const newListings = new Listings({
+      d_id: id,
+      aliasListings: [],
+      goatListings: [],
+    });
+
+    const newOrders = new Orders({
+      d_id: id,
+      aliasOrders: [],
+      goatOrders: [],
+    });
+
+    try {
+      await newLogin
+        .save()
+        .then(console.log('New login successfully added'))
+        .catch((err) => {
+          throw new Error(err);
+        });
+
+      await newListings
+        .save()
+        .then(console.log('New listings successfully added'))
+        .catch((err) => {
+          throw new Error(err);
+        });
+
+      await newOrders
+        .save()
+        .then(console.log('New orders successfully added'))
+        .catch((err) => {
+          throw new Error(err);
+        });
+    } catch (err) {
+      console.log(err);
+      console.log();
+
+      return message.channel.send('```Unexpected Error```');
+    }
+  } else {
+    user = users[0];
+  }
+
+  try {
+    let input = args[0];
+
+    if (input.toLowerCase() == 'test') {
+      if (user.webhook.length == 0) {
+        console.log();
+        return message.channel.send(```Enter !webhook <webhook> to setup webhook```);
+      }
+
       let split = user.webhook.split('/');
       let id = split[5];
       let token = split[6];
 
       webhook = new Discord.WebhookClient(id, token);
-    }
-
-    if (args.length != 1) {
-      throw new Error('Incorrect format');
-    }
-
-    let input = args[0];
-
-    if (input.toLowerCase() == 'test') {
-      if (user.webhook.length == 0) {
-        throw new Error('No webhook');
-      }
 
       await webhook
-        .send('```' + 'Test Success' + '```', {
+        .send('```Test Success```', {
           username: 'Webhook test',
           avatarURL: client.config.aliasPicture,
         })
         .then(console.log('!webhook test completed\n'))
-        .catch((err) => {
-          if (err.message == 'Unknown Webhook') {
-            throw new Error('Unknown webhook');
-          } else if (err.message == 'Invalid Webhook Token') {
-            throw new Error('Invalid webhook token');
-          } else {
-            throw new Error(err);
-          }
+        .catch(() => {
+          message.channel.send('```Invalid webhook```');
+          console.log('Invalid webhook\n');
         });
     } else if (input.toLowerCase() == 'remove') {
-      await Users.updateOne({ _id: user._id }, { $set: { webhook: '' } }, async (err) => {
+      await Users.updateOne({ _id: user._id }, { $set: { webhook: '' } }, (err) => {
         if (!err) {
-          await message.channel.send('```Webhook successfully removed```');
+          message.channel.send('```Webhook successfully removed```');
           console.log('Webhook successfully removed\n');
         }
       }).catch((err) => {
         throw new Error(err);
       });
     } else {
-      await Users.updateOne({ _id: user._id }, { $set: { webhook: input } }, async (err) => {
+      await Users.updateOne({ _id: user._id }, { $set: { webhook: input } }, (err) => {
         if (!err) {
-          await message.channel.send('```Webhook successfully added```');
+          message.channel.send('```Webhook successfully added```');
           console.log('New webhook successfully added\n');
         }
       }).catch((err) => {
@@ -66,21 +122,8 @@ exports.run = async (client, message, args) => {
     }
   } catch (err) {
     console.log(err);
+    console.log();
 
-    if (err.message == 'Not logged in') {
-      message.channel.send(
-        '```Command not available\nPlease login via daijoubu DMS with the format:\n\t!login <email> <password>```'
-      );
-    } else if (err.message == 'Incorrect format') {
-      message.channel.send('```Incorrect format\nEnter !webhook <webhook> to setup webhook```');
-    } else if (err.message == 'No webhook') {
-      message.channel.send(```Enter !webhook <webhook> to setup webhook```);
-    } else if (err.message == 'Unknown webhook') {
-      message.channel.send('```Unknown webhook```');
-    } else if (err.message == 'Invalid webhook token') {
-      message.channel.send('```Invalid Webhook Token```');
-    } else {
-      message.channel.send('```Unexpected error```');
-    }
+    return message.channel.send('```Unexpected error```');
   }
 };

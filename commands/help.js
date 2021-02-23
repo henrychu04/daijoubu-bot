@@ -7,10 +7,6 @@ exports.run = async (client, message, args) => {
         fields: [
           { name: 'Shopify Variant Scraper', value: '!shopify <shopify link>' },
           { name: 'Fee Calculator for StockX, GOAT, Stadium Goods', value: '!fee <amount>' },
-          {
-            name: 'Sends latest Supreme drop info, current Supreme week, or the Supreme drop info for a specific week',
-            value: '!droplist, !droplist num, !droplist <number>',
-          },
           { name: 'Returns information of a specified StockX product', value: '!stockx <search parameters>' },
           {
             name: 'Returns information of a specified GOAT product',

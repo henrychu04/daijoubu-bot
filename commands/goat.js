@@ -11,12 +11,7 @@ exports.run = async (client, message, args) => {
 
     let toReturn = await goatSearch(client, query);
 
-    await message.channel
-      .send(toReturn)
-      .then(console.log(`${message} completed\n`))
-      .catch((err) => {
-        throw new Error(err);
-      });
+    await message.channel.send(toReturn).then(console.log(`${message.content} completed\n`));
   } catch (err) {
     console.log(err);
 
@@ -29,6 +24,9 @@ exports.run = async (client, message, args) => {
         break;
       case 'No data':
         message.channel.send('```Matched product has no data```');
+        break;
+      case '403':
+        message.channel.send('```Forbidden```');
         break;
       default:
         message.channel.send('```Unexpected Error```');
@@ -46,6 +44,8 @@ async function goatSearch(client, query) {
     .then((res, err) => {
       if (res.status == 200) {
         return res.json();
+      } else if (res.status == 403 || res.status == 400) {
+        throw new Error('403');
       } else {
         console.log('Res is', res.status);
 

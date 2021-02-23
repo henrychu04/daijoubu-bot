@@ -2,11 +2,15 @@ const mongoose = require('mongoose');
 
 const userScehma = mongoose.Schema({
   d_id: String,
-  email: String,
-  pw: String,
-  login: String,
+  aliasEmail: String,
+  aliasPW: String,
+  aliasLogin: String,
+  goatEmail: String,
+  goatPW: String,
+  goatLogin: String,
   webhook: String,
-  cashoutAmount: Number,
+  aliasCashoutAmount: Number,
+  goatCashoutAmount: Number,
   settings: {
     orderRefresh: String,
     adjustListing: String,

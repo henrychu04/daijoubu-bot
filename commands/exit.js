@@ -5,5 +5,6 @@ exports.run = async (client, message, args) => {
 
   message.channel.send('Shutting down...').then(() => {
     client.destroy();
+    console.log('Client destroyed\n');
   });
 };

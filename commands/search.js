@@ -81,8 +81,18 @@ exports.run = async (client, message, args) => {
       headers: client.config.goatHeader,
       body: `{"params":"query=${encodeURIComponent(query)}"}`,
     })
-      .then((res) => {
-        return res.json();
+      .then((res, err) => {
+        if (res.status == 200) {
+          return res.json();
+        } else if (res.status == 403 || res.status == 400) {
+          throw new Error('403');
+        } else {
+          console.log('Res is', res.status);
+
+          if (err) {
+            throw new Error(err.message);
+          }
+        }
       })
       .then((json) => {
         if (json.hits.length != 0) {

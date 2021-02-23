@@ -3,7 +3,7 @@ const Sentry = require('@sentry/node');
 module.exports = (client, message) => {
   if (message.author.bot) return;
 
-  if (message.guild.id == '739493918558781490') {
+  if (message.guild && message.guild.id == '739493918558781490') {
     if (message.content.indexOf(client.config.rudymfPrefix) !== 0) return;
   } else {
     if (message.content.indexOf(client.config.prefix) !== 0) return;

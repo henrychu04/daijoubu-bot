@@ -1,8 +1,8 @@
 const Discord = require('discord.js');
 const Enmap = require('enmap');
 const fs = require('fs');
-const login = require('./scripts/login');
-const monitor = require('./scripts/monitor');
+const login = require('./scripts/login.js');
+const refresh = require('./api/refresh/refresh.js');
 const mongoose = require('mongoose');
 require('dotenv').config();
 const uri = process.env.URI;
@@ -55,10 +55,7 @@ client.on('ready', () => {
 });
 
 client.login(process.env.BOT_TOKEN).then(async () => {
-  await login.loggingIn().then(() => {
-    console.log('All initial alias logins successfully updated');
-    console.log('Ready!');
-    login.maintainLogin();
-    monitor(client);
-  });
+  login();
+  console.log('Ready!');
+  refresh(client);
 });

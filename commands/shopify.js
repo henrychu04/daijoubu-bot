@@ -34,7 +34,7 @@ exports.run = async (client, message, args) => {
 
     let domain = url.parse(link).host;
 
-    let data = await timeoutPromise(1000, fetch(`${link}.json`, { headers: client.config.headers }))
+    let data = await fetch(`${link}.json`, { headers: client.config.headers })
       .then((res) => {
         if (res.status == 403) {
           throw new Error('Banned');
@@ -52,24 +52,13 @@ exports.run = async (client, message, args) => {
         }
       });
 
-    let sizes = [];
-
-    for (let i = 0; i < data['product']['options'].length; i++) {
-      if (data['product']['options'][i]['name'] == 'Size' || data['product']['options'][i]['name'] == 'Title') {
-        sizes = data['product']['options'][i]['values'];
-        break;
-      }
-    }
-
     let vars = '';
 
-    for (let i = 0; i < sizes.length; i++) {
-      vars += `${sizes[i]} - ${data['product']['variants'][i]['id']}`;
-
-      if (i != sizes.length - 1) {
-        vars += '\n';
-      }
+    for (let variant of data.product.variants) {
+      vars += `${variant.title} - ${variant.id}\n`;
     }
+
+    vars += '\n';
 
     let image = '';
 
@@ -85,7 +74,7 @@ exports.run = async (client, message, args) => {
       .addFields(
         { name: 'Price', value: `$${data['product']['variants'][0]['price']}`, inline: true },
         { name: 'Site', value: domain, inline: true },
-        { name: 'Variants', value: vars }
+        { name: 'Variants', value: '```' + vars + '```' }
       );
 
     message.channel
