@@ -14,7 +14,7 @@ module.exports = async (client, loginToken, user, aliasOrdersArray) => {
   let orders = [];
 
   if (aliasOrdersArray.purchase_orders) {
-    purchaseOrders.purchase_orders.forEach((order) => {
+    aliasOrdersArray.purchase_orders.forEach((order) => {
       if (order.status == 'NEEDS_CONFIRMATION') {
         orders.push(order);
       }

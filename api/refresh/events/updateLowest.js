@@ -120,12 +120,12 @@ module.exports = async (client, user, loginToken, allListings) => {
   }
 };
 
-async function updateListing(client, loginToken, lowest) {
+async function updateListing(client, loginToken, lowest, listing) {
   let listings = await getAllListings(client, loginToken);
   let obj = {};
 
   for (let i = 0; i < listings.listing.length; i++) {
-    if (listings.listing[i].id == id) {
+    if (listings.listing[i].id == listing.id) {
       obj = listings.listing[i];
       break;
     }

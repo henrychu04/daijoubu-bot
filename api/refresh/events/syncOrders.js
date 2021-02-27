@@ -117,3 +117,25 @@ module.exports = async (aliasOrders, userOrdersArray) => {
     return [{ title: 'Orders', body: '```' + changedString + '```' }];
   }
 };
+
+function convertStatus(status) {
+  if (status == 'IN_REVIEW') {
+    return 'In Review';
+  } else if (status == 'NEEDS_CONFIRMATION') {
+    return 'Needs Confirmation';
+  } else if (status == 'NEEDS_SHIPPING_METHOD') {
+    return 'Needs Shipping Method';
+  } else if (status == 'NEEDS_SHIPPING') {
+    return 'Needs Shipping';
+  } else if (status == 'SHIPPED') {
+    return 'Shipped';
+  } else if (status == 'DROPPED_OFF') {
+    return 'Dropped Off';
+  } else if (status == 'RECEIVED') {
+    return 'Received';
+  } else if (status == 'HAS_ISSUES') {
+    return 'Has Issues';
+  } else {
+    return status;
+  }
+}
