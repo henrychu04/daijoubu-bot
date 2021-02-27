@@ -87,7 +87,7 @@ module.exports = async (client, user, loginToken, allListings) => {
 
           if (listing.setting == 'live' && lowest != listing.price) {
             if (parseInt(listing.price) - parseInt(lowest) <= user.settings.maxAdjust * 100) {
-              await updateListing(client, loginToken, lowest);
+              await updateListing(client, loginToken, lowest, listing);
 
               liveString += `\t${live}. ${listing.name} - ${listing.size} $${listing.price / 100}\n\t\t$${
                 listing.price / 100
