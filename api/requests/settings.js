@@ -1,5 +1,5 @@
-const Users = require('../../../models/users.js');
-const Listings = require('../../../models/listings');
+const Users = require('../../models/users.js');
+const Listings = require('../../models/listings');
 
 const response = {
   SUCCESS: 'success',
@@ -26,7 +26,7 @@ async function editManualNotif(message, user) {
     let input = msg.content.toLowerCase();
 
     if (input == 'on') {
-      await Users.updateOne({ _id: user._id }, { $set: { 'settings.manualNotif': true } }, async (err) => {
+      await Users.updateOne({ d_id: user.d_id }, { $set: { 'settings.manualNotif': true } }, async (err) => {
         if (!err) {
           await msg.channel.send('```Manual Listing Notifications edited successfully```');
           collector.stop();
@@ -37,7 +37,7 @@ async function editManualNotif(message, user) {
         throw new Error(err);
       });
     } else if (input == 'off') {
-      await Users.updateOne({ _id: user._id }, { $set: { 'settings.manualNotif': false } }, async (err) => {
+      await Users.updateOne({ d_id: user.d_id }, { $set: { 'settings.manualNotif': false } }, async (err) => {
         if (!err) {
           await msg.channel.send('```Manual Listing Notifications edited successfully```');
           collector.stop();
@@ -83,7 +83,7 @@ async function editMaxRange(message, user) {
     let input = msg.content.toLowerCase();
 
     if (!isNaN(input)) {
-      await Users.updateOne({ _id: user._id }, { $set: { 'settings.maxAdjust': input } }, async (err) => {
+      await Users.updateOne({ d_id: user.d_id }, { $set: { 'settings.maxAdjust': input } }, async (err) => {
         if (!err) {
           await msg.channel.send('```Max price adjustment range for live listings edited successfully```');
           collector.stop();
@@ -127,7 +127,7 @@ async function editOrderRate(message, user) {
     let input = msg.content.toLowerCase();
 
     if (input == 'live' || input == 'daily') {
-      await Users.updateOne({ _id: user._id }, { $set: { 'settings.orderRefresh': input } }, async (err) => {
+      await Users.updateOne({ d_id: user.d_id }, { $set: { 'settings.orderRefresh': input } }, async (err) => {
         if (!err) {
           await msg.channel.send('```Order confirmation refresh rate edited successfully```');
           collector.stop();
@@ -158,7 +158,7 @@ async function editOrderRate(message, user) {
 async function editSpecifiedListingRate(message, user) {
   let allListingsRes = await allListings(user);
 
-  if (listingEnum == response.SUCCESS) {
+  if (allListingsRes.returnedEnum == response.SUCCESS) {
     for (let i = 0; i < allListingsRes.listingArray.length; i++) {
       if (i == 0) {
         let initialString = 'Current Listings:';
@@ -289,7 +289,7 @@ async function editDefaultListingRate(message, user) {
     let input = msg.content.toLowerCase();
 
     if (input == 'live' || input == 'manual') {
-      await Users.updateOne({ _id: user._id }, { $set: { 'settings.adjustListing': input } }, async (err) => {
+      await Users.updateOne({ d_id: user.d_id }, { $set: { 'settings.adjustListing': input } }, async (err) => {
         if (!err) {
           await msg.channel.send('```Listing update refresh rate edited successfully```');
           collector.stop();

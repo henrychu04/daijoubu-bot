@@ -1,3 +1,6 @@
+const Discord = require('discord.js');
+const settings = require('../../requests/settings.js');
+
 const response = {
   SUCCESS: 'success',
   NO_ITEMS: 'no_items',
@@ -10,7 +13,7 @@ const response = {
 module.exports = async (edit, user, message) => {
   let returnObj = {
     returnedEnum: null,
-    userSettings: null,
+    userSettings: '',
   };
 
   const userSettings = new Discord.MessageEmbed()
@@ -49,7 +52,7 @@ module.exports = async (edit, user, message) => {
 
     await message.channel.send(
       '```' +
-        `0. Order confirmation refresh rate\n1. Default listing update rate\n2. Max price adjustment range for live listings\n3. Specified listing update rate\n4. Manual Listing Notifications\n\nEnter '0', '1', '2', '3' to edit\nEnter 'n' to cancel` +
+        `0. Order confirmation refresh rate\n1. Default listing update rate\n2. Max price adjustment range for live listings\n3. Specified listing update rate\n4. Manual Listing Notifications\n\nEnter '0', '1', '2', '3', or '4' to edit\nEnter 'n' to cancel` +
         '```'
     );
 
@@ -63,23 +66,23 @@ module.exports = async (edit, user, message) => {
       if (input == 0) {
         collector.stop();
         stopped = true;
-        returnedEnum = await aliasReq.settings.editOrderRate(msg, this.user);
+        returnedEnum = await settings.editOrderRate(msg, user);
       } else if (input == 1) {
         collector.stop();
         stopped = true;
-        returnedEnum = await aliasReq.settings.editDefaultListingRate(msg, this.user);
+        returnedEnum = await settings.editDefaultListingRate(msg, user);
       } else if (input == 2) {
         collector.stop();
         stopped = true;
-        returnedEnum = await aliasReq.settings.editMaxRange(msg, this.user);
+        returnedEnum = await settings.editMaxRange(msg, user);
       } else if (input == 3) {
         collector.stop();
         stopped = true;
-        returnedEnum = await aliasReq.settings.editSpecifiedListingRate(msg, this.user);
+        returnedEnum = await settings.editSpecifiedListingRate(msg, user);
       } else if (input == 4) {
         collector.stop();
         stopped = true;
-        returnedEnum = await aliasReq.settings.editManualNotif(msg, this.user);
+        returnedEnum = await settings.editManualNotif(msg, user);
       } else if (input == 'n') {
         collector.stop();
         stopped = true;
