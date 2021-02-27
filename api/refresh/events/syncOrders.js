@@ -1,6 +1,6 @@
 const Orders = require('../../../models/orders.js');
 
-module.exports = async (aliasOrders, userOrdersArray) => {
+module.exports = async (userOrdersArray, aliasOrders) => {
   let changed = false;
   let changedString = 'Updated Order(s):\n';
   let k = 0;

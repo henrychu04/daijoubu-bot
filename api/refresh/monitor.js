@@ -66,6 +66,7 @@ module.exports = class Monitor extends events {
         }
 
         await newRefresh.deleteOrders();
+        await newRefresh.syncOrders();
 
         let confirmOrdersRes = undefined;
 

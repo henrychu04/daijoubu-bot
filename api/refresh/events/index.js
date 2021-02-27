@@ -5,6 +5,7 @@ const updateLowest = require('./updateLowest.js');
 const confirmOrders = require('./confirmOrders.js');
 const addOrders = require('./addOrders.js');
 const deleteOrders = require('./deleteOrders.js');
+const syncOrders = require('./syncOrders.js');
 const earnings = require('./earnings.js');
 
 const Listings = require('../../../models/listings.js');
@@ -69,6 +70,10 @@ module.exports = class refreshClass {
 
   deleteOrders = async () => {
     await deleteOrders(this.user, this.userOrdersArray, this.aliasOrders);
+  };
+
+  syncOrders = async () => {
+    await syncOrders(this.userOrdersArray, this.aliasOrders);
   };
 
   confirmOrders = async () => {
