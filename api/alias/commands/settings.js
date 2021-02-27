@@ -13,7 +13,7 @@ const response = {
 module.exports = async (edit, user, message) => {
   let returnObj = {
     returnedEnum: null,
-    userSettings: '',
+    userSettings: null,
   };
 
   const userSettings = new Discord.MessageEmbed()

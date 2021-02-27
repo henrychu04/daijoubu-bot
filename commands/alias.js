@@ -399,7 +399,7 @@ exports.run = async (client, message, args) => {
         break;
     }
 
-    if (toReturn != '') {
+    if (toReturn != '' && toReturn != null) {
       await message.channel
         .send(toReturn)
         .then(console.log(`${message.content} completed\n`))
