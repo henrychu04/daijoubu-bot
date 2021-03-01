@@ -135,3 +135,23 @@ module.exports = async (client, loginToken, user, message) => {
 
   return returnObj;
 };
+
+function checkNumParams(nums) {
+  if (nums.length == 1) {
+    if (nums[0].toLowerCase() == 'all') {
+      return true;
+    } else if (!isNaN(nums[0])) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  for (let i = 0; i < nums.length; i++) {
+    if (isNaN(nums[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
