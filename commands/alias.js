@@ -364,7 +364,7 @@ exports.run = async (client, message, args) => {
         } else if (cashOutRes.returnedEnum == response.TIMEOUT) {
           toReturn = '```Command timed out```';
         } else if (cashOutRes.returnedEnum == response.NO_CHANGE) {
-          toReturn = '```No earnings available for cash out```';
+          toReturn = '```No earnings available to cash out```';
         }
         break;
       case 'cancel':
