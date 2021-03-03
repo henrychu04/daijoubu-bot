@@ -1,5 +1,7 @@
 const earningsReq = require('../../requests/earningsReq.js');
 
+const Users = require('../../../models/users.js');
+
 module.exports = async (client, user, loginToken) => {
   let earnings = await earningsReq(client, loginToken);
 
