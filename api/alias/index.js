@@ -61,7 +61,7 @@ module.exports = class aliasClass {
   }
 
   async cashOut() {
-    return await aliasCommands.cashOut(this.client, this.loginToken, this.message, this.user);
+    return await aliasCommands.cashOut(this.client, this.loginToken, this.user, this.message);
   }
 
   async cancel() {

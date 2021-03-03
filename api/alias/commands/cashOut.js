@@ -1,6 +1,8 @@
 const cashOutReq = require('../../requests/cashOutReq.js');
 const earnings = require('./earnings.js');
 
+const Users = require('../../../models/users.js');
+
 const response = {
   SUCCESS: 'success',
   NO_ITEMS: 'no_items',
