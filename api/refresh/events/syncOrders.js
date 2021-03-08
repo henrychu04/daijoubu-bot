@@ -1,6 +1,6 @@
 const Orders = require('../../../models/orders.js');
 
-module.exports = async (userOrdersArray, aliasOrders) => {
+module.exports = async (user, userOrdersArray, aliasOrders) => {
   let changed = false;
   let changedString = 'Updated Order(s):\n';
   let k = 0;
@@ -114,7 +114,9 @@ module.exports = async (userOrdersArray, aliasOrders) => {
   }
 
   if (changed) {
-    return [{ title: 'Orders', body: '```' + changedString + '```' }];
+    if (user.webhook.length != 0) {
+      return [{ title: 'Orders', body: '```' + changedString + '```' }];
+    }
   }
 };
 

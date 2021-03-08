@@ -27,32 +27,36 @@ module.exports = class refreshClass {
   }
 
   addListings = async () => {
-    await addListings(this.user, this.userListingsArray, this.aliasListings);
+    let modified = await addListings(this.user, this.userListingsArray, this.aliasListings);
 
-    const userListings = await Listings.find({ d_id: this.user.d_id });
-    this.userListingsArray = userListings[0].aliasListings;
+    if (modified) {
+      const userListings = await Listings.find({ d_id: this.user.d_id });
+      this.userListingsArray = userListings[0].aliasListings;
+    }
   };
 
   deleteListings = async () => {
-    await deleteListings(this.user, this.userListingsArray, this.aliasListings);
+    let modified = await deleteListings(this.user, this.userListingsArray, this.aliasListings);
 
-    const userListings = await Listings.find({ d_id: this.user.d_id });
-    this.userListingsArray = userListings[0].aliasListings;
+    if (modified) {
+      const userListings = await Listings.find({ d_id: this.user.d_id });
+      this.userListingsArray = userListings[0].aliasListings;
+    }
   };
 
   syncListingPrices = async () => {
-    await syncListingPrices(this.userListingsArray, this.aliasListings);
+    let modified = await syncListingPrices(this.userListingsArray, this.aliasListings);
 
-    const userListings = await Listings.find({ d_id: this.user.d_id });
-    this.userListingsArray = userListings[0].aliasListings;
+    if (modified) {
+      const userListings = await Listings.find({ d_id: this.user.d_id });
+      this.userListingsArray = userListings[0].aliasListings;
+    }
   };
 
   updateLowest = async (allListings) => {
     let newUpdate = await updateLowest(this.client, this.user, this.loginToken, allListings);
 
-    if (newUpdate != undefined) {
-      let returningUser = this.user;
-
+    if (newUpdate) {
       return { newUpdate, returningUser };
     }
   };
@@ -60,7 +64,7 @@ module.exports = class refreshClass {
   addOrders = async () => {
     let newUpdate = await addOrders(this.user, this.userOrdersArray, this.aliasOrders);
 
-    if (newUpdate != undefined) {
+    if (newUpdate) {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
       this.userOrdersArray = userOrders[0].aliasOrders;
 
@@ -69,17 +73,26 @@ module.exports = class refreshClass {
   };
 
   deleteOrders = async () => {
-    await deleteOrders(this.user, this.userOrdersArray, this.aliasOrders);
+    let modified = await deleteOrders(this.user, this.userOrdersArray, this.aliasOrders);
+
+    if (modified) {
+      const userOrders = await Orders.find({ d_id: this.user.d_id });
+      this.userOrdersArray = userOrders[0].aliasOrders;
+    }
   };
 
   syncOrders = async () => {
-    await syncOrders(this.userOrdersArray, this.aliasOrders);
+    let newUpdate = await syncOrders(this.user, this.userOrdersArray, this.aliasOrders);
+
+    if (newUpdate) {
+      return { newUpdate, returningUser };
+    }
   };
 
   confirmOrders = async () => {
     let newUpdate = await confirmOrders(this.client, this.loginToken, this.user, this.aliasOrders);
 
-    if (newUpdate != undefined) {
+    if (newUpdate) {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
       this.userOrdersArray = userOrders[0].aliasOrders;
 
@@ -90,7 +103,7 @@ module.exports = class refreshClass {
   earnings = async () => {
     let newUpdate = await earnings(this.client, this.user, this.loginToken);
 
-    if (newUpdate != undefined) {
+    if (newUpdate) {
       return { newUpdate, returningUser };
     }
   };

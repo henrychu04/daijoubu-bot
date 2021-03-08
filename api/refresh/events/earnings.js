@@ -22,16 +22,18 @@ module.exports = async (client, user, loginToken) => {
   }
 
   if (user.aliasCashoutAmount < crntEarnings) {
-    return [
-      {
-        title: 'Earnings',
-        body:
-          '```' +
-          `Amount available for cash out: $${(crntEarnings / 100).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-          })}` +
-          '```',
-      },
-    ];
+    if (user.webhook.length != 0) {
+      return [
+        {
+          title: 'Earnings',
+          body:
+            '```' +
+            `Amount available for cash out: $${(crntEarnings / 100).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+            })}` +
+            '```',
+        },
+      ];
+    }
   }
 };

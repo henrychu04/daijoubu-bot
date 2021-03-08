@@ -47,7 +47,7 @@ module.exports = async (user, userOrdersArray, aliasOrders) => {
   }
 
   if (newOrderFound) {
-    if (user.webhook != null) {
+    if (user.webhook.length != 0) {
       return [{ title: 'Orders', body: '```' + newOrdersString + '```' }];
     }
   }

@@ -107,16 +107,18 @@ module.exports = async (client, user, loginToken, allListings) => {
     }
   }
 
-  if (live > 0) {
-    return [{ title: 'Listing Updates', body: '```' + liveString + '```' }];
-  }
-
-  if (unadjustedLive > 0) {
-    return [{ title: 'Listing Updates', body: '```' + unadjustedLiveString + '```' }];
-  }
-
-  if (manual > 0 && user.settings.manualNotif) {
-    return [{ title: 'Listing Updates', body: '```' + manualString + '```' }];
+  if (user.webhook.length != 0) {  
+    if (live > 0) {
+      return [{ title: 'Listing Updates', body: '```' + liveString + '```' }];
+    }
+    
+    if (unadjustedLive > 0) {
+      return [{ title: 'Listing Updates', body: '```' + unadjustedLiveString + '```' }];
+    }
+    
+    if (manual > 0 && user.settings.manualNotif) {
+      return [{ title: 'Listing Updates', body: '```' + manualString + '```' }];
+    }
   }
 };
 

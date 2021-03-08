@@ -44,8 +44,10 @@ module.exports = async (client, loginToken, user, aliasOrdersArray) => {
 
         confirmed++;
       } catch (err) {
+        console.log(err);
+
         if (confirmed != 0) {
-          if (user.webhook != null) {
+          if (user.webhook.length != 0) {
             if (err.message == 'Error confirming') {
               return [
                 { title: 'Order Confirmations', body: '```alias Orders - ' + date + '\n' + returnString + '```' },
@@ -67,16 +69,22 @@ module.exports = async (client, loginToken, user, aliasOrdersArray) => {
 
     if (orders.length == 0) {
       if (user.settings.orderRefresh == 'daily') {
-        return [
-          { title: 'Order Confirmations', body: '```alias Orders - ' + date + '\n' + '\tNo orders to confirm```' },
-        ];
+        if (user.webhook.length != 0) {
+          return [
+            { title: 'Order Confirmations', body: '```alias Orders - ' + date + '\n' + '\tNo orders to confirm```' },
+          ];
+        }
       }
     } else {
-      return [{ title: 'Order Confirmations', body: '```alias Orders - ' + date + '\n' + returnString + '```' }];
+      if (user.webhook.length != 0) {
+        return [{ title: 'Order Confirmations', body: '```alias Orders - ' + date + '\n' + returnString + '```' }];
+      }
     }
   } else {
     if (user.settings.orderRefresh == 'daily') {
-      return [{ title: 'Order Confirmations', body: '```alias Orders - ' + date + '\n' + '\tNo orders to confirm```' }];
+      if (user.webhook.length != 0) {
+        return [{ title: 'Order Confirmations', body: '```alias Orders - ' + date + '\n' + '\tNo orders to confirm```' }];
+      }
     }
   }
 };

@@ -1,6 +1,8 @@
 const Listings = require('../../../models/listings.js');
 
 module.exports = async (user, userListingsArray, aliasListings) => {
+  let modified = false;
+
   if (aliasListings.listing) {
     for (let i = 0; i < aliasListings.listing.length; i++) {
       let crnt = aliasListings.listing[i];
@@ -16,6 +18,8 @@ module.exports = async (user, userListingsArray, aliasListings) => {
         continue;
       }
 
+      modified = true;
+
       let obj = {
         id: crnt.id,
         name: crnt.product.name,
@@ -29,4 +33,6 @@ module.exports = async (user, userListingsArray, aliasListings) => {
       await Listings.updateOne({ d_id: user.d_id }, { $push: { aliasListings: obj } }).catch((err) => console.log(err));
     }
   }
+
+  return modified;
 };
