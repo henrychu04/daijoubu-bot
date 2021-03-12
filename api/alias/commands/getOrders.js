@@ -45,7 +45,7 @@ module.exports = async (user) => {
   let issuesNum = 0;
   let i = 0;
 
-  userOrdersArray.forEach((order) => {
+  for (let order of userOrdersArray) {
     let date = new Date(order.take_action_by);
 
     switch (convertStatus(order.status)) {
@@ -177,7 +177,7 @@ module.exports = async (user) => {
         console.log(`\nNew order status is '${order.status}'\n`);
         break;
     }
-  });
+  }
 
   returnObj.returnedEnum = response.SUCCESS;
   returnObj.orderArray = orderArray;

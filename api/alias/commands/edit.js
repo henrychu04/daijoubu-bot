@@ -24,13 +24,13 @@ module.exports = async (client, loginToken, user, message) => {
   let listingsRes = await mongoListings(user);
 
   if (listingsRes.returnedEnum == response.SUCCESS) {
-    for (let i = 0; i < listingsRes.listingArray.length; i++) {
-      if (i == 0) {
+    for (let [index, crnt] of listingsRes.listingArray) {
+      if (index == 0) {
         let initialString = 'Current Listings:';
-        initialString += listingsRes.listingArray[i];
+        initialString += crnt;
         await message.channel.send('```' + initialString + '```');
       } else {
-        await message.channel.send('```' + listingsRes.listingArray[i] + '```');
+        await message.channel.send('```' + crnt + '```');
       }
     }
   } else if (listingsRes.returnedEnum == response.NO_ITEMS) {
@@ -58,7 +58,9 @@ module.exports = async (client, loginToken, user, message) => {
       console.log('Canceled');
     } else if (!isNaN(input)) {
       if (parseInt(input) >= listingsRes.listingIds.length) {
-        msg.channel.send('```' + 'Entered listing number does not exist' + '```');
+        msg.channel.send(
+          '```' + 'Entered listing number does not exist\nPlease enter existing listing numbers' + '```'
+        );
       } else {
         collector1.stop();
         stopped = true;
@@ -82,7 +84,7 @@ module.exports = async (client, loginToken, user, message) => {
 
   let matchedArray = [];
 
-  allListings.listing.forEach((listing) => {
+  for (let listing of allListings.listing) {
     if (
       listing.product.name == listingObj.listing.product.name &&
       parseFloat(listing.size_option.value) == parseFloat(listingObj.listing.size_option.value) &&
@@ -90,7 +92,7 @@ module.exports = async (client, loginToken, user, message) => {
     ) {
       matchedArray.push(listing);
     }
-  });
+  }
 
   let lowest = listingObj.listing.product.lowest_price_cents / 100;
   let price = 0;

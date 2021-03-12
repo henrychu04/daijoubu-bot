@@ -20,13 +20,13 @@ module.exports = async (client, loginToken, user, message) => {
   let listingsRes = await allListings(user);
 
   if (listingsRes.returnedEnum == response.SUCCESS) {
-    for (let i = 0; i < listingsRes.listingArray.length; i++) {
-      if (i == 0) {
+    for (let [index, crnt] of listingsRes.listingArray) {
+      if (index == 0) {
         let initialString = 'Current Listings:';
-        initialString += listingsRes.listingArray[i];
+        initialString += crnt;
         await message.channel.send('```' + initialString + '```');
       } else {
-        await message.channel.send('```' + listingsRes.listingArray[i] + '```');
+        await message.channel.send('```' + crnt + '```');
       }
     }
   } else if (listingsRes.returnedEnum == response.NO_ITEMS) {
@@ -64,7 +64,11 @@ module.exports = async (client, loginToken, user, message) => {
         for (let num of nums) {
           if (parseInt(num) >= listingsRes.listingIds.length) {
             valid = false;
-            await msg.channel.send('```' + 'One or more entered listing number(s) do not exist' + '```');
+            await msg.channel.send(
+              '```' +
+                'One or more entered listing number(s) do not exist\nPlease enter existing order numbers(s)' +
+                '```'
+            );
             break;
           }
         }
@@ -127,8 +131,8 @@ function checkNumParams(nums) {
     }
   }
 
-  for (let i = 0; i < nums.length; i++) {
-    if (isNaN(nums[i])) {
+  for (let crnt of nums) {
+    if (isNaN(crnt)) {
       return false;
     }
   }

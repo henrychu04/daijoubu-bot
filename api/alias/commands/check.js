@@ -27,26 +27,26 @@ module.exports = async (user) => {
   let newLowestAsksArray = [];
   let userListingsCheckArray = [];
   let num = 0;
-  let j = 0;
+  let count = 0;
 
-  for (let i = 0; i < userListingsArray.length; i++) {
-    if (i % 15 == 0 && i != 0) {
-      j++;
+  for (let [index, crnt] of userListingsArray) {
+    if (index % 15 == 0 && index != 0) {
+      count++;
     }
 
-    let listing = userListingsArray[i];
+    let listing = crnt;
 
     if (listing.price > listing.lowest) {
       userListingsCheckArray.push(listing);
 
-      if (newLowestAsksArray[j] == undefined) {
-        newLowestAsksArray[j] = `\n\t${num}. ${listing.name}\n\t\tsize: ${listing.size} $${listing.price / 100} => $${
-          listing.lowest / 100
-        }\n`;
+      if (newLowestAsksArray[count] == undefined) {
+        newLowestAsksArray[count] = `\n\t${num}. ${listing.name}\n\t\tsize: ${listing.size} $${
+          listing.price / 100
+        } => $${listing.lowest / 100}\n`;
       } else {
-        newLowestAsksArray[j] += `\n\t${num}. ${listing.name}\n\t\tsize: ${listing.size} $${listing.price / 100} => $${
-          listing.lowest / 100
-        }\n`;
+        newLowestAsksArray[count] += `\n\t${num}. ${listing.name}\n\t\tsize: ${listing.size} $${
+          listing.price / 100
+        } => $${listing.lowest / 100}\n`;
       }
 
       num++;

@@ -87,10 +87,12 @@ module.exports = async (client, loginToken, message, user) => {
       } else {
         let valid = true;
 
-        for (let i = 0; i < nums.length; i++) {
-          if (parseInt(nums[i]) >= orderNumArray.length) {
+        for (let crnt of nums) {
+          if (parseInt(crnt) >= orderNumArray.length) {
             valid = false;
-            await msg.channel.send('```' + 'One or more entered order number(s) do not exist' + '```');
+            await msg.channel.send(
+              '```' + 'One or more entered order number(s) do not exist\nPlease enter existing order numbers(s)' + '```'
+            );
             break;
           }
         }
@@ -152,8 +154,8 @@ function checkNumParams(nums) {
     }
   }
 
-  for (let i = 0; i < nums.length; i++) {
-    if (isNaN(nums[i])) {
+  for (let crnt of nums) {
+    if (isNaN(crnt)) {
       return false;
     }
   }

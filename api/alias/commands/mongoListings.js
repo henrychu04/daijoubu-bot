@@ -26,23 +26,22 @@ module.exports = async (user) => {
 
   let listingArray = [];
   let listingIds = [];
-  let j = 0;
+  let count = 0;
 
-  for (let i = 0; i < userListingsArray.length; i++) {
-    if (i % 15 == 0 && i != 0) {
-      j++;
+  for (let [index, crnt] of userListingsArray) {
+    if (index % 15 == 0 && index != 0) {
+      count++;
     }
 
-    let obj = userListingsArray[i];
-    listingIds.push(obj.id);
+    listingIds.push(crnt.id);
 
-    if (listingArray[j] == undefined) {
-      listingArray[j] = `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} - $${obj.price / 100}\n\t\tUpdate Rate: ${
-        obj.setting == 'manual' ? 'Manual' : 'Live'
+    if (listingArray[count] == undefined) {
+      listingArray[count] = `\n\t${index}. ${crnt.name}\n\t\tsize: ${crnt.size} - $${crnt.price / 100}\n\t\tUpdate Rate: ${
+        crnt.setting == 'manual' ? 'Manual' : 'Live'
       }\n`;
     } else {
-      listingArray[j] += `\n\t${i}. ${obj.name}\n\t\tsize: ${obj.size} - $${obj.price / 100}\n\t\tUpdate Rate: ${
-        obj.setting == 'manual' ? 'Manual' : 'Live'
+      listingArray[count] += `\n\t${index}. ${crnt.name}\n\t\tsize: ${crnt.size} - $${crnt.price / 100}\n\t\tUpdate Rate: ${
+        crnt.setting == 'manual' ? 'Manual' : 'Live'
       }\n`;
     }
   }

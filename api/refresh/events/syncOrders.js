@@ -1,108 +1,122 @@
 const Orders = require('../../../models/orders.js');
 
-module.exports = async (user, userOrdersArray, aliasOrders) => {
+module.exports = async (user, userOrders, aliasOrders) => {
   let changed = false;
   let changedString = 'Updated Order(s):\n';
   let k = 0;
 
-  for (let i = 0; i < userOrdersArray.length; i++) {
+  for (let userOrder of userOrders.aliasOrders) {
     if (aliasOrders.purchase_orders) {
-      for (let j = 0; j < aliasOrders.purchase_orders.length; j++) {
-        let crnt = userOrdersArray[i];
-
-        if (crnt.number == aliasOrders.purchase_orders[j].number) {
+      for (let aliasOrder of aliasOrders.purchase_orders) {
+        if (userOrder.number == aliasOrder.number) {
           let statusChange = false;
           let dateChange = false;
           let oldStatus = '';
 
-          if (crnt.status != aliasOrders.purchase_orders[j].status) {
+          if (userOrder.status != aliasOrder.status) {
             changed = true;
             statusChange = true;
-            oldStatus = crnt.status;
-            crnt.status = aliasOrders.purchase_orders[j].status;
+            oldStatus = userOrder.status;
+            userOrder.status = aliasOrder.status;
           }
 
-          let newParsedDate = new Date(aliasOrders.purchase_orders[j].take_action_by);
+          let newParsedDate = new Date(aliasOrder.take_action_by);
           let oldDate = '';
 
-          if (crnt.take_action_by != `${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`) {
+          if (userOrder.take_action_by != `${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`) {
             changed = true;
             dateChange = true;
-            oldDate = crnt.take_action_by;
-            crnt.take_action_by = `${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`;
+            oldDate = userOrder.take_action_by;
+            userOrder.take_action_by = `${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`;
           }
 
           if (statusChange && dateChange) {
-            if (crnt.status == 'SHIPPED') {
-              crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
+            if (userOrder.status == 'SHIPPED') {
+              userOrder.tracking = aliasOrder.shipping_info.tracking_code;
 
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
-            } else if (crnt.status == 'NEEDS_CONFIRMATION') {
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${oldDate} => ${crnt.take_action_by}\n`;
-            } else if (crnt.status == 'NEEDS_SHIPPING') {
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${oldDate} => ${crnt.take_action_by}\n`;
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(
+                userOrder.status
+              )}\n\t\tUPS tracking number: ${userOrder.tracking}\n`;
+            } else if (userOrder.status == 'NEEDS_CONFIRMATION') {
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(
+                userOrder.status
+              )}\n\t\tTake action by: ${oldDate} => ${userOrder.take_action_by}\n`;
+            } else if (userOrder.status == 'NEEDS_SHIPPING') {
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(
+                userOrder.status
+              )}\n\t\tTake action by: ${oldDate} => ${userOrder.take_action_by}\n`;
             } else {
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                oldStatus
-              )} => ${convertStatus(crnt.status)}\n`;
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(userOrder.status)}\n`;
             }
             k++;
           } else if (statusChange) {
-            if (crnt.status == 'SHIPPED') {
-              crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
+            if (userOrder.status == 'SHIPPED') {
+              userOrder.tracking = aliasOrder.shipping_info.tracking_code;
 
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
-            } else if (crnt.status == 'NEEDS_CONFIRMATION') {
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${crnt.take_action_by}\n`;
-            } else if (crnt.status == 'NEEDS_SHIPPING') {
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                oldStatus
-              )} => ${convertStatus(crnt.status)}\n\t\tTake action by: ${crnt.take_action_by}\n`;
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(
+                userOrder.status
+              )}\n\t\tUPS tracking number: ${userOrder.tracking}\n`;
+            } else if (userOrder.status == 'NEEDS_CONFIRMATION') {
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(userOrder.status)}\n\t\tTake action by: ${
+                userOrder.take_action_by
+              }\n`;
+            } else if (userOrder.status == 'NEEDS_SHIPPING') {
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(userOrder.status)}\n\t\tTake action by: ${
+                userOrder.take_action_by
+              }\n`;
             } else {
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                oldStatus
-              )} => ${convertStatus(crnt.status)}\n`;
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(userOrder.status)}\n`;
             }
             k++;
           } else if (dateChange) {
-            if (crnt.status == 'SHIPPED') {
-              crnt.tracking = aliasOrders.purchase_orders[j].shipping_info.tracking_code;
+            if (userOrder.status == 'SHIPPED') {
+              userOrder.tracking = aliasOrder.shipping_info.tracking_code;
 
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                crnt.status
-              )}\n\t\tUPS tracking number: ${crnt.tracking}\n`;
-            } else if (crnt.status == 'NEEDS_CONFIRMATION') {
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                crnt.status
-              )}\n\t\tTake action by: ${oldDate} => ${crnt.take_action_by}\n`;
-            } else if (crnt.status == 'NEEDS_SHIPPING') {
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                crnt.status
-              )}\n\t\tTake action by: ${oldDate} => ${crnt.take_action_by}\n`;
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(userOrder.status)}\n\t\tUPS tracking number: ${userOrder.tracking}\n`;
+            } else if (userOrder.status == 'NEEDS_CONFIRMATION') {
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(userOrder.status)}\n\t\tTake action by: ${oldDate} => ${
+                userOrder.take_action_by
+              }\n`;
+            } else if (userOrder.status == 'NEEDS_SHIPPING') {
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(userOrder.status)}\n\t\tTake action by: ${oldDate} => ${
+                userOrder.take_action_by
+              }\n`;
             } else {
-              changedString += `\t${k}. ${crnt.name} - ${crnt.size} $${crnt.price / 100}\n\t\tStatus: ${convertStatus(
-                crnt.status
-              )}\n`;
+              changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
+                userOrder.price / 100
+              }\n\t\tStatus: ${convertStatus(userOrder.status)}\n`;
             }
             k++;
           }
 
           if (changed) {
             await Orders.updateOne(
-              { 'aliasOrders.number': crnt.number },
+              { 'aliasOrders.number': userOrder.number },
               {
                 $set: {
-                  'aliasOrders.$': crnt,
+                  'aliasOrders.$': userOrder,
                 },
               }
             ).catch((err) => console.log(err));

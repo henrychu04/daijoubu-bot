@@ -8,103 +8,113 @@ const deleteOrders = require('./deleteOrders.js');
 const syncOrders = require('./syncOrders.js');
 const earnings = require('./earnings.js');
 
+const getAllListings = require('../../requests/getAllListings.js');
+const getAllOrders = require('../../requests/getAllOrders.js');
+const encryption = require('../../../scripts/encryption.js');
+
 const Listings = require('../../../models/listings.js');
 const Orders = require('../../../models/orders.js');
 
-let returningUser = null;
-
-module.exports = class refreshClass {
-  constructor(client, user, loginToken, userListingsArray, userOrdersArray, aliasListings, aliasOrders) {
+module.exports = class refresh {
+  constructor(client, user) {
     this.client = client;
     this.user = user;
-    this.loginToken = loginToken;
-    this.userListingsArray = userListingsArray;
-    this.userOrdersArray = userOrdersArray;
-    this.aliasListings = aliasListings;
-    this.aliasOrders = aliasOrders;
-
-    returningUser = this.user;
+    this.loginToken = encryption.decrypt(user.aliasLogin);
+    this.userListings;
+    this.userOrders;
+    this.aliasListings;
+    this.aliasOrders;
   }
 
+  init = async () => {
+    const userListings = await Listings.find({ d_id: this.user.d_id });
+    this.userListings = userListings[0];
+    const userOrders = await Orders.find({ d_id: this.user.d_id });
+    this.userOrders = userOrders[0];
+
+    this.aliasListings = await getAllListings(this.client, this.loginToken);
+    this.aliasOrders = await getAllOrders(this.client, this.loginToken);
+  };
+
   addListings = async () => {
-    let modified = await addListings(this.user, this.userListingsArray, this.aliasListings);
+    let modified = await addListings(this.user, this.userListings, this.aliasListings);
 
     if (modified) {
       const userListings = await Listings.find({ d_id: this.user.d_id });
-      this.userListingsArray = userListings[0].aliasListings;
+      this.userListings = userListings[0].aliasListings;
     }
   };
 
   deleteListings = async () => {
-    let modified = await deleteListings(this.user, this.userListingsArray, this.aliasListings);
+    let modified = await deleteListings(this.user, this.userListings, this.aliasListings);
 
     if (modified) {
       const userListings = await Listings.find({ d_id: this.user.d_id });
-      this.userListingsArray = userListings[0].aliasListings;
+      this.userListings = userListings[0].aliasListings;
     }
   };
 
   syncListingPrices = async () => {
-    let modified = await syncListingPrices(this.userListingsArray, this.aliasListings);
+    let modified = await syncListingPrices(this.userListings, this.aliasListings);
 
     if (modified) {
       const userListings = await Listings.find({ d_id: this.user.d_id });
-      this.userListingsArray = userListings[0].aliasListings;
+      this.userListings = userListings[0].aliasListings;
     }
   };
 
   updateLowest = async (allListings) => {
-    let newUpdate = await updateLowest(this.client, this.user, this.loginToken, allListings);
+    let updateLowestRes = await updateLowest(this.client, this.user, this.loginToken, allListings);
 
-    if (newUpdate) {
-      return { newUpdate, returningUser };
+    if (updateLowestRes) {
+      return updateLowestRes, this.user;
     }
   };
 
   addOrders = async () => {
-    let newUpdate = await addOrders(this.user, this.userOrdersArray, this.aliasOrders);
+    let addOrdersRes = await addOrders(this.user, this.userOrders, this.aliasOrders);
 
-    if (newUpdate) {
+    if (addOrdersRes) {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
-      this.userOrdersArray = userOrders[0].aliasOrders;
+      this.userOrders = userOrders[0].aliasOrders;
 
-      return { newUpdate, returningUser };
+      return addOrdersRes, this.user;
     }
   };
 
   deleteOrders = async () => {
-    let modified = await deleteOrders(this.user, this.userOrdersArray, this.aliasOrders);
+    let modified = await deleteOrders(this.user, this.userOrders, this.aliasOrders);
 
     if (modified) {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
-      this.userOrdersArray = userOrders[0].aliasOrders;
+      this.userOrders = userOrders[0].aliasOrders;
     }
   };
 
   syncOrders = async () => {
-    let newUpdate = await syncOrders(this.user, this.userOrdersArray, this.aliasOrders);
+    let syncOrdersRes = await syncOrders(this.user, this.userOrders, this.aliasOrders);
 
-    if (newUpdate) {
-      return { newUpdate, returningUser };
+    if (syncOrdersRes) {
+      return syncOrdersRes, this.user;
     }
   };
 
   confirmOrders = async () => {
-    let newUpdate = await confirmOrders(this.client, this.loginToken, this.user, this.aliasOrders);
+    let confirmOrdersRes = await confirmOrders(this.client, this.loginToken, this.user, this.aliasOrders);
 
-    if (newUpdate) {
+    if (confirmOrdersRes) {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
-      this.userOrdersArray = userOrders[0].aliasOrders;
+      this.userOrders = userOrders[0].aliasOrders;
 
-      return { newUpdate, returningUser };
+      return confirmOrdersRes, this.user;
     }
   };
 
   earnings = async () => {
-    let newUpdate = await earnings(this.client, this.user, this.loginToken);
+    let earningsRes = await earnings(this.client, this.user, this.loginToken);
 
-    if (newUpdate) {
-      return { newUpdate, returningUser };
+    if (earningsRes) {
+      return earningsRes, this.user;
     }
   };
 };

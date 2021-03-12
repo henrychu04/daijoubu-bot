@@ -1,9 +1,9 @@
 const Listings = require('../../../models/listings.js');
 
-module.exports = async (userListingsArray, aliasListings) => {
+module.exports = async (userListings, aliasListings) => {
   let modified = false;
 
-  for (let userListing of userListingsArray) {
+  for (let userListing of userListings.aliasListings) {
     if (aliasListings.listing) {
       for (let aliasListing of aliasListings.listing) {
         let crntPrice = parseInt(aliasListing.price_cents);

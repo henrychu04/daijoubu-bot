@@ -27,23 +27,23 @@ module.exports = async (client, loginToken, user, message) => {
   let orders = [];
 
   let confirmString = 'Needs Shipping Method:\n';
-  let i = 0;
+  let count = 0;
 
   for (let type of getOrderRes.orderArray) {
     if (type.name == 'Needs Shipping Method') {
-      for (let j = 0; j < type.value.length; j++) {
-        confirmString += type.value[j].string + '\n';
+      for (let crnt of type.value) {
+        confirmString += crnt.string + '\n';
 
-        i++;
+        count++;
 
-        if (i == 15) {
+        if (count == 15) {
           await message.channel.send('```' + confirmString + '```');
 
           confirmString = '';
-          i = 0;
+          count = 0;
         }
 
-        orders.push(type.value[j].number);
+        orders.push(crnt.number);
       }
     }
   }
@@ -83,10 +83,12 @@ module.exports = async (client, loginToken, user, message) => {
       } else {
         let valid = true;
 
-        for (let i = 0; i < nums.length; i++) {
-          if (parseInt(nums[i]) >= orders.length) {
+        for (let crnt of nums) {
+          if (parseInt(crnt) >= orders.length) {
             valid = false;
-            await msg.channel.send('```' + 'One or more entered order number(s) do not exist' + '```');
+            await msg.channel.send(
+              '```' + 'One or more entered order number(s) do not exist\nPlease enter existing order numbers(s)' + '```'
+            );
             break;
           }
         }
@@ -147,7 +149,7 @@ function checkNumParams(nums) {
     }
   }
 
-  for (let i = 0; i < nums.length; i++) {
+  for (let crnt of nums) {
     if (isNaN(nums[i])) {
       return false;
     }

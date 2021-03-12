@@ -30,13 +30,13 @@ module.exports = async (client, loginToken, user, message) => {
   let checkRes = await check(user);
 
   if (checkRes.returnedEnum == response.SUCCESS) {
-    for (let i = 0; i < checkRes.newLowestAsksArray.length; i++) {
-      if (i == 0) {
+    for (let [index, crnt] of checkRes.newLowestAsksArray) {
+      if (index == 0) {
         let initialString = 'Current Listings With a Lower Ask:';
-        initialString += checkRes.newLowestAsksArray[i];
+        initialString += crnt;
         await message.channel.send('```' + initialString + '```');
       } else {
-        await message.channel.send('```' + checkRes.newLowestAsksArray[i] + '```');
+        await message.channel.send('```' + crnt + '```');
       }
     }
   } else if (checkRes.returnedEnum == response.NO_CHANGE) {
@@ -74,10 +74,14 @@ module.exports = async (client, loginToken, user, message) => {
       } else {
         let valid = true;
 
-        for (let i = 0; i < nums.length; i++) {
-          if (parseInt(nums[i]) >= listingObj.length) {
+        for (let crnt of nums) {
+          if (parseInt(crnt) >= listingObj.length) {
             valid = false;
-            await msg.channel.send('```' + 'One or more entered listing number(s) do not exist' + '```');
+            await msg.channel.send(
+              '```' +
+                'One or more entered listing number(s) do not exist\nPlease enter existing listing numbers(s)' +
+                '```'
+            );
             break;
           }
         }
@@ -165,8 +169,8 @@ function checkNumParams(nums) {
     }
   }
 
-  for (let i = 0; i < nums.length; i++) {
-    if (isNaN(nums[i])) {
+  for (let crnt of nums) {
+    if (isNaN(crnt)) {
       return false;
     }
   }
