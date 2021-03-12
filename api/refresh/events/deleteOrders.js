@@ -8,7 +8,7 @@ module.exports = async (user, userOrders, aliasOrders) => {
 
     if (aliasOrders.purchase_orders) {
       for (let aliasOrder of aliasOrders.purchase_orders) {
-        if (aliasOrder.number == order.number) {
+        if (aliasOrder.number == userOrder.number) {
           deleted = false;
           break;
         }

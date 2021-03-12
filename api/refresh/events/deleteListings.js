@@ -7,8 +7,8 @@ module.exports = async (user, userListings, aliasListings) => {
     let deleted = true;
 
     if (aliasListings.listing) {
-      for (let aliasListing of aliasListings) {
-        if (aliasListing.id == listing.id) {
+      for (let aliasListing of aliasListings.listing) {
+        if (aliasListing.id == userListing.id) {
           deleted = false;
           break;
         }
