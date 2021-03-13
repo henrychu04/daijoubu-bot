@@ -41,7 +41,7 @@ module.exports = class refresh {
 
     if (modified) {
       const userListings = await Listings.find({ d_id: this.user.d_id });
-      this.userListings = userListings[0].aliasListings;
+      this.userListings = userListings[0];
     }
   };
 
@@ -50,7 +50,7 @@ module.exports = class refresh {
 
     if (modified) {
       const userListings = await Listings.find({ d_id: this.user.d_id });
-      this.userListings = userListings[0].aliasListings;
+      this.userListings = userListings[0];
     }
   };
 
@@ -59,7 +59,7 @@ module.exports = class refresh {
 
     if (modified) {
       const userListings = await Listings.find({ d_id: this.user.d_id });
-      this.userListings = userListings[0].aliasListings;
+      this.userListings = userListings[0];
     }
   };
 
@@ -76,7 +76,7 @@ module.exports = class refresh {
 
     if (addOrdersRes) {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
-      this.userOrders = userOrders[0].aliasOrders;
+      this.userOrders = userOrders[0];
 
       return addOrdersRes, this.user;
     }
@@ -87,7 +87,7 @@ module.exports = class refresh {
 
     if (modified) {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
-      this.userOrders = userOrders[0].aliasOrders;
+      this.userOrders = userOrders[0];
     }
   };
 
@@ -104,7 +104,7 @@ module.exports = class refresh {
 
     if (confirmOrdersRes) {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
-      this.userOrders = userOrders[0].aliasOrders;
+      this.userOrders = userOrders[0];
 
       return confirmOrdersRes, this.user;
     }

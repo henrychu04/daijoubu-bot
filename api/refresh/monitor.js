@@ -33,13 +33,13 @@ module.exports = class Monitor extends events {
         let updateLowestRes = await refresh.updateLowest(allListings);
 
         if (updateLowestRes) {
-          this.emit('newUpdate', updateLowestRes);
+          this.emit('newUpdate', 'updateLowest', updateLowestRes);
         }
 
         let addOrdersRes = await refresh.addOrders();
 
         if (addOrdersRes) {
-          this.emit('newUpdate', addOrdersRes);
+          this.emit('newUpdate', 'addOrders', addOrdersRes);
         }
 
         await refresh.deleteOrders();
@@ -47,7 +47,7 @@ module.exports = class Monitor extends events {
         let syncOrdersRes = await refresh.syncOrders();
 
         if (syncOrdersRes) {
-          this.emit('newUpdate', syncOrdersRes);
+          this.emit('newUpdate', 'syncOrders', syncOrdersRes);
         }
 
         let confirmOrdersRes = undefined;
@@ -59,13 +59,13 @@ module.exports = class Monitor extends events {
         }
 
         if (confirmOrdersRes) {
-          this.emit('newUpdate', confirmOrdersRes);
+          this.emit('newUpdate', 'confirmOrders', confirmOrdersRes);
         }
 
         let earningsRes = await refresh.earnings();
 
         if (earningsRes) {
-          this.emit('newUpdate', earningsRes);
+          this.emit('newUpdate', 'earnings', earningsRes);
         }
       }
     } catch (err) {
