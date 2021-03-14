@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const Discord = require('discord.js');
 const getProductAvailability = require('../requests/getProductAvailability.js');
 
 const Listings = require('../../models/listings.js');
@@ -189,6 +190,7 @@ async function doList(client, user, loginToken, message, searchProduct, sizingAr
     if (lower) {
       let skip = false;
       let stopped = false;
+      let cancel = false;
 
       await message.channel.send(
         '```' +
@@ -196,7 +198,7 @@ async function doList(client, user, loginToken, message, searchProduct, sizingAr
             lowest / 100
           }\nYou entered $${price}, a lower asking price than the current lowest asking price of $${
             lowest / 100
-          }\n\nEnter 'y to confirm, 'n' to skip size ${size}` +
+          }\n\nEnter 'y to confirm, 's' to skip size ${size}, 'n' to cancel` +
           '```'
       );
 
@@ -207,25 +209,34 @@ async function doList(client, user, loginToken, message, searchProduct, sizingAr
       for await (const msg of collector) {
         let input = msg.content.toLowerCase();
 
-        if (input == 'y' || input == 'n') {
-          if (input == 'n') {
+        if (input == 'y' || input == 's' || input == 'n') {
+          if (input == 's') {
             collector.stop();
             stopped = true;
             await msg.channel.send('```' + `Skipped size ${size}` + '```');
             skip = true;
-          } else {
+          } else if (input == 'y') {
             collector.stop();
             stopped = true;
             returnString = await whileRequest(listing, amount, returnString);
             returnedEnum = response.SUCCESS;
+          } else {
+            collector.stop();
+            stopped = true;
+            cancel = true;
           }
         } else {
-          await msg.channel.send('```' + `Enter either 'y' or 'n'` + '```');
+          await msg.channel.send('```' + `Enter either 'y', 'n', or 'x'` + '```');
         }
       }
 
       if (!stopped) {
         returnedEnum = response.TIMEOUT;
+      }
+
+      if (cancel) {
+        returnedEnum = response.EXIT;
+        break;
       }
 
       if (skip) {

@@ -150,7 +150,7 @@ function checkNumParams(nums) {
   }
 
   for (let crnt of nums) {
-    if (isNaN(nums[i])) {
+    if (isNaN(crnt)) {
       return false;
     }
   }

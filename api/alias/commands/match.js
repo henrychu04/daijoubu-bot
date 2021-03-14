@@ -23,14 +23,14 @@ module.exports = async (client, loginToken, user, message) => {
 
   let listingObj = [];
 
-  listings.listing.forEach(async (listing) => {
+  listings.listing.forEach((listing) => {
     listingObj = checkListings(listing, listingObj);
   });
 
   let checkRes = await check(user);
 
   if (checkRes.returnedEnum == response.SUCCESS) {
-    for (let [index, crnt] of checkRes.newLowestAsksArray) {
+    for (let [index, crnt] of checkRes.newLowestAsksArray.entries()) {
       if (index == 0) {
         let initialString = 'Current Listings With a Lower Ask:';
         initialString += crnt;

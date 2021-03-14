@@ -28,7 +28,7 @@ module.exports = async (user) => {
   let listingIds = [];
   let count = 0;
 
-  for (let [index, crnt] of userListingsArray) {
+  for (let [index, crnt] of userListingsArray.entries()) {
     if (index % 15 == 0 && index != 0) {
       count++;
     }
@@ -36,13 +36,13 @@ module.exports = async (user) => {
     listingIds.push(crnt.id);
 
     if (listingArray[count] == undefined) {
-      listingArray[count] = `\n\t${index}. ${crnt.name}\n\t\tsize: ${crnt.size} - $${crnt.price / 100}\n\t\tUpdate Rate: ${
-        crnt.setting == 'manual' ? 'Manual' : 'Live'
-      }\n`;
+      listingArray[count] = `\n\t${index}. ${crnt.name}\n\t\tsize: ${crnt.size} - $${
+        crnt.price / 100
+      }\n\t\tUpdate Rate: ${crnt.setting == 'manual' ? 'Manual' : 'Live'}\n`;
     } else {
-      listingArray[count] += `\n\t${index}. ${crnt.name}\n\t\tsize: ${crnt.size} - $${crnt.price / 100}\n\t\tUpdate Rate: ${
-        crnt.setting == 'manual' ? 'Manual' : 'Live'
-      }\n`;
+      listingArray[count] += `\n\t${index}. ${crnt.name}\n\t\tsize: ${crnt.size} - $${
+        crnt.price / 100
+      }\n\t\tUpdate Rate: ${crnt.setting == 'manual' ? 'Manual' : 'Live'}\n`;
     }
   }
 

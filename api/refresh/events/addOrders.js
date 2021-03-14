@@ -50,7 +50,7 @@ module.exports = async (user, userOrders, aliasOrders) => {
       let combinedArray = [];
       let count = 0;
 
-      for (let [index, crnt] of stringArray) {
+      for (let [index, crnt] of stringArray.entries()) {
         if (index % 15 == 0 && index != 0) {
           count++;
         }

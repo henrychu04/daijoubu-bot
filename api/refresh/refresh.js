@@ -2,13 +2,14 @@ const webhook = require('./webhook.js');
 const Monitor = require('./monitor.js');
 
 module.exports = async (client) => {
-  const newMonitor = new Monitor(client);
+  const monitor = new Monitor(client);
 
   console.log('Monitoring users ...\n');
 
-  newMonitor.on('newUpdate', (newUpdate, user, type) => {
+  monitor.on('newUpdate', (newUpdate) => {
+    let { data, user, type } = newUpdate;
     console.log(`Type: ${type}`);
-    for (let crnt of newUpdate) {
+    for (let crnt of data) {
       webhook(client, user, crnt.title, crnt.body);
     }
   });

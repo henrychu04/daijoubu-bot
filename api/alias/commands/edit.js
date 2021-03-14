@@ -24,7 +24,7 @@ module.exports = async (client, loginToken, user, message) => {
   let listingsRes = await mongoListings(user);
 
   if (listingsRes.returnedEnum == response.SUCCESS) {
-    for (let [index, crnt] of listingsRes.listingArray) {
+    for (let [index, crnt] of listingsRes.listingArray.entries()) {
       if (index == 0) {
         let initialString = 'Current Listings:';
         initialString += crnt;

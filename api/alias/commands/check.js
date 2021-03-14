@@ -29,7 +29,7 @@ module.exports = async (user) => {
   let num = 0;
   let count = 0;
 
-  for (let [index, crnt] of userListingsArray) {
+  for (let [index, crnt] of userListingsArray.entries()) {
     if (index % 15 == 0 && index != 0) {
       count++;
     }

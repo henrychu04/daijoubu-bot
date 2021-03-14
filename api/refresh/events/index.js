@@ -67,7 +67,7 @@ module.exports = class refresh {
     let updateLowestRes = await updateLowest(this.client, this.user, this.loginToken, allListings);
 
     if (updateLowestRes) {
-      return updateLowestRes, this.user, 'updateLowest';
+      return { data: updateLowestRes, user: this.user, type: 'updateLowest' };
     }
   };
 
@@ -78,7 +78,7 @@ module.exports = class refresh {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
       this.userOrders = userOrders[0];
 
-      return addOrdersRes, this.user, 'addOrders';
+      return { data: addOrdersRes, user: this.user, type: 'addOrders' };
     }
   };
 
@@ -95,7 +95,7 @@ module.exports = class refresh {
     let syncOrdersRes = await syncOrders(this.user, this.userOrders, this.aliasOrders);
 
     if (syncOrdersRes) {
-      return syncOrdersRes, this.user, 'syncOrders';
+      return { data: syncOrdersRes, user: this.user, type: 'syncOrders' };
     }
   };
 
@@ -106,7 +106,7 @@ module.exports = class refresh {
       const userOrders = await Orders.find({ d_id: this.user.d_id });
       this.userOrders = userOrders[0];
 
-      return confirmOrdersRes, this.user, 'confirmOrders';
+      return { data: confirmOrdersRes, user: this.user, type: 'confirmOrders' };
     }
   };
 
@@ -114,7 +114,7 @@ module.exports = class refresh {
     let earningsRes = await earnings(this.client, this.user, this.loginToken);
 
     if (earningsRes) {
-      return earningsRes, this.user, 'earnings';
+      return { data: earningsRes, user: this.user, type: 'earnings' };
     }
   };
 };
