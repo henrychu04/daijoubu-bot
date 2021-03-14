@@ -1,7 +1,7 @@
 const check = require('./check.js');
 const updateReq = require('../../requests/updateReq.js');
 const getAllListings = require('../../requests/getAllListings.js');
-const syncListingPrices = require('../../refresh/events/syncListingPrices.js');
+const Refresh = require('../../refresh/events/index.js');
 
 const response = {
   SUCCESS: 'success',
@@ -130,7 +130,8 @@ module.exports = async (client, loginToken, user, message) => {
     }
   }
 
-  await syncListingPrices(client, user, loginToken);
+  let refresh = new Refresh();
+  refresh.syncListingPrices();
 
   returnObj.returnedEnum = response.SUCCESS;
   returnObj.all = all;

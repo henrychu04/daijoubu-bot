@@ -1,5 +1,6 @@
 const getOrders = require('./getOrders.js');
 const generateReq = require('../../requests/generateReq.js');
+const Refresh = require('../../refresh/events/index.js');
 
 const response = {
   SUCCESS: 'success',
@@ -130,6 +131,9 @@ module.exports = async (client, loginToken, user, message) => {
       }
     }
   }
+
+  let refresh = new Refresh();
+  refresh.syncOrders();
 
   returnObj.returnedEnum = response.SUCCESS;
   returnObj.all = all;

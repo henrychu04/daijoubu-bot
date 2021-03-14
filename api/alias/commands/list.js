@@ -1,5 +1,6 @@
 const aliasSearch = require('../../requests/aliasSearch.js');
 const listReq = require('../../requests/listReq.js');
+const Refresh = require('../../refresh/events/index.js');
 
 const response = {
   SUCCESS: 'success',
@@ -73,7 +74,7 @@ module.exports = async (query, client, loginToken, user, message) => {
   let sizingArray = [];
 
   const collector2 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
-    time: 30000,
+    time: 120000,
   });
 
   for await (const msg of collector2) {
@@ -115,6 +116,9 @@ module.exports = async (query, client, loginToken, user, message) => {
     searchProduct,
     sizingArray
   );
+
+  let refresh = new Refresh();
+  refresh.addListings();
 
   returnObj.returnedEnum = returnedEnum;
   returnObj.listString = returnString;

@@ -8,7 +8,9 @@ module.exports = async (client) => {
 
   monitor.on('newUpdate', (newUpdate) => {
     let { data, user, type } = newUpdate;
-    console.log(`Type: ${type}`);
+
+    console.log(`Event type: ${type}`);
+    
     for (let crnt of data) {
       webhook(client, user, crnt.title, crnt.body);
     }

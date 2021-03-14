@@ -1,5 +1,6 @@
 const deleteReq = require('../../requests/deleteReq.js');
 const allListings = require('./mongoListings.js');
+const Refresh = require('../../refresh/events/index.js');
 
 const response = {
   SUCCESS: 'success',
@@ -66,7 +67,7 @@ module.exports = async (client, loginToken, user, message) => {
             valid = false;
             await msg.channel.send(
               '```' +
-                'One or more entered listing number(s) do not exist\nPlease enter existing order numbers(s)' +
+                'One or more entered listing number(s) do not exist\nPlease enter existing listing numbers(s)' +
                 '```'
             );
             break;
@@ -112,6 +113,9 @@ module.exports = async (client, loginToken, user, message) => {
       }
     }
   }
+
+  let refresh = new Refresh();
+  refresh.deleteListings();
 
   returnObj.returnedEnum = response.SUCCESS;
   returnObj.all = all;

@@ -1,5 +1,6 @@
 const cancelReq = require('../../requests/cancelReq.js');
 const getOrders = require('./getOrders.js');
+const Refresh = require('../../refresh/events/index.js');
 
 const response = {
   SUCCESS: 'success',
@@ -135,7 +136,8 @@ module.exports = async (client, loginToken, message, user) => {
     }
   }
 
-  // Add delete orders
+  let refresh = new Refresh();
+  await refresh.deleteOrders();
 
   returnObj.returnedEnum = response.SUCCESS;
   returnObj.msg = msg;
