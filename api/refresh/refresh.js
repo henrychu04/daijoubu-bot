@@ -12,7 +12,7 @@ module.exports = async (client) => {
     console.log(`Event type: ${type}`);
     
     for (let crnt of data) {
-      webhook(client, user, crnt.title, crnt.body);
+      webhook(client, user, crnt);
     }
   });
 };

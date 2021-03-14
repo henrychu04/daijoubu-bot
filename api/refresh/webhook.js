@@ -1,6 +1,8 @@
 const Discord = require('discord.js');
 
-module.exports = async (client, user, title, body) => {
+module.exports = async (client, user, data) => {
+  let { title, body } = data;
+
   let split = user.webhook.split('/');
   let id = split[5];
   let token = split[6];
