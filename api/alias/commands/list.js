@@ -118,7 +118,8 @@ module.exports = async (query, client, loginToken, user, message) => {
   );
 
   let refresh = new Refresh();
-  refresh.addListings();
+  await refresh.init();
+  await refresh.addListings();
 
   returnObj.returnedEnum = returnedEnum;
   returnObj.listString = returnString;

@@ -1,7 +1,7 @@
 const mongoListings = require('./mongoListings.js');
-const syncListingPrices = require('../../refresh/events/syncListingPrices.js');
 const getAllListings = require('../../requests/getAllListings');
 const editReq = require('../../requests/editReq.js');
+const Refresh = require('../../refresh/events/index.js');
 
 const response = {
   SUCCESS: 'success',
@@ -210,7 +210,9 @@ module.exports = async (client, loginToken, user, message) => {
     }
   }
 
-  await syncListingPrices(client, user, loginToken);
+  let refresh = new Refresh();
+  await refresh.init();
+  await refresh.syncListingPrices();
 
   returnObj.returnedEnum = response.SUCCESS;
   returnObj.msg = msg;

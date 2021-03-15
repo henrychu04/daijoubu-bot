@@ -144,8 +144,9 @@ module.exports = async (client, loginToken, user, message) => {
     }
   }
 
-  let refresh = new Refresh();
-  refresh.syncOrders();
+  let refresh = new Refresh(client, user);
+  await refresh.init();
+  await refresh.syncOrders();
 
   returnObj.returnedEnum = response.SUCCESS;
   returnObj.all = all;

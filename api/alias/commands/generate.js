@@ -133,7 +133,8 @@ module.exports = async (client, loginToken, user, message) => {
   }
 
   let refresh = new Refresh();
-  refresh.syncOrders();
+  await refresh.init();
+  await refresh.syncOrders();
 
   returnObj.returnedEnum = response.SUCCESS;
   returnObj.all = all;

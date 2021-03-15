@@ -136,7 +136,8 @@ module.exports = async (client, loginToken, message, user) => {
     }
   }
 
-  let refresh = new Refresh();
+  let refresh = new Refresh(client, user);
+  await refresh.init();
   await refresh.deleteOrders();
 
   returnObj.returnedEnum = response.SUCCESS;

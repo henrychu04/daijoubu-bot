@@ -131,7 +131,8 @@ module.exports = async (client, loginToken, user, message) => {
   }
 
   let refresh = new Refresh();
-  refresh.syncListingPrices();
+  await refresh.init();
+  await refresh.syncListingPrices();
 
   returnObj.returnedEnum = response.SUCCESS;
   returnObj.all = all;
