@@ -107,12 +107,12 @@ function buildArray(stringArray) {
 
     if (combinedArray[count] == undefined) {
       if (index == 0) {
-        combinedArray[count] += `New alias Order(s) Confirmed - ${date}:\n${crnt}`;
+        combinedArray[count] = `New alias Order(s) Confirmed - ${date}:\n${crnt}`;
       } else {
-        combinedArray[count] += crnt;
+        combinedArray[count] = crnt;
       }
     } else {
-      combinedArray[count] == crnt;
+      combinedArray[count] += crnt;
     }
   }
 

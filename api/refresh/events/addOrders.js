@@ -57,12 +57,12 @@ module.exports = async (user, userOrders, aliasOrders) => {
 
         if (combinedArray[count] == undefined) {
           if (index == 0) {
-            combinedArray[count] += 'New Open Order(s):\n' + crnt;
+            combinedArray[count] = 'New Open Order(s):\n' + crnt;
           } else {
-            combinedArray[count] += crnt;
+            combinedArray[count] = crnt;
           }
         } else {
-          combinedArray[count] == crnt;
+          combinedArray[count] += crnt;
         }
       }
 
