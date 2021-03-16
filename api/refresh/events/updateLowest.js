@@ -12,7 +12,7 @@ module.exports = async (client, user, loginToken, userListingsArray, allListings
   let manualString = 'Listing(s) With a New Lowest Ask:\n';
   let manual = 0;
 
-  for (let listing of userListingsArray) {
+  for (let listing of userListingsArray.aliasListings) {
     if (allListings.has(listing.slug)) {
       let existing = allListings.get(listing.slug);
 
