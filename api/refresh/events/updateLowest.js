@@ -4,15 +4,12 @@ const getProductAvailability = require('../../requests/getProductAvailability.js
 
 const Listings = require('../../../models/listings.js');
 
-module.exports = async (client, user, loginToken, allListings) => {
-  const userListings = await Listings.find({ d_id: user.d_id });
-  const userListingsArray = userListings[0].aliasListings;
-
-  let liveString = 'Listings Updated:\n';
+module.exports = async (client, user, loginToken, userListingsArray, allListings) => {
+  let liveString = 'Listing(s) Updated:\n';
   let live = 0;
-  let unadjustedLiveString = `Live Listings Not Updated:\nNew lowest ask out of range of Max Price Adjustment Range - '${user.settings.maxAdjust}'\n`;
+  let unadjustedLiveString = `Live Listing(s) Not Updated:\nNew lowest ask out of range of Max Price Adjustment Range - '${user.settings.maxAdjust}'\n`;
   let unadjustedLive = 0;
-  let manualString = 'Listings With a New Lowest Ask:\n';
+  let manualString = 'Listing(s) With a New Lowest Ask:\n';
   let manual = 0;
 
   for (let listing of userListingsArray) {
@@ -107,15 +104,15 @@ module.exports = async (client, user, loginToken, allListings) => {
     }
   }
 
-  if (user.webhook.length != 0) {  
+  if (user.webhook.length != 0) {
     if (live > 0) {
       return [{ title: 'Listing Updates', body: '```' + liveString + '```' }];
     }
-    
+
     if (unadjustedLive > 0) {
       return [{ title: 'Listing Updates', body: '```' + unadjustedLiveString + '```' }];
     }
-    
+
     if (manual > 0 && user.settings.manualNotif) {
       return [{ title: 'Listing Updates', body: '```' + manualString + '```' }];
     }

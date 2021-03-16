@@ -64,9 +64,12 @@ module.exports = class refresh {
   };
 
   updateLowest = async (allListings) => {
-    let updateLowestRes = await updateLowest(this.client, this.user, this.loginToken, allListings);
+    let updateLowestRes = await updateLowest(this.client, this.user, this.loginToken, this.userListings, allListings);
 
     if (updateLowestRes) {
+      const userListings = await Listings.find({ d_id: this.user.d_id });
+      this.userListings = userListings[0];
+
       return { data: updateLowestRes, user: this.user, type: 'updateLowest' };
     }
   };
