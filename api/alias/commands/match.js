@@ -130,7 +130,7 @@ module.exports = async (client, loginToken, user, message) => {
     }
   }
 
-  let refresh = new Refresh();
+  let refresh = new Refresh(client, user);
   await refresh.init();
   await refresh.syncListingPrices();
 

@@ -117,7 +117,7 @@ module.exports = async (query, client, loginToken, user, message) => {
     sizingArray
   );
 
-  let refresh = new Refresh();
+  let refresh = new Refresh(client, user);
   await refresh.init();
   await refresh.addListings();
 
