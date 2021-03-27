@@ -21,7 +21,7 @@ module.exports = async (client, loginToken, message, user) => {
   let orderNumArray = [];
 
   if (getOrdersRes.returnedEnum == response.SUCCESS) {
-    let orderReturnString = 'Current Cancelable Orders:\n';
+    let orderReturnString = 'Current Cancelable Order(s):\n';
     let orderCounter = 0;
 
     for (let type of getOrdersRes.orderArray) {

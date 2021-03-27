@@ -26,7 +26,7 @@ module.exports = async (client, loginToken, user, message) => {
   if (listingsRes.returnedEnum == response.SUCCESS) {
     for (let [index, crnt] of listingsRes.listingArray.entries()) {
       if (index == 0) {
-        let initialString = 'Current Listings:';
+        let initialString = 'Current Listing(s):';
         initialString += crnt;
         await message.channel.send('```' + initialString + '```');
       } else {
@@ -42,7 +42,7 @@ module.exports = async (client, loginToken, user, message) => {
   let exit = false;
   let stopped = false;
 
-  await message.channel.send('```' + `Enter listing number to edit\nEnter 'n' to cancel` + '```');
+  await message.channel.send('```' + `Enter one listing number to edit\nEnter 'n' to cancel` + '```');
 
   const collector1 = this.message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,

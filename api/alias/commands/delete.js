@@ -23,7 +23,7 @@ module.exports = async (client, loginToken, user, message) => {
   if (listingsRes.returnedEnum == response.SUCCESS) {
     for (let [index, crnt] of listingsRes.listingArray.entries()) {
       if (index == 0) {
-        let initialString = 'Current Listings:';
+        let initialString = 'Current Listing(s):';
         initialString += crnt;
         await message.channel.send('```' + initialString + '```');
       } else {

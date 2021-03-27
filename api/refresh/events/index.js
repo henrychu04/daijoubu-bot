@@ -103,7 +103,7 @@ module.exports = class refresh {
   };
 
   confirmOrders = async () => {
-    let confirmOrdersRes = await confirmOrders(this.client, this.loginToken, this.user, this.aliasOrders);
+    let confirmOrdersRes = await confirmOrders(this.client, this.loginToken, this.user, this.userOrders);
 
     if (confirmOrdersRes) {
       const userOrders = await Orders.find({ d_id: this.user.d_id });

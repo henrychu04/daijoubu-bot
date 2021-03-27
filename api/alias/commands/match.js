@@ -32,7 +32,7 @@ module.exports = async (client, loginToken, user, message) => {
   if (checkRes.returnedEnum == response.SUCCESS) {
     for (let [index, crnt] of checkRes.newLowestAsksArray.entries()) {
       if (index == 0) {
-        let initialString = 'Current Listings With a Lower Ask:';
+        let initialString = 'Current Listing(s) With a Lower Ask:';
         initialString += crnt;
         await message.channel.send('```' + initialString + '```');
       } else {

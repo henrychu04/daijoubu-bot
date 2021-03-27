@@ -16,66 +16,64 @@ module.exports = class Monitor extends events {
   }
 
   monitor = async () => {
-    try {
-      const date = new Date();
+    while (1) {
+      try {
+        const date = new Date();
 
-      const allUsers = await Users.find();
-      let allListings = new Map();
+        const allUsers = await Users.find();
+        let allListings = new Map();
 
-      for (let user of allUsers) {
-        let refresh = new Refresh(this.client, user);
-        await refresh.init();
+        for (let user of allUsers) {
+          let refresh = new Refresh(this.client, user);
+          await refresh.init();
 
-        await refresh.addListings();
-        await refresh.deleteListings();
-        await refresh.syncListingPrices();
+          await refresh.addListings();
+          await refresh.deleteListings();
+          await refresh.syncListingPrices();
 
-        let updateLowestRes = await refresh.updateLowest(allListings);
+          let updateLowestRes = await refresh.updateLowest(allListings);
 
-        if (updateLowestRes) {
-          this.emit('newUpdate', updateLowestRes);
+          if (updateLowestRes) {
+            this.emit('newUpdate', updateLowestRes);
+          }
+
+          let addOrdersRes = await refresh.addOrders();
+
+          if (addOrdersRes) {
+            this.emit('newUpdate', addOrdersRes);
+          }
+
+          await refresh.deleteOrders();
+
+          let syncOrdersRes = await refresh.syncOrders();
+
+          if (syncOrdersRes) {
+            this.emit('newUpdate', syncOrdersRes);
+          }
+
+          let confirmOrdersRes = undefined;
+
+          if (user.settings.orderRefresh == 'live') {
+            confirmOrdersRes = await refresh.confirmOrders();
+          } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 5 && date.getMinutes() == 1) {
+            confirmOrdersRes = await refresh.confirmOrders();
+          }
+
+          if (confirmOrdersRes) {
+            this.emit('newUpdate', confirmOrdersRes);
+          }
+
+          let earningsRes = await refresh.earnings();
+
+          if (earningsRes) {
+            this.emit('newUpdate', earningsRes);
+          }
         }
-
-        let addOrdersRes = await refresh.addOrders();
-
-        if (addOrdersRes) {
-          this.emit('newUpdate', addOrdersRes);
-        }
-
-        await refresh.deleteOrders();
-
-        let syncOrdersRes = await refresh.syncOrders();
-
-        if (syncOrdersRes) {
-          this.emit('newUpdate', syncOrdersRes);
-        }
-
-        let confirmOrdersRes = undefined;
-
-        if (user.settings.orderRefresh == 'live') {
-          confirmOrdersRes = await refresh.confirmOrders();
-        } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 5 && date.getMinutes() == 1) {
-          confirmOrdersRes = await refresh.confirmOrders();
-        }
-
-        if (confirmOrdersRes) {
-          this.emit('newUpdate', confirmOrdersRes);
-        }
-
-        let earningsRes = await refresh.earnings();
-
-        if (earningsRes) {
-          this.emit('newUpdate', earningsRes);
-        }
+      } catch (err) {
+        console.log(err);
       }
-    } catch (err) {
-      console.log(err);
-
-      await sleep(oneMinute);
-      return this.monitor();
     }
 
     await sleep(oneMinute);
-    return this.monitor();
   };
 };

@@ -85,7 +85,7 @@ exports.run = async (client, message, args) => {
         if (checkResponse.returnedEnum == response.SUCCESS) {
           for (let i = 0; i < checkResponse.newLowestAsksArray.length; i++) {
             if (i == 0) {
-              let initialString = 'Current Listings With a Lower Ask:';
+              let initialString = 'Current Listing(s) With a Lower Ask:';
               initialString += checkResponse.newLowestAsksArray[i];
               await message.channel.send('```' + initialString + '```');
             } else {
@@ -138,7 +138,7 @@ exports.run = async (client, message, args) => {
         if (listingsResponse.returnedEnum == response.SUCCESS) {
           for (let i = 0; i < listingsResponse.listingArray.length; i++) {
             if (i == 0) {
-              let initialString = 'Current Listings:';
+              let initialString = 'Current Listing(s):';
               initialString += listingsResponse.listingArray[i];
               await message.channel.send('```' + initialString + '```');
             } else {
@@ -183,7 +183,7 @@ exports.run = async (client, message, args) => {
 
         if (editResponse.returnedEnum == response.SUCCESS) {
           if (editResponse.editOthers) {
-            await editResponse.msg.edit('```All listings edited successfully```');
+            await editResponse.msg.edit('```All listing(s) edited successfully```');
           } else {
             await editResponse.msg.edit('```Listing edited successfully```');
           }
@@ -204,7 +204,7 @@ exports.run = async (client, message, args) => {
         let getOrdersResponse = await aliasObj.getOrders();
 
         if (getOrdersResponse.returnedEnum == response.SUCCESS) {
-          let orderReturnString = 'Current Open Orders:\n';
+          let orderReturnString = 'Current Open Order(s):\n';
           let orderCounter = 0;
 
           for (type of getOrdersResponse.orderArray) {
