@@ -55,7 +55,7 @@ module.exports = class Monitor extends events {
 
           if (user.settings.orderRefresh == 'live') {
             confirmOrdersRes = await refresh.confirmOrders();
-          } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 5 && date.getMinutes() == 1) {
+          } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
             confirmOrdersRes = await refresh.confirmOrders();
           }
 
