@@ -55,7 +55,7 @@ module.exports = async (client, loginToken, user, message) => {
       collector1.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled');
+      console.log('Canceled\n');
     } else if (!isNaN(input)) {
       if (parseInt(input) >= listingsRes.listingIds.length) {
         msg.channel.send(
@@ -112,7 +112,7 @@ module.exports = async (client, loginToken, user, message) => {
       collector2.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled');
+      console.log('Canceled\n');
     } else if (!isNaN(price)) {
       collector2.stop();
       stopped = true;
@@ -248,7 +248,7 @@ async function confirmEdit(lowest, price, message) {
       price = -1;
       stopped = true;
       confirm = true;
-      console.log('Canceled');
+      console.log('Canceled\n');
     } else if (!isNaN(input)) {
       collector.stop();
       stopped = true;

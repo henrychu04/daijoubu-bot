@@ -79,7 +79,7 @@ module.exports = async (client, loginToken, message, user) => {
       collector.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled');
+      console.log('Canceled\n');
     } else if (checkNumParams(nums)) {
       if (nums[0].toLowerCase() == 'all') {
         collector.stop();

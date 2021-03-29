@@ -191,7 +191,7 @@ async function editSpecifiedListingRate(message, user) {
       collector1.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled');
+      console.log('Canceled\n');
     } else if (nums == 'all') {
       collector1.stop();
       stopped = true;
@@ -227,7 +227,7 @@ async function editSpecifiedListingRate(message, user) {
       collector2.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled');
+      console.log('Canceled\n');
     } else if (input == 'live' || input == 'manual') {
       editMsg = await msg.channel.send('```' + 'Editing ...' + '```');
       collector2.stop();

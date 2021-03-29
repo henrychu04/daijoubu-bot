@@ -60,7 +60,7 @@ module.exports = async (client, loginToken, user, message) => {
       collector1.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled');
+      console.log('Canceled\n');
     } else if (input == 's') {
       await cashOutReq.sendOTP(client, loginToken);
       await msg.channel.send(
@@ -108,7 +108,7 @@ module.exports = async (client, loginToken, user, message) => {
       collector2.stop();
       stopped = true;
       exit = true;
-      console.log('Canceled');
+      console.log('Canceled\n');
     } else if (!isNaN(input)) {
       if (input > earningsRes.cashoutAmount / 100) {
         await msg.channel.send(

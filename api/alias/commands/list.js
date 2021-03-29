@@ -46,7 +46,7 @@ module.exports = async (query, client, loginToken, user, message) => {
       if (input == 'n') {
         collector1.stop();
         stopped = true;
-        console.log('Canceled');
+        console.log('Canceled\n');
         exit = true;
       } else {
         collector1.stop();
@@ -84,7 +84,7 @@ module.exports = async (query, client, loginToken, user, message) => {
     if (input == 'n') {
       collector2.stop();
       stopped = true;
-      console.log('Canceled');
+      console.log('Canceled\n');
       exit = true;
     } else if (listReq.checkListParams(sizingArray)) {
       collector2.stop();
