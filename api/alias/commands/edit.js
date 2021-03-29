@@ -44,7 +44,7 @@ module.exports = async (client, loginToken, user, message) => {
 
   await message.channel.send('```' + `Enter one listing number to edit\nEnter 'n' to cancel` + '```');
 
-  const collector1 = this.message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
+  const collector1 = message.channel.createMessageCollector((msg) => msg.author.id == message.author.id, {
     time: 30000,
   });
 
