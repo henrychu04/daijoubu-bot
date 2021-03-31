@@ -20,21 +20,21 @@ module.exports = function login() {
 };
 
 async function loggingIn() {
-  let users = await Users.find();
-  let i = 0;
+  while (1) {
+    let users = await Users.find();
 
-  for (; i < users.length; i++) {
-    if (users[i].aliasEmail.length != 0) {
-      aliasLogin(users[i]);
+    for (let i = 0; i < users.length; i++) {
+      if (users[i].aliasEmail.length != 0) {
+        aliasLogin(users[i]);
+      }
+
+      if (users[i].goatEmail.length != 0) {
+        goatLogin(users[i]);
+      }
     }
 
-    if (users[i].goatEmail.length != 0) {
-      goatLogin(users[i]);
-    }
+    await sleep(oneHour);
   }
-
-  await sleep(oneHour);
-  loggingIn();
 }
 
 async function aliasLogin(user) {
