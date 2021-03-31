@@ -9,6 +9,7 @@ module.exports = async (client, message, email, pw) => {
   const id = message.author.id;
   let loginRes = 0;
   let authRes = null;
+  let count = 0;
 
   try {
     while (loginRes != 200) {
