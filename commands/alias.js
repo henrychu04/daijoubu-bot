@@ -64,7 +64,7 @@ exports.run = async (client, message, args) => {
       case 'login':
         if (message.channel.type == 'dm') {
           if (args.length == 3) {
-            let newAliasObj = new aliasClass(client, null, null, null);
+            let newAliasObj = new aliasClass(client, null, null, message);
             await newAliasObj.login(args[1], args[2]);
           } else {
             await message.channel.send('```Incorrect format\nCorrect format is !login <email> <password>```');
