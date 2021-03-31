@@ -7,7 +7,7 @@ const Listings = require('../../../models/listings.js');
 module.exports = async (client, user, loginToken, userListingsArray, allListings) => {
   let liveString = 'Listing(s) Updated:\n';
   let live = 0;
-  let unadjustedLiveString = `Live Listing(s) Not Updated:\nNew lowest ask out of range of Max Price Adjustment Range - '${user.settings.maxAdjust}'\n`;
+  let unadjustedLiveString = `Live Listing(s) Not Updated:\nNew lowest ask out of range of Max Price Adjustment Range - '$${user.settings.maxAdjust}'\n`;
   let unadjustedLive = 0;
   let manualString = 'Listing(s) With a New Lowest Ask:\n';
   let manual = 0;

@@ -28,7 +28,6 @@ exports.run = async (client, message, args) => {
   let aliasObj;
 
   if (
-    command == 'login' ||
     command == 'check' ||
     command == 'match' ||
     command == 'listings' ||
