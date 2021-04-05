@@ -48,8 +48,7 @@ module.exports = async (client, query) => {
 
   while (dataRes != 200) {
     data = await fetch(`https://www.goat.com/api/v1/product_variants/buy_bar_data?productTemplateId=${res.slug}`, {
-      method: 'GET',
-      headers: client.config.goatHeader,
+      headers: client.config.headers,
     }).then((res, err) => {
       dataRes = res.status;
 
