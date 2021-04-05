@@ -11,78 +11,59 @@ module.exports = async (client, loginToken, user, aliasOrdersArray) => {
 
   let needConfirmOrderArray = [];
 
-  if (aliasOrdersArray.purchase_orders) {
-    aliasOrdersArray.purchase_orders.forEach((order) => {
-      if (order.status == 'NEEDS_CONFIRMATION') {
-        needConfirmOrderArray.push(order);
+  aliasOrdersArray.aliasOrders.forEach((order) => {
+    if (order.status == 'NEEDS_CONFIRMATION') {
+      needConfirmOrderArray.push(order);
+    }
+  });
+
+  for (let order of needConfirmOrderArray) {
+    let orderNum = order.number;
+
+    try {
+      let confirmRes = await confirmReq(client, loginToken, orderNum);
+
+      if (confirmRes != 200) {
+        throw new Error('Error confirming');
       }
-    });
 
-    for (let order of needConfirmOrderArray) {
-      let orderNum = order.number;
+      let generateRes = await generateReq(client, loginToken, orderNum);
 
-      try {
-        let confirmRes = await confirmReq(client, loginToken, orderNum);
+      if (generateRes != 200) {
+        throw new Error('Error generating');
+      }
 
-        if (confirmRes != 200) {
-          throw new Error('Error confirming');
-        }
+      stringArray.push(
+        `\t${stringArray.length}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${orderNum}\n`
+      );
+    } catch (err) {
+      console.log(err);
 
-        let generateRes = await generateReq(client, loginToken, orderNum);
+      if (stringArray.length != 0) {
+        if (user.webhook.length != 0) {
+          returnArray = buildArray(stringArray);
 
-        if (generateRes != 200) {
-          throw new Error('Error generating');
-        }
+          if (err.message == 'Error confirming') {
+            returnArray.push({
+              title: 'Order Confirmations',
+              body: '```' + `Error confirming order number ${orderNum}` + '```',
+            });
 
-        stringArray.push(
-          `\t${stringArray.length}. ${order.listing.product.name} - ${order.listing.size_option.name.toUpperCase()} $${
-            order.listing.price_cents / 100
-          }\n\t\tOrder number: ${orderNum}\n`
-        );
-      } catch (err) {
-        console.log(err);
+            return returnArray;
+          } else if (err.message == 'Error generating') {
+            returnArray.push({
+              title: 'Order Confirmations',
+              body: '```' + `Error generating a shipping label for order number ${orderNum}` + '```',
+            });
 
-        if (stringArray.length != 0) {
-          if (user.webhook.length != 0) {
-            returnArray = buildArray(stringArray);
-
-            if (err.message == 'Error confirming') {
-              returnArray.push({
-                title: 'Order Confirmations',
-                body: '```' + `Error confirming order number ${orderNum}` + '```',
-              });
-
-              return returnArray;
-            } else if (err.message == 'Error generating') {
-              returnArray.push({
-                title: 'Order Confirmations',
-                body: '```' + `Error generating a shipping label for order number ${orderNum}` + '```',
-              });
-
-              return returnArray;
-            }
+            return returnArray;
           }
         }
       }
     }
+  }
 
-    if (needConfirmOrderArray.length == 0) {
-      if (user.settings.orderRefresh == 'daily') {
-        if (user.webhook.length != 0) {
-          return [
-            {
-              title: 'Order Confirmations',
-              body: '```' + `alias Orders - ${date}:\n\tNo orders to confirm` + '```',
-            },
-          ];
-        }
-      }
-    } else {
-      if (user.webhook.length != 0) {
-        return buildArray(stringArray);
-      }
-    }
-  } else {
+  if (needConfirmOrderArray.length == 0) {
     if (user.settings.orderRefresh == 'daily') {
       if (user.webhook.length != 0) {
         return [
@@ -92,6 +73,10 @@ module.exports = async (client, loginToken, user, aliasOrdersArray) => {
           },
         ];
       }
+    }
+  } else {
+    if (user.webhook.length != 0) {
+      return buildArray(stringArray);
     }
   }
 };

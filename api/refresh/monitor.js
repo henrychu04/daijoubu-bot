@@ -72,7 +72,7 @@ module.exports = class Monitor extends events {
       } catch (err) {
         console.log(err);
       }
-      
+
       await sleep(oneMinute);
     }
   };
