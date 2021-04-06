@@ -23,12 +23,12 @@ module.exports = async (user, userOrders, aliasOrders) => {
 
       newOrderFound = true;
 
-      let date = moment().tz('America/New_York');
+      let date = new Date(aliasOrder.take_action_by);
 
       let newOrder = {
         number: aliasOrder.number,
         status: aliasOrder.status,
-        take_action_by: `${date.month() + 1}/${date.date()}`,
+        take_action_by: `${date.getMonth() + 1}/${date.getDate()}`,
         size: parseFloat(aliasOrder.listing.size),
         price: parseInt(aliasOrder.listing.price_cents),
         name: aliasOrder.listing.product.name,
