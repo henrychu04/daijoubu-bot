@@ -1,5 +1,3 @@
-const moment = require('moment-timezone');
-
 const Orders = require('../../../models/orders.js');
 
 module.exports = async (user, userOrders, aliasOrders) => {
