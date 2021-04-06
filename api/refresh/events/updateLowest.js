@@ -123,12 +123,17 @@ async function updateListing(client, loginToken, lowest, listing) {
   let listings = await getAllListings(client, loginToken);
   let obj = {};
 
-  for (let i = 0; i < listings.listing.length; i++) {
-    if (listings.listing[i].id == listing.id) {
-      obj = listings.listing[i];
+  for (let crnt of listings.listing) {
+    if (crnt.id == listing.id) {
+      obj = crnt;
       break;
     }
   }
+
+  console.log('in updateLowest');
+  console.log('item is ' + listing.name);
+  console.log('old price is ' + obj.price_cents);
+  console.log('new price is ' + lowest);
 
   obj.price_cents = lowest.toString();
 
