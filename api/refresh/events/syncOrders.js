@@ -1,3 +1,5 @@
+const moment = require('moment-timezone');
+
 const Orders = require('../../../models/orders.js');
 
 module.exports = async (user, userOrders, aliasOrders) => {
@@ -20,14 +22,13 @@ module.exports = async (user, userOrders, aliasOrders) => {
             userOrder.status = aliasOrder.status;
           }
 
-          let newParsedDate = new Date(aliasOrder.take_action_by);
-          let oldDate = '';
+          let newMoment = moment.utc(aliasOrder.take_action_by).tz('America/New_York');
 
-          if (userOrder.take_action_by != `${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`) {
+          if (userOrder.take_action_by != `${newMoment.month() + 1}/${newMoment.date()}`) {
             changed = true;
             dateChange = true;
             oldDate = userOrder.take_action_by;
-            userOrder.take_action_by = `${newParsedDate.getMonth() + 1}/${newParsedDate.getDate()}`;
+            userOrder.take_action_by = `${newMoment.month() + 1}/${newMoment.date()}`;
           }
 
           if (statusChange && dateChange) {
