@@ -29,6 +29,8 @@ module.exports = async (client, user, loginToken, userListingsArray, allListings
               manual++;
             }
 
+            console.log('lowest is ' + lowest);
+
             await Listings.updateOne(
               { 'aliasListings.id': listing.id },
               { $set: { 'aliasListings.$.lowest': lowest } }
@@ -54,10 +56,12 @@ module.exports = async (client, user, loginToken, userListingsArray, allListings
               }
             }
           }
+          break;
         }
       }
     } else {
       let pageData = await getProductAvailability(client, listing.slug);
+      console.log(pageData);
 
       allListings.set(listing.slug, pageData);
 
@@ -74,6 +78,8 @@ module.exports = async (client, user, loginToken, userListingsArray, allListings
               manual++;
             }
 
+            console.log('lowest is ' + lowest);
+
             await Listings.updateOne(
               { 'aliasListings.id': listing.id },
               { $set: { 'aliasListings.$.lowest': lowest } }
@@ -99,6 +105,7 @@ module.exports = async (client, user, loginToken, userListingsArray, allListings
               }
             }
           }
+          break;
         }
       }
     }
