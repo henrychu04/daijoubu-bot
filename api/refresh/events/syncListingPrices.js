@@ -11,11 +11,6 @@ module.exports = async (userListings, aliasListings) => {
         if (userListing.id == aliasListing.id && userListing.price != crntPrice) {
           modified = true;
 
-          console.log('in syncListingPrices');
-          console.log('item is ' + userListing.name);
-          console.log('user price is ' + userListing.price);
-          console.log('crnt price is ' + crntPrice);
-
           await Listings.updateOne(
             { 'aliasListings.id': userListing.id },
             { $set: { 'aliasListings.$.price': crntPrice } }

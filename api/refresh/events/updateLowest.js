@@ -29,8 +29,6 @@ module.exports = async (client, user, loginToken, userListingsArray, allListings
               manual++;
             }
 
-            console.log('lowest is ' + lowest);
-
             await Listings.updateOne(
               { 'aliasListings.id': listing.id },
               { $set: { 'aliasListings.$.lowest': lowest } }
@@ -61,7 +59,6 @@ module.exports = async (client, user, loginToken, userListingsArray, allListings
       }
     } else {
       let pageData = await getProductAvailability(client, listing.slug);
-      console.log(pageData);
 
       allListings.set(listing.slug, pageData);
 
@@ -77,8 +74,6 @@ module.exports = async (client, user, loginToken, userListingsArray, allListings
               } => $${lowest / 100}\n`;
               manual++;
             }
-
-            console.log('lowest is ' + lowest);
 
             await Listings.updateOne(
               { 'aliasListings.id': listing.id },
@@ -136,11 +131,6 @@ async function updateListing(client, loginToken, lowest, listing) {
       break;
     }
   }
-
-  console.log('in updateLowest');
-  console.log('item is ' + listing.name);
-  console.log('old price is ' + obj.price_cents);
-  console.log('new price is ' + lowest);
 
   obj.price_cents = lowest.toString();
 

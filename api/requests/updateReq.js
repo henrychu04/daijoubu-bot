@@ -1,13 +1,8 @@
 const fetch = require('node-fetch');
 
 module.exports = async (client, loginToken, obj) => {
-  obj.price_cents = obj.product.lowest_price_cents;
   let updateRes = 0;
   let count = 0;
-
-  console.log('in updateReq');
-  console.log('updated obj is:');
-  console.log(obj);
 
   while (updateRes != 200) {
     updateRes = await fetch(`https://sell-api.goat.com/api/v1/listings/${obj.id}`, {
