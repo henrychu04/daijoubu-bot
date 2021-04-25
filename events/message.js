@@ -1,5 +1,3 @@
-const Sentry = require('@sentry/node');
-
 module.exports = (client, message) => {
   if (message.author.bot) return;
 
@@ -8,8 +6,6 @@ module.exports = (client, message) => {
   } else {
     if (message.content.indexOf(client.config.prefix) !== 0) return;
   }
-
-  Sentry.setUser({ id: message.author.id });
 
   const args = message.content.slice(client.config.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
