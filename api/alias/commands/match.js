@@ -109,6 +109,8 @@ module.exports = async (client, loginToken, user, message) => {
   if (all) {
     for (let listing of listingObj) {
       if (listing.price_cents > listing.product.lowest_price_cents) {
+        listing.price_cents = listing.product.lowest_price_cents;
+
         let updateRes = await updateReq(client, loginToken, listing);
 
         if (updateRes != 200) {
@@ -120,6 +122,8 @@ module.exports = async (client, loginToken, user, message) => {
     for (let num of nums) {
       for (let listing of listingObj) {
         if (listing.id == checkRes.userListingsCheckArray[parseInt(num)].id) {
+          listing.price_cents = listing.product.lowest_price_cents;
+
           let updateRes = await updateReq(client, loginToken, listing);
 
           if (updateRes != 200) {
