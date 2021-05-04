@@ -68,7 +68,7 @@ async function editManualNotif(message, user) {
 async function editMaxRange(message, user) {
   await message.channel.send(
     '```' +
-      `Editing max price adjustment range for live listings\n\tEnter new number value\n\tEnter 'n' to cancel` +
+      `Editing max price adjustment range for live listings\n\tCurrent max price adjustment: '$${user.settings.maxAdjust}'\n\tEnter new number value\n\tEnter 'n' to cancel` +
       '```'
   );
 

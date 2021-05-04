@@ -89,7 +89,7 @@ module.exports = async (edit, user, message) => {
         exit = true;
         returnedEnum = response.EXIT;
       } else {
-        await msg.channel.send('```' + `Enter either '0', '1', or '2'` + '```');
+        await msg.channel.send('```' + `Enter either '0', '1', '2', '3', or '4'` + '```');
       }
     }
 
