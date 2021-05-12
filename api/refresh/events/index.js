@@ -3,6 +3,7 @@ const deleteListings = require('./deleteListings.js');
 const syncListingPrices = require('./syncListingPrices.js');
 const updateLowest = require('./updateLowest.js');
 const confirmOrders = require('./confirmOrders.js');
+const genShipping = require('./genShipping.js');
 const addOrders = require('./addOrders.js');
 const deleteOrders = require('./deleteOrders.js');
 const syncOrders = require('./syncOrders.js');
@@ -110,6 +111,17 @@ module.exports = class refresh {
       this.userOrders = userOrders[0];
 
       return { data: confirmOrdersRes, user: this.user, type: 'confirmOrders' };
+    }
+  };
+
+  genShipping = async () => {
+    let genShippingRes = await genShipping(this.client, this.loginToken, this.user, this.userOrders);
+
+    if (genShippingRes) {
+      const userOrders = await Orders.find({ d_id: this.user.d_id });
+      this.userOrders = userOrders[0];
+
+      return { data: genShippingRes, user: this.user, type: 'genShipping' };
     }
   };
 

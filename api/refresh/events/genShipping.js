@@ -1,4 +1,3 @@
-const confirmReq = require('../../requests/confirmReq.js');
 const generateReq = require('../../requests/generateReq.js');
 
 let crntDate = new Date();
@@ -8,33 +7,30 @@ let date = `${month}/${day}`;
 
 module.exports = async (client, loginToken, user, aliasOrdersArray) => {
   let stringArray = [];
-
-  let needConfirmOrderArray = [];
+  let needShipping = [];
 
   aliasOrdersArray.aliasOrders.forEach((order) => {
-    if (order.status == 'NEEDS_CONFIRMATION') {
-      needConfirmOrderArray.push(order);
+    if (order.status == 'NEEDS_SHIPPING_METHOD') {
+      needShipping.push(order);
     }
   });
 
-  for (let order of needConfirmOrderArray) {
+  for (let order of needShipping) {
     let orderNum = order.number;
 
     try {
-      let confirmRes = await confirmReq(client, loginToken, orderNum);
-
-      if (confirmRes != 200) {
-        throw new Error('Error confirming');
-      }
-
       let generateRes = await generateReq(client, loginToken, orderNum);
 
       if (generateRes != 200) {
         throw new Error('Error generating');
       }
 
+      let orderShipDate = order.take_action_by;
+
       stringArray.push(
-        `\t${stringArray.length}. ${order.name} - ${order.size} $${order.price / 100}\n\t\tOrder number: ${orderNum}\n`
+        `\t${stringArray.length}. ${order.name} - ${order.size} $${
+          order.price / 100
+        }\n\t\tOrder number: ${orderNum}\n\t\tShip by: ${orderShipDate}\n`
       );
     } catch (err) {
       console.log(err);
@@ -43,16 +39,9 @@ module.exports = async (client, loginToken, user, aliasOrdersArray) => {
         if (user.webhook.length != 0) {
           returnArray = buildArray(stringArray);
 
-          if (err.message == 'Error confirming') {
+          if (err.message == 'Error generating') {
             returnArray.push({
-              title: 'Order Confirmations',
-              body: '```' + `Error confirming order number ${orderNum}` + '```',
-            });
-
-            return returnArray;
-          } else if (err.message == 'Error generating') {
-            returnArray.push({
-              title: 'Order Confirmations',
+              title: 'Order Shipping Label Generation',
               body: '```' + `Error generating a shipping label for order number ${orderNum}` + '```',
             });
 
@@ -63,18 +52,7 @@ module.exports = async (client, loginToken, user, aliasOrdersArray) => {
     }
   }
 
-  if (needConfirmOrderArray.length == 0) {
-    if (user.settings.orderRefresh == 'daily') {
-      if (user.webhook.length != 0) {
-        return [
-          {
-            title: 'Order Confirmations',
-            body: '```' + `alias Orders - ${date}:\n\tNo orders to confirm` + '```',
-          },
-        ];
-      }
-    }
-  } else {
+  if (needShipping.length != 0) {
     if (user.webhook.length != 0) {
       return buildArray(stringArray);
     }
@@ -92,7 +70,7 @@ function buildArray(stringArray) {
 
     if (combinedArray[count] == undefined) {
       if (index == 0) {
-        combinedArray[count] = `New alias Order(s) Confirmed - ${date}:\n${crnt}`;
+        combinedArray[count] = `New alias Shipping Label(s) Generated - ${date}:\n${crnt}`;
       } else {
         combinedArray[count] = crnt;
       }
@@ -104,7 +82,7 @@ function buildArray(stringArray) {
   let returnArray = [];
 
   for (let crnt of combinedArray) {
-    returnArray.push({ title: 'Order Confirmations', body: '```' + crnt + '```' });
+    returnArray.push({ title: 'Order Shipping Label Generation', body: '```' + crnt + '```' });
   }
 
   return returnArray;

@@ -21,6 +21,7 @@ module.exports = class Monitor extends events {
         const date = new Date();
 
         const allUsers = await Users.find();
+        // const allUsers = await Users.find({ d_id: '504000540804382741' });
         let allListings = new Map();
 
         for (let user of allUsers) {
@@ -52,15 +53,22 @@ module.exports = class Monitor extends events {
           }
 
           let confirmOrdersRes = undefined;
+          let genShipping = undefined;
 
           if (user.settings.orderRefresh == 'live') {
             confirmOrdersRes = await refresh.confirmOrders();
+            genShipping = await refresh.genShipping();
           } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
             confirmOrdersRes = await refresh.confirmOrders();
+            genShipping = await refresh.genShipping();
           }
 
           if (confirmOrdersRes) {
             this.emit('newUpdate', confirmOrdersRes);
+          }
+
+          if (genShipping) {
+            this.emit('newUpdate', genShipping);
           }
 
           let earningsRes = await refresh.earnings();
