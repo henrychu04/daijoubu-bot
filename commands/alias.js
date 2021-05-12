@@ -226,7 +226,9 @@ exports.run = async (client, message, args) => {
             }
           }
 
-          toReturn = '```' + orderReturnString + '```';
+          if (orderCounter != 0) {
+            toReturn = '```' + orderReturnString + '```';
+          }
         } else if (getOrdersResponse.returnedEnum == response.NO_ITEMS) {
           toReturn = '```Account currently has no open orders```';
         }

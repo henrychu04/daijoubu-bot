@@ -82,7 +82,7 @@ exports.run = async (client, message, args) => {
     if (input.toLowerCase() == 'test') {
       if (user.webhook.length == 0) {
         console.log();
-        return message.channel.send(```Enter !webhook <webhook> to setup webhook```);
+        return message.channel.send('```Enter !webhook <webhook> to setup webhook```');
       }
 
       let split = user.webhook.split('/');
