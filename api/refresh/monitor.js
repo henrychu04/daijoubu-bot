@@ -1,4 +1,5 @@
 const events = require('events');
+const moment = require('moment-timezone');
 const Refresh = require('./events/index.js');
 const sleep = require('../../scripts/sleep.js');
 
@@ -20,8 +21,8 @@ module.exports = class Monitor extends events {
       try {
         const date = new Date();
 
-        const allUsers = await Users.find();
-        // const allUsers = await Users.find({ d_id: '504000540804382741' });
+        // const allUsers = await Users.find();
+        const allUsers = await Users.find({ d_id: '504000540804382741' });
         let allListings = new Map();
 
         for (let user of allUsers) {
@@ -55,10 +56,14 @@ module.exports = class Monitor extends events {
           let confirmOrdersRes = undefined;
           let genShipping = undefined;
 
+          const crntDate = moment().tz('America/New_York');
+
           if (user.settings.orderRefresh == 'live') {
+            console.log('confirming live orders');
             confirmOrdersRes = await refresh.confirmOrders();
             genShipping = await refresh.genShipping();
-          } else if (user.settings.orderRefresh == 'daily' && date.getHours() == 4 && date.getMinutes() == 1) {
+          } else if (user.settings.orderRefresh == 'daily' && crntDate.hour() == 0 && crntDate.minute() == 1) {
+            console.log('confirming orders\n');
             confirmOrdersRes = await refresh.confirmOrders();
             genShipping = await refresh.genShipping();
           }
