@@ -32,7 +32,7 @@ module.exports = async (user, userOrders, aliasOrders) => {
         size: parseFloat(aliasOrder.listing.size),
         price: parseInt(aliasOrder.listing.price_cents),
         name: aliasOrder.listing.product.name,
-        tracking: '',
+        tracking: aliasOrder.shipping_info.tracking_code == '' ? '' : aliasOrder.shipping_info.tracking_code,
       };
 
       stringArray.push(

@@ -94,7 +94,6 @@ module.exports = async (user) => {
       case 'Needs Shipping':
         for (let obj of orderArray) {
           if (obj.name == 'Needs Shipping') {
-            console.log(order);
             obj.value.push({
               number: order.number,
               string: `\t\t${needShipNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
