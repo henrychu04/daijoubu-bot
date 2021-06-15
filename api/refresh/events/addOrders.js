@@ -32,8 +32,15 @@ module.exports = async (user, userOrders, aliasOrders) => {
         size: parseFloat(aliasOrder.listing.size),
         price: parseInt(aliasOrder.listing.price_cents),
         name: aliasOrder.listing.product.name,
-        tracking: aliasOrder.shipping_info.tracking_code == '' ? '' : aliasOrder.shipping_info.tracking_code,
       };
+
+      try {
+        newOrder.tracking = aliasOrder.shipping_info.tracking_code;
+      } catch (err) {
+        if (err != "TypeError: Cannot read property 'tracking_code' of undefined") {
+          console.log(err);
+        }
+      }
 
       stringArray.push(
         `\t${stringArray.length}. ${newOrder.name} - ${newOrder.size} $${
