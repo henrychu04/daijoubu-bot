@@ -94,11 +94,14 @@ module.exports = async (user) => {
       case 'Needs Shipping':
         for (let obj of orderArray) {
           if (obj.name == 'Needs Shipping') {
+            console.log(order);
             obj.value.push({
               number: order.number,
               string: `\t\t${needShipNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
                 order.number
-              }\n\t\t\tShip by: ${date.getMonth() + 1}/${date.getDate()}\n`,
+              }\n\t\t\tUPS tracking number: ${order.tracking}\n\t\t\tShip by: ${
+                date.getMonth() + 1
+              }/${date.getDate()}\n`,
             });
             break;
           }
@@ -126,7 +129,7 @@ module.exports = async (user) => {
               number: order.number,
               string: `\t\t${droppedNum}. ${order.name} - ${order.size} $${order.price / 100}\n\t\t\tOrder number: ${
                 order.number
-              }\n`,
+              }\n\t\t\tUPS tracking number: ${order.tracking}\n`,
             });
             break;
           }
