@@ -1,5 +1,4 @@
 const Discord = require('discord.js');
-const Enmap = require('enmap');
 const fs = require('fs');
 const login = require('./scripts/login.js');
 const refresh = require('./api/refresh/refresh.js');
@@ -32,7 +31,7 @@ fs.readdir('./events/', (err, files) => {
   });
 });
 
-client.commands = new Enmap();
+client.commands = new Discord.Collection();
 
 fs.readdir('./commands/', (err, files) => {
   if (err) return console.error(err);
