@@ -47,15 +47,11 @@ module.exports = async (user, userOrders, aliasOrders) => {
                 userOrder.status
               )}\n\t\tTake action by: ${oldDate} => ${userOrder.take_action_by}\n`;
             } else if (userOrder.status == 'NEEDS_SHIPPING') {
-              userOrder.tracking = aliasOrder.shipping_info.tracking_code;
-
               changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
                 userOrder.price / 100
               }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(
                 userOrder.status
-              )}\n\t\tTake action by: ${oldDate} => ${userOrder.take_action_by}\n\t\tUPS tracking number: ${
-                userOrder.tracking
-              }\n`;
+              )}\n\t\tTake action by: ${oldDate} => ${userOrder.take_action_by}\n`;
             } else {
               changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
                 userOrder.price / 100
@@ -78,13 +74,11 @@ module.exports = async (user, userOrders, aliasOrders) => {
                 userOrder.take_action_by
               }\n`;
             } else if (userOrder.status == 'NEEDS_SHIPPING') {
-              userOrder.tracking = aliasOrder.shipping_info.tracking_code;
-
               changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
                 userOrder.price / 100
               }\n\t\tStatus: ${convertStatus(oldStatus)} => ${convertStatus(userOrder.status)}\n\t\tTake action by: ${
                 userOrder.take_action_by
-              }\n\t\tUPS tracking number: ${userOrder.tracking}\n`;
+              }\n`;
             } else {
               changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
                 userOrder.price / 100
@@ -105,13 +99,11 @@ module.exports = async (user, userOrders, aliasOrders) => {
                 userOrder.take_action_by
               }\n`;
             } else if (userOrder.status == 'NEEDS_SHIPPING') {
-              userOrder.tracking = aliasOrder.shipping_info.tracking_code;
-
               changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
                 userOrder.price / 100
               }\n\t\tStatus: ${convertStatus(userOrder.status)}\n\t\tTake action by: ${oldDate} => ${
                 userOrder.take_action_by
-              }\n\t\tUPS tracking number: ${userOrder.tracking}\n`;
+              }\n`;
             } else {
               changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
                 userOrder.price / 100
