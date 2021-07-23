@@ -67,4 +67,8 @@ module.exports = class aliasClass {
   async cancel() {
     return await aliasCommands.cancel(this.client, this.loginToken, this.message, this.user);
   }
+
+  async history() {
+    return await aliasCommands.history(this.client, this.loginToken, this.message);
+  }
 };

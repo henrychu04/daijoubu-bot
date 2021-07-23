@@ -41,7 +41,8 @@ exports.run = async (client, message, args) => {
     command == 'earnings' ||
     command == 'cashout' ||
     command == 'generate' ||
-    command == 'cancel'
+    command == 'cancel' ||
+    command == 'history'
   ) {
     let userArray = await Users.find({ d_id: id });
 
@@ -388,6 +389,13 @@ exports.run = async (client, message, args) => {
         } else if (cancelRes.returnedEnum == response.ERROR) {
           throw new Error();
         }
+        break;
+      case 'history':
+        if (args.length > 1) {
+          throw new Error('Too many parameters');
+        }
+
+        await aliasObj.history();
         break;
       case 'help':
         if (args.length > 1) {

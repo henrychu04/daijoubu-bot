@@ -13,6 +13,7 @@ const me = require('./commands/me.js');
 const earnings = require('./commands/earnings.js');
 const cancel = require('./commands/cancel.js');
 const cashOut = require('./commands/cashOut.js');
+const history = require('./commands/history');
 
 module.exports = {
   aliasLogin,
@@ -29,5 +30,6 @@ module.exports = {
   me,
   earnings,
   cancel,
-  cashOut
+  cashOut,
+  history,
 };
