@@ -47,7 +47,7 @@ module.exports = async (user, userOrders, aliasOrders) => {
                 userOrder.status
               )}\n\t\tTake action by: ${oldDate} => ${userOrder.take_action_by}\n`;
             } else if (userOrder.status == 'NEEDS_SHIPPING') {
-              userOrder.tracking = aliasOrder?.shipping_info.tracking_code;
+              userOrder.tracking = aliasOrder?.shipping_info?.tracking_code;
 
               changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
                 userOrder.price / 100
@@ -76,7 +76,7 @@ module.exports = async (user, userOrders, aliasOrders) => {
                 userOrder.take_action_by
               }\n`;
             } else if (userOrder.status == 'NEEDS_SHIPPING') {
-              userOrder.tracking = aliasOrder?.shipping_info.tracking_code;
+              userOrder.tracking = aliasOrder?.shipping_info?.tracking_code;
 
               changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
                 userOrder.price / 100
@@ -103,7 +103,7 @@ module.exports = async (user, userOrders, aliasOrders) => {
                 userOrder.take_action_by
               }\n`;
             } else if (userOrder.status == 'NEEDS_SHIPPING') {
-              userOrder.tracking = aliasOrder?.shipping_info.tracking_code;
+              userOrder.tracking = aliasOrder?.shipping_info?.tracking_code;
 
               changedString += `\t${k}. ${userOrder.name} - ${userOrder.size} $${
                 userOrder.price / 100
