@@ -11,9 +11,13 @@ module.exports = async (client, loginToken, user, aliasOrdersArray) => {
 
   let needConfirmOrderArray = [];
 
+  console.log('all orders are:\n' + aliasOrdersArray.aliasOrders);
+
   aliasOrdersArray.aliasOrders.forEach((order) => {
     if (order.status == 'NEEDS_CONFIRMATION') {
       needConfirmOrderArray.push(order);
+      console.log('needs confirmation:');
+      console.log(order);
     }
   });
 
